@@ -8,7 +8,7 @@ class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  _ProfileScreenState createState() => _ProfileScreenState();
+  State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
@@ -16,11 +16,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _email;
   String? _role;
   bool _isLoading = false;
+  bool _isDarkMode = false;
+  bool _notificationsEnabled = true;
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(_loadProfile); // aman karena dipanggil setelah build
+    Future.microtask(_loadProfile);
   }
 
   Future<void> _loadProfile() async {
@@ -29,7 +31,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       final profile = await userProvider.getProfile();
-
       if (profile != null && mounted) {
         setState(() {
           _name = profile['name'];
@@ -38,124 +39,129 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading profile: $e')),
-        );
-      }
+      CustomAlert.show(context, 'Gagal memuat profil', type: AlertType.error);
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _logout() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.logout();
-
     if (success) {
-      CustomAlert.show(
-        context,
-        'Berhasil logout',
-        type: AlertType.success,
-      );
-      await Future.delayed(const Duration(milliseconds: 750));
-      Navigator.pushReplacementNamed(context, '/login');
+      CustomAlert.show(context, 'Berhasil logout', type: AlertType.success);
+      await Future.delayed(const Duration(milliseconds: 700));
+      if (mounted) Navigator.pushReplacementNamed(context, '/login');
     } else {
-      CustomAlert.show(
-        context,
-        authProvider.errorMessage,
-        type: AlertType.error,
-      );
+      CustomAlert.show(context, authProvider.errorMessage,
+          type: AlertType.error);
     }
+  }
+
+  Widget buildListTile({
+    required IconData icon,
+    required String label,
+    required Color color,
+    Widget? trailing,
+    VoidCallback? onTap,
+  }) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: color.withOpacity(0.2),
+        child: Icon(icon, color: color),
+      ),
+      title: Text(label),
+      trailing: trailing ?? const Icon(Icons.arrow_forward_ios, size: 16),
+      onTap: onTap,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Profil')),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            _isLoading
-                ? const CircleAvatar(
-                    radius: 42,
-                    backgroundColor: Colors.grey,
-                    child: CircularProgressIndicator(color: Colors.white),
-                  )
-                : CircleAvatar(
-                    radius: 42,
-                    backgroundColor: Colors.pink[100],
-                    child:
-                        Icon(Icons.person, size: 56, color: Colors.pink[400]),
-                  ),
-            const SizedBox(height: 24),
-            _isLoading
-                ? Container(
-                    height: 18,
-                    width: 120,
-                    color: Colors.grey[300],
-                    margin: const EdgeInsets.only(bottom: 8),
-                  )
-                : Text(
-                    _name ?? 'Nama Pengguna',
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-            _isLoading
-                ? Container(
-                    height: 14,
-                    width: 180,
-                    color: Colors.grey[200],
-                    margin: const EdgeInsets.only(bottom: 8),
-                  )
-                : Text(
-                    _email ?? '',
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
-            const SizedBox(height: 8),
-            if (_role != null)
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: _role == 'admin' ? Colors.red[100] : Colors.blue[100],
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  _role!.toUpperCase(),
-                  style: TextStyle(
-                    color:
-                        _role == 'admin' ? Colors.red[800] : Colors.blue[800],
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.logout),
-                label: const Text('Logout'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.pink,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  textStyle: const TextStyle(fontSize: 16),
-                ),
-                onPressed: _logout,
-              ),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text('Profile',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        automaticallyImplyLeading: false,
+      ),
+      body: Column(
+        children: [
+          const SizedBox(height: 16),
+          ListTile(
+            leading: CircleAvatar(
+              radius: 30,
+              backgroundColor: Colors.pink[200],
+              child: const Icon(Icons.person, color: Colors.white, size: 32),
             ),
-            const SizedBox(height: 16),
-          ],
-        ),
+            title: Text(_name ?? 'Loading...',
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text(_email ?? ''),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () {},
+          ),
+          const Divider(),
+          // buildListTile(
+
+          //   icon: Icons.dark_mode,
+          //   label: 'Dark Mode',
+          //   color: Colors.black,
+          //   trailing: Switch(
+          //     value: _isDarkMode,
+          //     onChanged: (val) => setState(() => _isDarkMode = val),
+          //   ),
+          // ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text('Profile',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ),
+          buildListTile(
+            icon: Icons.person,
+            label: 'Edit Profile',
+            color: Colors.orange,
+            onTap: () => {Navigator.pushNamed(context, '/edit-profile')},
+          ),
+          buildListTile(
+            icon: Icons.vpn_key,
+            label: 'Change Password',
+            color: Colors.blue,
+            onTap: () => {Navigator.pushNamed(context, '/change-password')},
+          ),
+          const SizedBox(height: 16),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text('Notifications',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ),
+          buildListTile(
+            icon: Icons.notifications,
+            label: 'Notifications',
+            color: Colors.green,
+            trailing: Switch(
+              value: _notificationsEnabled,
+              onChanged: (val) => setState(() => _notificationsEnabled = val),
+            ),
+          ),
+          const Spacer(),
+          buildListTile(
+            icon: Icons.logout,
+            label: 'Logout',
+            color: Colors.red,
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: _logout,
+          ),
+          const Padding(
+            padding: EdgeInsets.only(bottom: 16),
+            child: Text('App ver 2.0.1', style: TextStyle(color: Colors.grey)),
+          )
+        ],
       ),
     );
   }

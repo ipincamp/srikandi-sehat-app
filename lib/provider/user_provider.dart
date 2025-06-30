@@ -89,7 +89,7 @@ class UserProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token') ?? '';
     final baseUrl = dotenv.env['API_URL'];
-    final url = '$baseUrl/api/me/profile';
+    final url = '$baseUrl/me/profile';
 
     try {
       final response = await http.put(
@@ -140,10 +140,10 @@ class UserProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token') ?? '';
     final baseUrl = dotenv.env['API_URL'];
-    final url = '$baseUrl/api/me/password';
+    final url = '$baseUrl/me/password';
 
     try {
-      final response = await http.post(
+      final response = await http.patch(
         Uri.parse(url),
         headers: {
           'Authorization': 'Bearer $token',
