@@ -81,7 +81,7 @@ class UserProvider with ChangeNotifier {
       String phone,
       String dateOfBirth,
       String heightCm,
-      String weightKg) async {
+      String weightKg, {required String province, required String district, required String subDistrict}) async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();

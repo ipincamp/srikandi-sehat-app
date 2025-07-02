@@ -4,7 +4,7 @@ import 'package:srikandi_sehat_app/provider/auth_provider.dart';
 import 'package:srikandi_sehat_app/screens/auth/login_screen.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/custom_button.dart';
-import 'package:srikandi_sehat_app/widgets/custom_form.dart';
+import 'package:srikandi_sehat_app/widgets/custom_form.dart'; // Updated import
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -14,6 +14,7 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -22,53 +23,61 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
 
   Future<void> _register() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-    final name = _nameController.text.trim();
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
-    final confirmPassword = _confirmPasswordController.text;
-
-    if (name.isEmpty ||
-        email.isEmpty ||
-        password.isEmpty ||
-        confirmPassword.isEmpty) {
-      CustomAlert.show(
-        context,
-        'Wajib mengisi semua field',
-        type: AlertType.warning,
-      );
+    // Validate form first
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    if (password != confirmPassword) {
-      CustomAlert.show(
-        context,
-        'Password tidak cocok',
-        type: AlertType.warning,
-      );
-      return;
-    }
+    setState(() => _isLoading = true);
 
-    final success =
-        await authProvider.register(name, email, password, confirmPassword);
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    if (success) {
-      if (!mounted) return;
+      final name = _nameController.text.trim();
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+      final confirmPassword = _confirmPasswordController.text;
+
+      // Additional validation for password confirmation
+      if (password != confirmPassword) {
+        CustomAlert.show(
+          context,
+          'Password tidak cocok',
+          type: AlertType.warning,
+        );
+        return;
+      }
+
+      final success =
+          await authProvider.register(name, email, password, confirmPassword);
+
+      if (success) {
+        if (!mounted) return;
+        CustomAlert.show(
+          context,
+          'Akun Berhasil dibuat!',
+          type: AlertType.success,
+        );
+        await Future.delayed(const Duration(milliseconds: 750));
+        Navigator.pushReplacementNamed(context, '/login');
+      } else {
+        CustomAlert.show(
+          context,
+          authProvider.errorMessage,
+          type: AlertType.error,
+          duration: const Duration(milliseconds: 1500),
+        );
+      }
+    } catch (e) {
       CustomAlert.show(
         context,
-        'Akun Berhasil dibuat!',
-        type: AlertType.success,
-      );
-      await Future.delayed(const Duration(milliseconds: 750));
-      Navigator.pushReplacementNamed(context, '/login');
-    } else {
-      CustomAlert.show(
-        context,
-        authProvider.errorMessage,
+        'Terjadi kesalahan: ${e.toString()}',
         type: AlertType.error,
-        duration: const Duration(milliseconds: 1500),
       );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -94,65 +103,142 @@ class _RegisterScreenState extends State<RegisterScreen> {
         backgroundColor: Colors.transparent,
       ),
       backgroundColor: Colors.white,
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: 30),
-              CircleAvatar(
-                radius: 80,
-                backgroundColor: Colors.pink[100],
-                child: Icon(Icons.bloodtype_sharp,
-                    size: 56, color: Colors.pink[400]),
-              ),
-              const SizedBox(height: 20),
-              CustomFormField(
-                label: 'Nama',
-                placeholder: 'Masukkan nama lengkap',
-                controller: _nameController,
-              ),
-              const SizedBox(height: 16),
-              CustomFormField(
-                label: 'Email',
-                placeholder: 'email@example.com',
-                controller: _emailController,
-                isEmail: true,
-              ),
-              const SizedBox(height: 16),
-              CustomFormField(
-                label: 'Password',
-                placeholder: 'Masukkan password',
-                controller: _passwordController,
-                isPassword: true,
-              ),
-              const SizedBox(height: 16),
-              CustomFormField(
-                label: 'Konfirmasi Password',
-                placeholder: 'Ulangi password',
-                controller: _confirmPasswordController,
-                isPassword: true,
-              ),
-              const SizedBox(height: 24),
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : CustomButton(
-                      label: 'REGISTER',
-                      textSize: 16,
-                      fullWidth: true,
-                      isFullRounded: true,
-                      padding: const EdgeInsets.symmetric(vertical: 20),
-                      onPressed: _register,
+      body: Form(
+        key: _formKey,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 30),
+                CircleAvatar(
+                  radius: 80,
+                  backgroundColor: Colors.pink[100],
+                  child: Icon(
+                    Icons.bloodtype_sharp,
+                    size: 56,
+                    color: Colors.pink[400],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Name Field
+                CustomFormField(
+                  label: 'Nama Lengkap',
+                  placeholder: 'Masukkan nama lengkap',
+                  controller: _nameController,
+                  type: CustomFormFieldType.text,
+                  prefixIcon: Icons.person,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Nama tidak boleh kosong';
+                    }
+                    if (value.trim().length < 2) {
+                      return 'Nama minimal 2 karakter';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Email Field
+                CustomFormField(
+                  label: 'Email',
+                  placeholder: 'email@example.com',
+                  controller: _emailController,
+                  type: CustomFormFieldType.email,
+                  prefixIcon: Icons.email,
+                ),
+                const SizedBox(height: 16),
+
+                // Password Field
+                CustomFormField(
+                  label: 'Password',
+                  placeholder: 'Masukkan password',
+                  controller: _passwordController,
+                  type: CustomFormFieldType.password,
+                  prefixIcon: Icons.lock,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Password tidak boleh kosong';
+                    }
+                    if (value.length < 6) {
+                      return 'Password minimal 6 karakter';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Confirm Password Field
+                CustomFormField(
+                  label: 'Konfirmasi Password',
+                  placeholder: 'Ulangi password',
+                  controller: _confirmPasswordController,
+                  type: CustomFormFieldType.password,
+                  prefixIcon: Icons.lock_outline,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Konfirmasi password tidak boleh kosong';
+                    }
+                    if (value != _passwordController.text) {
+                      return 'Password tidak cocok';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+
+                // Register Button
+                _isLoading
+                    ? const SizedBox(
+                        height: 50,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.pink),
+                          ),
+                        ),
+                      )
+                    : CustomButton(
+                        label: 'REGISTER',
+                        textSize: 16,
+                        fullWidth: true,
+                        isFullRounded: true,
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        onPressed: _register,
+                      ),
+                const SizedBox(height: 20),
+
+                // Login Link
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Sudah punya akun? ',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
                     ),
-              const SizedBox(height: 20),
-              TextButton(
-                onPressed: () {
-                  Navigator.pushReplacementNamed(context, '/login');
-                },
-                child: const Text('Sudah punya akun? Login'),
-              ),
-            ],
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pushReplacementNamed(context, '/login');
+                      },
+                      child: const Text(
+                        'Login',
+                        style: TextStyle(
+                          color: Colors.pink,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

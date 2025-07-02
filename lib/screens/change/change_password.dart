@@ -4,6 +4,7 @@ import 'package:srikandi_sehat_app/provider/user_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/custom_button.dart';
 import 'package:srikandi_sehat_app/widgets/custom_form.dart';
+import 'package:srikandi_sehat_app/widgets/custom_popup.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -13,6 +14,7 @@ class ChangePasswordScreen extends StatefulWidget {
 }
 
 class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _oldPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -20,17 +22,16 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   bool _isLoading = false;
 
   Future<void> _submitChange() async {
+    // Validate form first
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     final userProvider = Provider.of<UserProvider>(context, listen: false);
 
     final oldPass = _oldPasswordController.text;
     final newPass = _newPasswordController.text;
     final confirmPass = _confirmPasswordController.text;
-
-    if (oldPass.isEmpty || newPass.isEmpty || confirmPass.isEmpty) {
-      CustomAlert.show(context, 'Semua field wajib diisi',
-          type: AlertType.warning);
-      return;
-    }
 
     if (newPass != confirmPass) {
       CustomAlert.show(context, 'Konfirmasi password tidak cocok',
@@ -46,18 +47,44 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     if (success) {
       if (!mounted) return;
-      CustomAlert.show(
-          context, 'Password berhasil diubah, Silakan login kembali',
-          type: AlertType.success);
-      _oldPasswordController.clear();
-      _newPasswordController.clear();
-      _confirmPasswordController.clear();
-      await Future.delayed(const Duration(milliseconds: 4000));
-      if (mounted) Navigator.pushReplacementNamed(context, '/login');
-    } else {
-      CustomAlert.show(context, userProvider.errorMessage,
-          type: AlertType.error);
+
+      final confirmed = await CustomConfirmationPopup.show(
+        context,
+        title: 'Password Berhasil Diubah',
+        message: 'Anda harus login ulang untuk melanjutkan.',
+        icon: Icons.lock_reset,
+        confirmColor: Colors.green,
+        confirmText: 'Ya',
+        singleButton: true, // ← Tambahkan ini
+      );
+
+      if (confirmed == true && mounted) {
+        _oldPasswordController.clear();
+        _newPasswordController.clear();
+        _confirmPasswordController.clear();
+        Navigator.pushReplacementNamed(context, '/login');
+      }
     }
+  }
+
+  String? _validateConfirmPassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Konfirmasi password tidak boleh kosong';
+    }
+    if (value != _newPasswordController.text) {
+      return 'Konfirmasi password tidak cocok';
+    }
+    return null;
+  }
+
+  String? _validateNewPassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Password baru tidak boleh kosong';
+    }
+    if (value.length < 6) {
+      return 'Password minimal 6 karakter';
+    }
+    return null;
   }
 
   @override
@@ -77,39 +104,47 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            CustomFormField(
-              label: 'Password Lama',
-              placeholder: 'Masukkan password lama',
-              controller: _oldPasswordController,
-              isPassword: true,
-            ),
-            const SizedBox(height: 16),
-            CustomFormField(
-              label: 'Password Baru',
-              placeholder: 'Masukkan password baru',
-              controller: _newPasswordController,
-              isPassword: true,
-            ),
-            const SizedBox(height: 16),
-            CustomFormField(
-              label: 'Konfirmasi Password Baru',
-              placeholder: 'Ulangi password baru',
-              controller: _confirmPasswordController,
-              isPassword: true,
-            ),
-            const SizedBox(height: 24),
-            _isLoading
-                ? const CircularProgressIndicator()
-                : CustomButton(
-                    label: 'Simpan Perubahan',
-                    onPressed: _submitChange,
-                    fullWidth: true,
-                    isFullRounded: true,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                  ),
-          ],
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              CustomFormField(
+                label: 'Password Lama',
+                placeholder: 'Masukkan password lama',
+                controller: _oldPasswordController,
+                type: CustomFormFieldType.password,
+                
+              ),
+              const SizedBox(height: 16),
+              CustomFormField(
+                label: 'Password Baru',
+                placeholder: 'Masukkan password baru',
+                controller: _newPasswordController,
+                type: CustomFormFieldType.password,
+                
+                validator: _validateNewPassword,
+              ),
+              const SizedBox(height: 16),
+              CustomFormField(
+                label: 'Konfirmasi Password Baru',
+                placeholder: 'Ulangi password baru',
+                controller: _confirmPasswordController,
+                type: CustomFormFieldType.password,
+                
+                validator: _validateConfirmPassword,
+              ),
+              const SizedBox(height: 24),
+              _isLoading
+                  ? const CircularProgressIndicator()
+                  : CustomButton(
+                      label: 'Simpan Perubahan',
+                      onPressed: _submitChange,
+                      fullWidth: true,
+                      isFullRounded: true,
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                    ),
+            ],
+          ),
         ),
       ),
     );

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/provider/auth_provider.dart';
-import 'package:srikandi_sehat_app/screens/main_screen.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/custom_button.dart';
 import 'package:srikandi_sehat_app/widgets/custom_form.dart';
@@ -42,10 +41,14 @@ class _LoginScreenState extends State<LoginScreen> {
     final success = await loginProvider.login(email, password);
 
     if (success) {
-      Navigator.pushReplacement(
+      Navigator.pushNamedAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => const MainScreen()),
-      );
+        '/main',
+        (route) => false, // Menghapus semua route sebelumnya
+      ); // Navigator.pushReplacement(
+      //   context,
+      //   MaterialPageRoute(builder: (context) => const MainScreen()),
+      // );
       CustomAlert.show(
         context,
         'Login berhasil!',

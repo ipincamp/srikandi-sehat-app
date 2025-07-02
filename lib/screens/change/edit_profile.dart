@@ -4,6 +4,9 @@ import 'package:srikandi_sehat_app/provider/user_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/custom_button.dart';
 import 'package:srikandi_sehat_app/widgets/custom_form.dart';
+import 'package:srikandi_sehat_app/widgets/custom_popup.dart';
+
+// ... import tetap sama
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -16,8 +19,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _addressController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _provinceController = TextEditingController();
+  final _districtController = TextEditingController();
+  final _subDistrictController = TextEditingController();
   final _dobController = TextEditingController();
   final _heightController = TextEditingController();
   final _weightController = TextEditingController();
@@ -36,8 +41,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
-    _addressController.dispose();
     _phoneController.dispose();
+    _provinceController.dispose();
+    _districtController.dispose();
+    _subDistrictController.dispose();
     _dobController.dispose();
     _heightController.dispose();
     _weightController.dispose();
@@ -53,11 +60,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final success = await userProvider.updateProfile(
       _nameController.text,
       _emailController.text,
-      _addressController.text,
+      '', // alamat tidak dipakai lagi
       _phoneController.text,
       _dobController.text,
       _heightController.text,
       _weightController.text,
+      province: _provinceController.text,
+      district: _districtController.text,
+      subDistrict: _subDistrictController.text,
     );
 
     setState(() => _isLoading = false);
@@ -73,24 +83,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  Future<bool> _confirmCancel() async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Batalkan Perubahan?'),
-            content:
-                const Text('Apakah Anda yakin ingin membatalkan perubahan?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Tidak'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Ya'),
-              ),
-            ],
-          ),
+  Future<bool> _showLogoutConfirmation() async {
+    return await CustomConfirmationPopup.show(
+          context,
+          title: 'Konfirmasi Batal',
+          message: 'Apakah Anda yakin ingin membatalkan pengeditan?',
+          confirmText: 'Ya',
+          cancelText: 'Batal',
+          icon: Icons.cancel,
         ) ??
         false;
   }
@@ -98,28 +98,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () async {
-        final cancel = await _confirmCancel();
-        return cancel;
-      },
+      onWillPop: () async => await _showLogoutConfirmation(),
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Edit Profil'),
+          title: const Text('Edit Profile'),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () async {
-              final cancel = await _confirmCancel();
+              final cancel = await _showLogoutConfirmation();
               if (cancel && mounted) Navigator.pop(context);
             },
           ),
         ),
         body: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16),
           child: Form(
             key: _formKey,
             child: SingleChildScrollView(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Basic Info
                   CustomFormField(
                     label: 'Nama',
                     controller: _nameController,
@@ -134,44 +133,87 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   const SizedBox(height: 16),
                   CustomFormField(
-                    placeholder: 'Masukkan alamat',
-                    label: 'Alamat',
-                    controller: _addressController,
-                  ),
-                  const SizedBox(height: 16),
-                  CustomFormField(
                     placeholder: 'Masukkan No. HP',
                     label: 'No. HP',
                     controller: _phoneController,
+                    type: CustomFormFieldType.number,
+                  ),
+                  const SizedBox(height: 32),
+
+                  // User Address
+                  const Text(
+                    'User Address',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   CustomFormField(
-                      placeholder: 'DD/MM/YYYY',
-                      label: 'Tanggal Lahir',
-                      controller: _dobController),
+                    label: 'Province',
+                    controller: _provinceController,
+                    type: CustomFormFieldType.dropdown,
+                    items: const [
+                      'Jawa Barat',
+                      'DKI Jakarta',
+                      'Sumatera Utara'
+                    ],
+                    placeholder: '',
+                  ),
                   const SizedBox(height: 16),
                   CustomFormField(
-                      placeholder: 'Masukkan tinggi badan',
-                      label: 'Tinggi Badan (cm)',
-                      controller: _heightController),
+                    label: 'District',
+                    controller: _districtController,
+                    type: CustomFormFieldType.dropdown,
+                    items: const ['Kota Bandung', 'Kab. Bekasi', 'Medan'],
+                    placeholder: '',
+                  ),
+                  const SizedBox(height: 16),
+                  CustomFormField(
+                    label: 'Sub District',
+                    controller: _subDistrictController,
+                    type: CustomFormFieldType.dropdown,
+                    items: const ['Cicendo', 'Tambun', 'Medan Johor'],
+                    placeholder: '',
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Personal Info
+                  const Text(
+                    'Personal Information',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  CustomFormField(
+                    placeholder: 'DD/MM/YYYY',
+                    label: 'Tanggal Lahir',
+                    type: CustomFormFieldType.date,
+                    controller: _dobController,
+                  ),
+                  const SizedBox(height: 16),
+                  CustomFormField(
+                    placeholder: 'Masukkan tinggi badan',
+                    label: 'Tinggi Badan (cm)',
+                    controller: _heightController,
+                    type: CustomFormFieldType.number,
+                  ),
                   const SizedBox(height: 16),
                   CustomFormField(
                     placeholder: 'Masukkan berat badan',
                     label: 'Berat Badan (kg)',
                     controller: _weightController,
+                    type: CustomFormFieldType.number,
                   ),
                   const SizedBox(height: 32),
+
+                  // Buttons
                   _isLoading
-                      ? const CircularProgressIndicator()
+                      ? const Center(child: CircularProgressIndicator())
                       : Row(
                           children: [
-                            Expanded(
-                              child: CustomButton(
-                                label: 'Simpan',
-                                onPressed: _saveProfile,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
                             Expanded(
                               child: CustomButton(
                                 label: 'Batal',
@@ -179,9 +221,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     Colors.grey[300] ?? Colors.grey,
                                 textColor: Colors.black,
                                 onPressed: () async {
-                                  final cancel = await _confirmCancel();
+                                  final cancel =
+                                      await _showLogoutConfirmation();
                                   if (cancel && mounted) Navigator.pop(context);
                                 },
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: CustomButton(
+                                label: 'Simpan',
+                                onPressed: _saveProfile,
                               ),
                             ),
                           ],

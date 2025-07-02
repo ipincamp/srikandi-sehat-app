@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/provider/auth_provider.dart';
 import 'package:srikandi_sehat_app/provider/user_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
+import 'package:srikandi_sehat_app/widgets/custom_popup.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -55,6 +56,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } else {
       CustomAlert.show(context, authProvider.errorMessage,
           type: AlertType.error);
+    }
+  }
+
+    Future<void> _showLogoutConfirmation() async {
+    final bool? confirmed = await CustomConfirmationPopup.show(
+      context,
+      title: 'Konfirmasi Logout',
+      message: 'Apakah Anda yakin ingin keluar dari aplikasi?',
+      confirmText: 'Ya',
+      cancelText: 'Batal',
+      confirmColor: Colors.red,
+      icon: Icons.logout,
+    );
+
+    if (confirmed == true) {
+      _logout();
     }
   }
 
@@ -155,7 +172,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             label: 'Logout',
             color: Colors.red,
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: _logout,
+            onTap: _showLogoutConfirmation,
           ),
           const Padding(
             padding: EdgeInsets.only(bottom: 16),
