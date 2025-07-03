@@ -6,6 +6,7 @@ import 'package:srikandi_sehat_app/screens/auth/login_screen.dart';
 import 'package:srikandi_sehat_app/screens/auth/register_screen.dart';
 import 'package:srikandi_sehat_app/screens/change/change_password.dart';
 import 'package:srikandi_sehat_app/screens/change/edit_profile.dart';
+import 'package:srikandi_sehat_app/screens/dashboard/dashboard_screen.dart';
 import 'package:srikandi_sehat_app/screens/home_screen.dart';
 import 'package:srikandi_sehat_app/screens/main_screen.dart';
 import 'package:srikandi_sehat_app/screens/profile_screen.dart';
@@ -82,6 +83,7 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => const ProfileScreen(),
         '/change-password': (context) => const ChangePasswordScreen(),
         '/edit-profile': (context) => const EditProfileScreen(),
+        '/dashboard': (context) => const AdminDashboardPage(),
       },
     );
   }

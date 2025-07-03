@@ -103,6 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 label: 'Password',
                 placeholder: 'Masukkan password',
                 controller: _passwordController,
+                type: CustomFormFieldType.password,
                 isPassword: true,
               ),
               const SizedBox(height: 20),

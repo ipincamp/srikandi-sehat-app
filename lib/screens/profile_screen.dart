@@ -59,7 +59,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-    Future<void> _showLogoutConfirmation() async {
+  Future<void> _showLogoutConfirmation() async {
     final bool? confirmed = await CustomConfirmationPopup.show(
       context,
       title: 'Konfirmasi Logout',
@@ -114,7 +114,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title: Text(_name ?? 'Loading...',
                 style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text(_email ?? ''),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            // trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {},
           ),
           const Divider(),
@@ -128,44 +128,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
           //     onChanged: (val) => setState(() => _isDarkMode = val),
           //   ),
           // ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text('Profile',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+          if (_role != 'admin') ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Profile',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
             ),
-          ),
-          buildListTile(
-            icon: Icons.person,
-            label: 'Edit Profile',
-            color: Colors.orange,
-            onTap: () => {Navigator.pushNamed(context, '/edit-profile')},
-          ),
-          buildListTile(
-            icon: Icons.vpn_key,
-            label: 'Change Password',
-            color: Colors.blue,
-            onTap: () => {Navigator.pushNamed(context, '/change-password')},
-          ),
-          const SizedBox(height: 16),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text('Notifications',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+            buildListTile(
+              icon: Icons.person,
+              label: 'Edit Profile',
+              color: Colors.orange,
+              onTap: () => {Navigator.pushNamed(context, '/edit-profile')},
             ),
-          ),
-          buildListTile(
-            icon: Icons.notifications,
-            label: 'Notifications',
-            color: Colors.green,
-            trailing: Switch(
-              value: _notificationsEnabled,
-              onChanged: (val) => setState(() => _notificationsEnabled = val),
+            buildListTile(
+              icon: Icons.vpn_key,
+              label: 'Change Password',
+              color: Colors.blue,
+              onTap: () => {Navigator.pushNamed(context, '/change-password')},
             ),
-          ),
+            buildListTile(
+              icon: Icons.notifications,
+              label: 'Notifications',
+              color: Colors.green,
+              trailing: Switch(
+                value: _notificationsEnabled,
+                onChanged: (val) => setState(() => _notificationsEnabled = val),
+              ),
+            ),
+          ] else ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/dashboard');
+                },
+                icon: const Icon(Icons.dashboard),
+                label: const Text('Ke Dashboard'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.pink,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(45),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
+          ],
+
           const Spacer(),
           buildListTile(
             icon: Icons.logout,
