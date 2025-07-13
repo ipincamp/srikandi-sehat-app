@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:srikandi_sehat_app/provider/password_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/custom_button.dart';
@@ -62,8 +63,16 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         _oldPasswordController.clear();
         _newPasswordController.clear();
         _confirmPasswordController.clear();
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.clear(); // ← tambahkan ini
+
         Navigator.pushReplacementNamed(context, '/login');
       }
+    } else {
+      CustomAlert.show(context, userProvider.errorMessage,
+          type: AlertType.error);
+      print(userProvider.errorMessage);
     }
   }
 

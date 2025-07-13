@@ -103,6 +103,8 @@ class _CustomFormFieldState extends State<CustomFormField> {
   bool _hasSymbol = false;
   bool _hasUppercase = false;
 
+  get milliseconds => null;
+
   void _checkPasswordCriteria(String value) {
     setState(() {
       _hasMinLength = value.length >= 8;
@@ -209,18 +211,19 @@ class _CustomFormFieldState extends State<CustomFormField> {
             }
           },
         ),
-        if (widget.type == CustomFormFieldType.password &&
-            widget.validatePasswordComplexity &&
-            !(_hasMinLength && _hasNumber && _hasSymbol && _hasUppercase))
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 500),
-            child: (_hasMinLength && _hasNumber && _hasSymbol && _hasUppercase)
-                ? const SizedBox.shrink()
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: _buildPasswordCriteriaIndicator(),
-                  ),
-          ),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: (widget.type == CustomFormFieldType.password &&
+                  widget.validatePasswordComplexity &&
+                  widget.controller.text.isNotEmpty &&
+                  !(_hasMinLength && _hasNumber && _hasSymbol && _hasUppercase))
+              ? Column(
+                  key: const ValueKey('visible'),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: _buildPasswordCriteriaIndicator(),
+                )
+              : const SizedBox(key: ValueKey('hidden')),
+        ),
       ],
     );
   }

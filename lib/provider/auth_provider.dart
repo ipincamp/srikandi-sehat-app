@@ -116,7 +116,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> logout() async {
+  Future<bool> logout(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token') ?? '';
 
@@ -139,6 +139,15 @@ class AuthProvider with ChangeNotifier {
         await prefs.remove('name');
         notifyListeners();
         return true;
+      } else if (response.statusCode == 401) {
+        // ✅ Token expired — clear & redirect
+        await prefs.clear();
+        notifyListeners();
+        if (context.mounted) {
+          Navigator.of(context)
+              .pushNamedAndRemoveUntil('/login', (route) => false);
+        }
+        return false;
       } else {
         throw Exception('Logout gagal');
       }

@@ -232,8 +232,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         Navigator.pop(context);
       }
     } else {
-      CustomAlert.show(context, profileProvider.errorMessage,
-          type: AlertType.error);
+      // CustomAlert.show(context, profileProvider.errorMessage,
+      //     type: AlertType.error);
+      print(profileProvider.errorMessage);
     }
   }
 
@@ -391,20 +392,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   const SizedBox(height: 16),
 
                   CustomFormField(
-                    placeholder: 'Pilih Pendidikan Sekarang',
-                    label: 'Riwayat Pendidikan',
-                    controller: _eduNowController,
-                    type: CustomFormFieldType.dropdown,
-                    items: const [
-                      'SD',
-                      'SMP',
-                      'SMA',
-                      'Diploma',
-                      'S1',
-                      'S2',
-                      'S3',
-                    ],
-                  ),
+                      placeholder: 'Pilih Pendidikan Sekarang',
+                      label: 'Riwayat Pendidikan',
+                      controller: _eduNowController,
+                      type: CustomFormFieldType.dropdown,
+                      items: [
+                        'Tidak Sekolah',
+                        'SD/MI',
+                        'SMP/MTs',
+                        'SMA/MA',
+                        'D1/D2/D3',
+                        'S1/S2/S3'
+                      ].map((e) => DropdownItem(
+                            value: e,
+                            label: e.capitalizeWords(),
+                          ))),
                   const SizedBox(height: 16),
 
                   CustomFormField(
@@ -446,6 +448,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             ),
                           ],
                         ),
+                  const SizedBox(width: 32),
                 ],
               ),
             ),

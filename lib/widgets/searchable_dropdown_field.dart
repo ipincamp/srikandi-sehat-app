@@ -16,6 +16,7 @@ class SearchableDropdownField extends StatelessWidget {
   final double borderRadius;
   final void Function(String?)? onChanged;
   final String? Function(String?)? validator;
+  final bool isMandatory;
 
   const SearchableDropdownField({
     super.key,
@@ -27,6 +28,7 @@ class SearchableDropdownField extends StatelessWidget {
     this.borderRadius = 10,
     this.onChanged,
     this.validator,
+    this.isMandatory = true,
   });
 
   @override

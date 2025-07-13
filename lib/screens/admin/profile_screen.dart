@@ -4,6 +4,7 @@ import 'package:srikandi_sehat_app/provider/auth_provider.dart';
 import 'package:srikandi_sehat_app/provider/user_profile_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/custom_popup.dart';
+import 'package:srikandi_sehat_app/widgets/logout_tile.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -15,7 +16,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   String? _name;
   String? _email;
-  String? _role;
+  // String? _role;
   bool _isLoading = false;
   bool _notificationsEnabled = true;
 
@@ -36,42 +37,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           _name = profile['name'];
           _email = profile['email'];
-          _role = profile['role'];
+          // _role = profile['role'];
         });
       }
     } catch (e) {
       CustomAlert.show(context, 'Gagal memuat profil', type: AlertType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _logout() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await authProvider.logout();
-    if (success) {
-      CustomAlert.show(context, 'Berhasil logout', type: AlertType.success);
-      await Future.delayed(const Duration(milliseconds: 700));
-      if (mounted) Navigator.pushReplacementNamed(context, '/login');
-    } else {
-      CustomAlert.show(context, authProvider.errorMessage,
-          type: AlertType.error);
-    }
-  }
-
-  Future<void> _showLogoutConfirmation() async {
-    final bool? confirmed = await CustomConfirmationPopup.show(
-      context,
-      title: 'Konfirmasi Logout',
-      message: 'Apakah Anda yakin ingin keluar dari aplikasi?',
-      confirmText: 'Ya',
-      cancelText: 'Batal',
-      confirmColor: Colors.red,
-      icon: Icons.logout,
-    );
-
-    if (confirmed == true) {
-      _logout();
     }
   }
 
@@ -121,13 +93,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // buildListTile(
 
           const Spacer(),
-          buildListTile(
-            icon: Icons.logout,
-            label: 'Logout',
-            color: Colors.red,
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: _showLogoutConfirmation,
-          ),
+          const LogoutTile(),
           const Padding(
             padding: EdgeInsets.only(bottom: 16),
             child: Text('App ver 1.0', style: TextStyle(color: Colors.grey)),

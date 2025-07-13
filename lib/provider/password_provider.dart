@@ -23,7 +23,7 @@ class PasswordProvider with ChangeNotifier {
     final url = '$baseUrl/me/password';
 
     try {
-      final response = await http.patch(
+      final response = await http.post(
         Uri.parse(url),
         headers: {
           'Authorization': 'Bearer $token',
