@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/provider/auth_provider.dart';
-import 'package:srikandi_sehat_app/provider/user_provider.dart';
+import 'package:srikandi_sehat_app/provider/profile_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/custom_popup.dart';
 
@@ -17,7 +17,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _email;
   String? _role;
   bool _isLoading = false;
-  bool _isDarkMode = false;
   bool _notificationsEnabled = true;
 
   @override
@@ -28,7 +27,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadProfile() async {
     setState(() => _isLoading = true);
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final userProvider = Provider.of<ProfileProvider>(context, listen: false);
 
     try {
       final profile = await userProvider.getProfile();

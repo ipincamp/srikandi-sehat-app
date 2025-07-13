@@ -43,7 +43,6 @@ class CustomAlert {
       case AlertType.warning:
         return Colors.orange;
       case AlertType.info:
-      default:
         return Colors.blue;
     }
   }
@@ -57,7 +56,6 @@ class CustomAlert {
       case AlertType.warning:
         return Icons.warning;
       case AlertType.info:
-      default:
         return Icons.info;
     }
   }

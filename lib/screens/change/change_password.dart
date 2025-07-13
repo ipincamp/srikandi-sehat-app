@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/provider/user_provider.dart';
+import 'package:srikandi_sehat_app/provider/password_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/custom_button.dart';
 import 'package:srikandi_sehat_app/widgets/custom_form.dart';
@@ -27,7 +27,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       return;
     }
 
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final userProvider = Provider.of<PasswordProvider>(context, listen: false);
 
     final oldPass = _oldPasswordController.text;
     final newPass = _newPasswordController.text;
@@ -113,7 +113,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 placeholder: 'Masukkan password lama',
                 controller: _oldPasswordController,
                 type: CustomFormFieldType.password,
-                
               ),
               const SizedBox(height: 16),
               CustomFormField(
@@ -121,7 +120,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 placeholder: 'Masukkan password baru',
                 controller: _newPasswordController,
                 type: CustomFormFieldType.password,
-                
                 validator: _validateNewPassword,
               ),
               const SizedBox(height: 16),
@@ -130,7 +128,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 placeholder: 'Ulangi password baru',
                 controller: _confirmPasswordController,
                 type: CustomFormFieldType.password,
-                
                 validator: _validateConfirmPassword,
               ),
               const SizedBox(height: 24),

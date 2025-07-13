@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:srikandi_sehat_app/provider/auth_provider.dart';
+import 'package:srikandi_sehat_app/provider/district_provider.dart';
+import 'package:srikandi_sehat_app/provider/password_provider.dart';
+import 'package:srikandi_sehat_app/provider/profile_provider.dart';
+import 'package:srikandi_sehat_app/provider/village_provider.dart';
 import 'package:srikandi_sehat_app/provider/user_provider.dart';
 import 'package:srikandi_sehat_app/screens/auth/login_screen.dart';
 import 'package:srikandi_sehat_app/screens/auth/register_screen.dart';
@@ -27,6 +31,10 @@ void main() async {
         providers: [
           ChangeNotifierProvider(create: (_) => AuthProvider()),
           ChangeNotifierProvider(create: (_) => UserProvider()),
+          ChangeNotifierProvider(create: (_) => DistrictProvider()),
+          ChangeNotifierProvider(create: (_) => ProfileProvider()),
+          ChangeNotifierProvider(create: (_) => PasswordProvider()),
+          ChangeNotifierProvider(create: (_) => VillageProvider()),
         ],
         child: const MyApp(),
       ),

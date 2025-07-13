@@ -24,6 +24,7 @@ class CustomFormField extends StatefulWidget {
   final List<DropdownItem>? dropdownItems;
   final String? selectedValue;
   final Function(String?)? onDropdownChanged;
+  final void Function(String)? onChanged;
 
   // Date picker properties
   final DateTime? initialDate;
@@ -62,6 +63,8 @@ class CustomFormField extends StatefulWidget {
     this.dropdownItems,
     this.selectedValue,
     this.onDropdownChanged,
+    this.onChanged,
+
     // Date
     this.initialDate,
     this.firstDate,
@@ -139,6 +142,7 @@ class _CustomFormFieldState extends State<CustomFormField> {
       inputFormatters: _getInputFormatters(),
       decoration: _getInputDecoration(),
       validator: widget.validator ?? _getDefaultValidator(),
+      onChanged: widget.onChanged,
     );
   }
 
