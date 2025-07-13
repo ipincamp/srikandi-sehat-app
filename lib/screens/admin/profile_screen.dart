@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/provider/auth_provider.dart';
-import 'package:srikandi_sehat_app/provider/profile_provider.dart';
+import 'package:srikandi_sehat_app/provider/user_profile_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/custom_popup.dart';
 
@@ -27,7 +27,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadProfile() async {
     setState(() => _isLoading = true);
-    final userProvider = Provider.of<ProfileProvider>(context, listen: false);
+    final userProvider =
+        Provider.of<UserProfileProvider>(context, listen: false);
 
     try {
       final profile = await userProvider.getProfile();
@@ -119,65 +120,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const Divider(),
           // buildListTile(
 
-          //   icon: Icons.dark_mode,
-          //   label: 'Dark Mode',
-          //   color: Colors.black,
-          //   trailing: Switch(
-          //     value: _isDarkMode,
-          //     onChanged: (val) => setState(() => _isDarkMode = val),
-          //   ),
-          // ),
-          if (_role != 'admin') ...[
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Profile',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ),
-            buildListTile(
-              icon: Icons.person,
-              label: 'Edit Profile',
-              color: Colors.orange,
-              onTap: () => {Navigator.pushNamed(context, '/edit-profile')},
-            ),
-            buildListTile(
-              icon: Icons.vpn_key,
-              label: 'Change Password',
-              color: Colors.blue,
-              onTap: () => {Navigator.pushNamed(context, '/change-password')},
-            ),
-            buildListTile(
-              icon: Icons.notifications,
-              label: 'Notifications',
-              color: Colors.green,
-              trailing: Switch(
-                value: _notificationsEnabled,
-                onChanged: (val) => setState(() => _notificationsEnabled = val),
-              ),
-            ),
-          ] else ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/dashboard');
-                },
-                icon: const Icon(Icons.dashboard),
-                label: const Text('Ke Dashboard'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.pink,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(45),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-            ),
-          ],
-
           const Spacer(),
           buildListTile(
             icon: Icons.logout,
@@ -188,7 +130,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const Padding(
             padding: EdgeInsets.only(bottom: 16),
-            child: Text('App ver 2.0.1', style: TextStyle(color: Colors.grey)),
+            child: Text('App ver 1.0', style: TextStyle(color: Colors.grey)),
           )
         ],
       ),

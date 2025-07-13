@@ -10,7 +10,7 @@ class Village {
     return Village(
       code: json['code'] ?? '',
       name: json['name'] ?? '',
-      classification: json['class_name'] ?? '',
+      classification: json['classification'] ?? '',
     );
   }
 }

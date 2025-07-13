@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class UserProvider with ChangeNotifier {
+class ProfileChangeProvider with ChangeNotifier {
   bool _isLoading = false;
   String _errorMessage = '';
 
@@ -45,7 +45,7 @@ class UserProvider with ChangeNotifier {
   String? get jobParent => _jobParent;
 
   // FIX: Hapus parameter yang tidak perlu dari signature
-  Future<void> getProfile() async {
+  Future<void> updateProfile() async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
@@ -98,8 +98,8 @@ class UserProvider with ChangeNotifier {
     }
   }
 
-  // TAMBAHKAN method baru ini di dalam class UserProvider
-  Future<bool> updateProfile(Map<String, dynamic> profileData) async {
+  // TAMBAHKAN method baru ini di dalam class ProfileChangeProvider
+  Future<bool> getProfile(Map<String, dynamic> profileData) async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();

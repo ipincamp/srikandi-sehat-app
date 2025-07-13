@@ -46,8 +46,10 @@ class CustomFormField extends StatefulWidget {
   final dynamic isEmail;
 
   final dynamic isPassword;
-
   final dynamic items;
+  final bool validatePasswordComplexity;
+
+  final bool isMandatory;
 
   const CustomFormField({
     super.key,
@@ -83,6 +85,8 @@ class CustomFormField extends StatefulWidget {
     this.isEmail = false,
     this.isPassword = false,
     this.items,
+    this.isMandatory = true,
+    this.validatePasswordComplexity = true,
   });
 
   @override
@@ -93,6 +97,47 @@ class _CustomFormFieldState extends State<CustomFormField> {
   bool _obscureText = true;
   String? _selectedDropdownValue;
   DateTime? _selectedDate;
+
+  bool _hasMinLength = false;
+  bool _hasNumber = false;
+  bool _hasSymbol = false;
+  bool _hasUppercase = false;
+
+  void _checkPasswordCriteria(String value) {
+    setState(() {
+      _hasMinLength = value.length >= 8;
+      _hasNumber = RegExp(r'[0-9]').hasMatch(value);
+      _hasSymbol = RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(value);
+      _hasUppercase = RegExp(r'[A-Z]').hasMatch(value);
+    });
+  }
+
+  List<Widget> _buildPasswordCriteriaIndicator() {
+    TextStyle baseStyle = Theme.of(context).textTheme.bodySmall!;
+    Color activeColor = Colors.green;
+    Color inactiveColor = Colors.grey;
+
+    Widget buildCriteria(bool condition, String text) {
+      return Row(
+        children: [
+          Icon(condition ? Icons.check_circle : Icons.cancel,
+              size: 16, color: condition ? activeColor : inactiveColor),
+          const SizedBox(width: 6),
+          Text(text,
+              style: baseStyle.copyWith(
+                  color: condition ? activeColor : inactiveColor)),
+        ],
+      );
+    }
+
+    return [
+      const SizedBox(height: 8),
+      buildCriteria(_hasMinLength, "Minimal 8 karakter"),
+      buildCriteria(_hasNumber, "Mengandung angka"),
+      buildCriteria(_hasSymbol, "Mengandung simbol"),
+      buildCriteria(_hasUppercase, "Mengandung huruf kapital"),
+    ];
+  }
 
   @override
   void initState() {
@@ -107,11 +152,22 @@ class _CustomFormFieldState extends State<CustomFormField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          widget.label,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+        Text.rich(
+          TextSpan(
+            text: widget.label,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+            children: widget.isMandatory
+                ? [
+                    const TextSpan(
+                      text: ' *', // Tambahkan spasi sebelum bintang
+                      style: TextStyle(
+                          color: Colors.red, fontWeight: FontWeight.bold),
+                    ),
+                  ]
+                : null,
+          ),
         ),
         const SizedBox(height: 8),
         _buildFormField(),
@@ -131,18 +187,41 @@ class _CustomFormFieldState extends State<CustomFormField> {
   }
 
   Widget _buildTextFormField() {
-    return TextFormField(
-      controller: widget.controller,
-      style: Theme.of(context).textTheme.bodyLarge,
-      obscureText: _obscureText,
-      enabled: widget.enabled,
-      maxLines: widget.maxLines,
-      textInputAction: widget.textInputAction,
-      keyboardType: _getKeyboardType(),
-      inputFormatters: _getInputFormatters(),
-      decoration: _getInputDecoration(),
-      validator: widget.validator ?? _getDefaultValidator(),
-      onChanged: widget.onChanged,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          controller: widget.controller,
+          style: Theme.of(context).textTheme.bodyLarge,
+          obscureText: _obscureText,
+          enabled: widget.enabled,
+          maxLines: widget.maxLines,
+          textInputAction: widget.textInputAction,
+          keyboardType: _getKeyboardType(),
+          inputFormatters: _getInputFormatters(),
+          decoration: _getInputDecoration(),
+          validator: widget.validator ?? _getDefaultValidator(),
+          onChanged: (val) {
+            widget.onChanged?.call(val);
+            if (widget.type == CustomFormFieldType.password &&
+                widget.validatePasswordComplexity) {
+              _checkPasswordCriteria(val);
+            }
+          },
+        ),
+        if (widget.type == CustomFormFieldType.password &&
+            widget.validatePasswordComplexity &&
+            !(_hasMinLength && _hasNumber && _hasSymbol && _hasUppercase))
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 500),
+            child: (_hasMinLength && _hasNumber && _hasSymbol && _hasUppercase)
+                ? const SizedBox.shrink()
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: _buildPasswordCriteriaIndicator(),
+                  ),
+          ),
+      ],
     );
   }
 
@@ -160,7 +239,21 @@ class _CustomFormFieldState extends State<CustomFormField> {
       items: options.map((item) {
         return DropdownMenuItem<String>(
           value: item.value,
-          child: Text(item.label),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              const SizedBox(width: 8),
+              Flexible(
+                fit: FlexFit.loose,
+                child: Text(
+                  item.label,
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ),
+            ],
+          ),
         );
       }).toList(),
       onChanged: widget.enabled
@@ -172,6 +265,9 @@ class _CustomFormFieldState extends State<CustomFormField> {
               widget.onDropdownChanged?.call(value);
             }
           : null,
+      icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.pink),
+      dropdownColor: Colors.white,
+      style: Theme.of(context).textTheme.bodyLarge,
       decoration: _getInputDecoration(),
       validator: widget.validator ??
           (value) {
@@ -307,6 +403,22 @@ class _CustomFormFieldState extends State<CustomFormField> {
           }
           if (widget.maxValue != null && numValue > widget.maxValue!) {
             return 'Nilai maksimal ${widget.maxValue}';
+          }
+          break;
+        case CustomFormFieldType.password:
+          if (widget.validatePasswordComplexity) {
+            if (value.length < 8) {
+              return 'Password minimal 8 karakter';
+            }
+            if (!RegExp(r'[0-9]').hasMatch(value)) {
+              return 'Password harus mengandung angka';
+            }
+            if (!RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(value)) {
+              return 'Password harus mengandung simbol';
+            }
+            if (!RegExp(r'[A-Z]').hasMatch(value)) {
+              return 'Password harus mengandung huruf kapital';
+            }
           }
           break;
         default:

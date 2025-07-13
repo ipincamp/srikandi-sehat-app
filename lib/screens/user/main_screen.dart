@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:srikandi_sehat_app/screens/education_screen.dart';
-import 'package:srikandi_sehat_app/screens/home_screen.dart';
-import 'package:srikandi_sehat_app/screens/profile_screen.dart';
-import 'package:srikandi_sehat_app/screens/support_screen.dart';
-import 'package:srikandi_sehat_app/screens/tracker_screen.dart';
+import 'package:srikandi_sehat_app/screens/user/education_screen.dart';
+import 'package:srikandi_sehat_app/screens/user/home_screen.dart';
+import 'package:srikandi_sehat_app/screens/user/profile_screen.dart';
+import 'package:srikandi_sehat_app/screens/user/support_screen.dart';
+import 'package:srikandi_sehat_app/screens/user/tracker_screen.dart';
 
 class User {
   final String id;

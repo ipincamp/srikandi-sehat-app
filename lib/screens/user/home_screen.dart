@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:srikandi_sehat_app/screens/profile_screen.dart';
+import 'package:srikandi_sehat_app/screens/user/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

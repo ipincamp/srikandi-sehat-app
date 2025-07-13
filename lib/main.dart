@@ -1,25 +1,33 @@
+import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:srikandi_sehat_app/provider/auth_provider.dart';
 import 'package:srikandi_sehat_app/provider/district_provider.dart';
 import 'package:srikandi_sehat_app/provider/password_provider.dart';
-import 'package:srikandi_sehat_app/provider/profile_provider.dart';
+import 'package:srikandi_sehat_app/provider/profile_change_provider.dart';
+import 'package:srikandi_sehat_app/provider/user_profile_provider.dart';
 import 'package:srikandi_sehat_app/provider/village_provider.dart';
-import 'package:srikandi_sehat_app/provider/user_provider.dart';
+
 import 'package:srikandi_sehat_app/screens/auth/login_screen.dart';
 import 'package:srikandi_sehat_app/screens/auth/register_screen.dart';
-import 'package:srikandi_sehat_app/screens/change/change_password.dart';
-import 'package:srikandi_sehat_app/screens/change/edit_profile.dart';
-import 'package:srikandi_sehat_app/screens/dashboard/dashboard_screen.dart';
-import 'package:srikandi_sehat_app/screens/home_screen.dart';
-import 'package:srikandi_sehat_app/screens/main_screen.dart';
-import 'package:srikandi_sehat_app/screens/profile_screen.dart';
-import 'package:device_preview/device_preview.dart';
-import 'package:provider/provider.dart';
+import 'package:srikandi_sehat_app/screens/user/change_password.dart' as user;
+import 'package:srikandi_sehat_app/screens/user/edit_profile.dart' as user;
+import 'package:srikandi_sehat_app/screens/user/home_screen.dart' as user;
+import 'package:srikandi_sehat_app/screens/user/main_screen.dart' as user;
+import 'package:srikandi_sehat_app/screens/user/profile_screen.dart' as user;
+import 'package:srikandi_sehat_app/screens/admin/home_screen.dart' as admin;
+import 'package:srikandi_sehat_app/screens/admin/main_screen.dart' as admin;
+import 'package:srikandi_sehat_app/screens/admin/profile_screen.dart' as admin;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
+
+  final prefs = await SharedPreferences.getInstance();
+  final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+  final role = prefs.getString('role');
 
   runApp(
     DevicePreview(
@@ -30,43 +38,42 @@ void main() async {
       builder: (context) => MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => AuthProvider()),
-          ChangeNotifierProvider(create: (_) => UserProvider()),
+          ChangeNotifierProvider(create: (_) => UserProfileProvider()),
+          ChangeNotifierProvider(create: (_) => ProfileChangeProvider()),
           ChangeNotifierProvider(create: (_) => DistrictProvider()),
-          ChangeNotifierProvider(create: (_) => ProfileProvider()),
-          ChangeNotifierProvider(create: (_) => PasswordProvider()),
           ChangeNotifierProvider(create: (_) => VillageProvider()),
+          ChangeNotifierProvider(create: (_) => PasswordProvider()),
         ],
-        child: const MyApp(),
+        child: MyApp(
+          isLoggedIn: isLoggedIn,
+          role: role,
+        ),
       ),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool isLoggedIn;
+  final String? role;
+
+  const MyApp({super.key, required this.isLoggedIn, required this.role});
 
   @override
   Widget build(BuildContext context) {
+    Widget initialScreen;
+    if (isLoggedIn && role == 'admin') {
+      initialScreen = const admin.MainScreen();
+    } else if (isLoggedIn && role == 'user') {
+      initialScreen = const user.MainScreen();
+    } else {
+      initialScreen = const LoginScreen();
+    }
     return MaterialApp(
-      home: StreamBuilder<User?>(
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasData) {
-            // Sudah login, masuk ke main screen
-            return const MainScreen();
-          }
-          // Belum login, masuk ke login screen
-          return const LoginScreen();
-        },
-        stream: null,
-      ),
-      debugShowCheckedModeBanner: false,
       title: 'Sri Kandi Sehat',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.pink,
-        hintColor: Colors.tealAccent,
         fontFamily: 'Poppins',
         scaffoldBackgroundColor: Colors.grey[50],
         appBarTheme: const AppBarTheme(
@@ -82,16 +89,22 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      initialRoute: '/login',
+      home: initialScreen,
       routes: {
-        '/main': (context) => const MainScreen(),
-        '/home': (context) => const HomeScreen(),
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
-        '/profile': (context) => const ProfileScreen(),
-        '/change-password': (context) => const ChangePasswordScreen(),
-        '/edit-profile': (context) => const EditProfileScreen(),
-        '/dashboard': (context) => const AdminDashboardPage(),
+
+        // User routes
+        '/main': (context) => const user.MainScreen(),
+        '/home': (context) => const user.HomeScreen(),
+        '/profile': (context) => const user.ProfileScreen(),
+        '/change-password': (context) => const user.ChangePasswordScreen(),
+        '/edit-profile': (context) => const user.EditProfileScreen(),
+
+        // Admin routes
+        '/admin': (context) => const admin.MainScreen(),
+        '/admin/home': (context) => const admin.HomeScreen(),
+        '/admin/profile': (context) => const admin.ProfileScreen(),
       },
     );
   }

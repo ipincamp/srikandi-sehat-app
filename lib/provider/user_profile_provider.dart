@@ -4,26 +4,27 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class ProfileProvider with ChangeNotifier {
+class UserProfileProvider with ChangeNotifier {
   bool _isLoading = false;
   String _errorMessage = '';
+  String _name = '';
+  String _email = '';
 
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
-
-  // Menggunakan Map<String, dynamic> agar lebih fleksibel seperti di screen Anda
-  // Ganti metode getProfile() yang kosong dengan ini:
+  String get name => _name;
+  String get email => _email;
 
   Future<Map<String, dynamic>?> getProfile() async {
     _isLoading = true;
     notifyListeners();
 
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token') ?? '';
-    final baseUrl = dotenv.env['API_URL'];
-    final url = '$baseUrl/me'; // Endpoint untuk mendapatkan data user
-
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+      final baseUrl = dotenv.env['API_URL'];
+      final url = '$baseUrl/me';
+
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -32,13 +33,17 @@ class ProfileProvider with ChangeNotifier {
         },
       );
 
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        // Kembalikan data user agar bisa ditangkap oleh screen
-        return responseData['data'];
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && responseData['data'] != null) {
+        final user = responseData['data'];
+        _name = user['name'] ?? '';
+        _email = user['email'] ?? '';
+        _errorMessage = '';
+        notifyListeners();
+        return user;
       } else {
-        final data = jsonDecode(response.body);
-        _errorMessage = data['message'] ?? 'Gagal mengambil profil.';
+        _errorMessage = responseData['message'] ?? 'Gagal mengambil profil.';
         return null;
       }
     } catch (e) {

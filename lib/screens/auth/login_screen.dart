@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:srikandi_sehat_app/provider/auth_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/custom_button.dart';
@@ -39,16 +40,15 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     final success = await loginProvider.login(email, password);
+    final prefs = await SharedPreferences.getInstance();
+    final role = prefs.getString('role');
 
     if (success) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/main',
-        (route) => false, // Menghapus semua route sebelumnya
-      ); // Navigator.pushReplacement(
-      //   context,
-      //   MaterialPageRoute(builder: (context) => const MainScreen()),
-      // );
+      if (role == 'admin') {
+        Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
+      } else {
+        Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
+      }
       CustomAlert.show(
         context,
         'Login berhasil!',
@@ -105,6 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: _passwordController,
                 type: CustomFormFieldType.password,
                 isPassword: true,
+                validatePasswordComplexity: false,
               ),
               const SizedBox(height: 20),
               loginProvider.isLoading

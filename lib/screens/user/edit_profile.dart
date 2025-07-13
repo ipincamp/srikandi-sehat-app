@@ -1,16 +1,19 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/provider/user_provider.dart';
+import 'package:srikandi_sehat_app/models/village_model.dart';
+import 'package:srikandi_sehat_app/provider/profile_change_provider.dart';
 import 'package:srikandi_sehat_app/provider/district_provider.dart';
+import 'package:srikandi_sehat_app/provider/user_profile_provider.dart';
 import 'package:srikandi_sehat_app/provider/village_provider.dart';
+import 'package:srikandi_sehat_app/utils/string_extentions.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/custom_button.dart';
 import 'package:srikandi_sehat_app/widgets/custom_form.dart' hide DropdownItem;
 import 'package:srikandi_sehat_app/widgets/custom_popup.dart';
 import 'package:srikandi_sehat_app/utils/user_calc.dart';
 import 'package:srikandi_sehat_app/widgets/searchable_dropdown_field.dart';
-
-// ... import tetap sama
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -20,9 +23,6 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  String _imt = '';
-  String _imtCategory = '';
-
   // Ganti semua deklarasi controller Anda dengan ini
   final _formKey = GlobalKey<FormState>();
 
@@ -44,6 +44,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 // Controllers for derived fields
   final _ageController = TextEditingController();
   final _imtController = TextEditingController();
+  final _villageClassificationController = TextEditingController();
 
   bool _isLoading = false;
 
@@ -58,22 +59,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _loadInitialData() {
-    final userProvider = context.read<UserProvider>();
-
-    // Sekarang semua data ada di UserProvider
-    _nameController.text = userProvider.name ?? '';
-    _emailController.text = userProvider.email ?? '';
-    _phoneController.text = userProvider.phone ?? '';
-    _dobController.text = userProvider.dob ?? '';
-    _heightController.text = userProvider.height?.toString() ?? '';
-    _weightController.text = userProvider.weight?.toString() ?? '';
-    _districtController.text = userProvider.districtCode ?? '';
-    _villageController.text = userProvider.villageCode ?? '';
-    _eduNowController.text = userProvider.eduNow ?? '';
-    _eduParentController.text = userProvider.eduParent ?? '';
-    _internetAccessController.text = userProvider.internetAccess ?? '';
-    _firstHaidController.text = userProvider.firstHaid ?? '';
-    _jobParentController.text = userProvider.jobParent ?? '';
+    final userProfileProvider = context.read<UserProfileProvider>();
+    final profileChangeProvider = context.read<ProfileChangeProvider>();
+    // Sekarang semua data ada di UserProfileProvider
+    _nameController.text = userProfileProvider.name ?? '';
+    _emailController.text = userProfileProvider.email ?? '';
+    _phoneController.text = profileChangeProvider.phone ?? '';
+    _dobController.text = profileChangeProvider.dob ?? '';
+    _heightController.text = profileChangeProvider.height?.toString() ?? '';
+    _weightController.text = profileChangeProvider.weight?.toString() ?? '';
+    _districtController.text = profileChangeProvider.districtCode ?? '';
+    _villageController.text = profileChangeProvider.villageCode ?? '';
+    _eduNowController.text = profileChangeProvider.eduNow ?? '';
+    _eduParentController.text = profileChangeProvider.eduParent ?? '';
+    _internetAccessController.text = profileChangeProvider.internetAccess ?? '';
+    _firstHaidController.text = profileChangeProvider.firstHaid ?? '';
+    _jobParentController.text = profileChangeProvider.jobParent ?? '';
 
     if (_districtController.text.isNotEmpty) {
       context.read<VillageProvider>().fetchVillages(_districtController.text);
@@ -93,6 +94,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _phoneController.dispose();
     _districtController.dispose();
     _villageController.dispose();
+    _villageClassificationController.dispose();
+
     _dobController.dispose();
     _heightController.dispose();
     _weightController.dispose();
@@ -104,6 +107,56 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _ageController.dispose();
     _imtController.dispose();
     super.dispose();
+  }
+
+  void _handleDistrictChanged(String? value) {
+    _onDistrictChanged(value);
+  }
+
+  void _handleVillageChanged(String? value) {
+    _onVillageChanged(value);
+  }
+
+  /// Handler saat kecamatan dipilih
+  Future<void> _onDistrictChanged(String? value) async {
+    if (value == null || value.isEmpty) return;
+
+    _districtController.text = value;
+    _villageController.clear();
+    _villageClassificationController.clear();
+
+    final villageProvider = context.read<VillageProvider>();
+    await villageProvider.fetchVillages(value);
+
+    // Jika user sudah pernah memilih desa sebelumnya, update classification-nya
+    final selectedVillage =
+        villageProvider.villages.cast<Village?>().firstWhere(
+              (v) => v?.code == _villageController.text,
+              orElse: () => null,
+            );
+
+    if (selectedVillage != null) {
+      _villageClassificationController.text =
+          selectedVillage.classification.capitalizeWords();
+    }
+  }
+
+  /// Handler saat desa dipilih
+  void _onVillageChanged(String? value) {
+    _villageController.text = value ?? '';
+
+    final villages = context.read<VillageProvider>().villages;
+    final village = villages.cast<Village?>().firstWhere(
+          (v) => v?.code == value,
+          orElse: () => null,
+        );
+
+    if (village != null) {
+      _villageClassificationController.text =
+          village.classification.capitalizeWords(); // "Desa" atau "Kota"
+    } else {
+      _villageClassificationController.clear();
+    }
   }
 
   void _onHeightWeightChanged() {
@@ -140,8 +193,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _isLoading = true);
 
     // Sesuaikan dengan nama provider yang benar untuk update profil
-    // Seharusnya ProfileProvider, bukan UserProvider untuk update
-    final profileProvider = context.read<UserProvider>();
+    final profileProvider = context.read<UserProfileProvider>();
     final Map<String, dynamic> payload = {
       'name': _nameController.text,
       'email': _emailController.text,
@@ -157,15 +209,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       'job_parent': _jobParentController.text,
     };
 
+    // --- TAMBAHKAN BLOK INI UNTUK DEBUGGING ---
+    // Untuk mencetak JSON dengan format yang rapi (pretty print)
+    const jsonEncoder = JsonEncoder.withIndent('  ');
+    final prettyJson = jsonEncoder.convert(payload);
+    debugPrint("✅ Payload yang akan dikirim:\n$prettyJson");
+    // ------------------------------------------
+
     // Gunakan arsitektur provider yang sudah dipisah
-    final success = await profileProvider.updateProfile(payload);
+    final profileChangeProvider = context.read<ProfileChangeProvider>();
+    final success = await profileChangeProvider.getProfile(payload);
 
     if (!mounted) return;
     setState(() => _isLoading = false);
 
     if (success) {
-      // Panggil getProfile dari UserProvider untuk refresh data di seluruh app
-      await context.read<UserProvider>().updateProfile(payload);
+      // Panggil getProfile dari UserProfileProvider untuk refresh data di seluruh app
+      await context.read<UserProfileProvider>().getProfile();
       if (mounted) {
         CustomAlert.show(context, 'Profil berhasil diperbarui',
             type: AlertType.success);
@@ -193,18 +253,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     final districtProvider = Provider.of<DistrictProvider>(context);
     final districtItems = districtProvider.districts
-        .map((e) => DropdownItem(value: e.code, label: e.name))
+        .map(
+            (e) => DropdownItem(value: e.code, label: e.name.capitalizeWords()))
         .toList();
 
     final villageItems = context
         .watch<VillageProvider>()
         .villages
-        .map((v) => DropdownItem(value: v.code, label: v.name))
+        .map(
+            (v) => DropdownItem(value: v.code, label: v.name.capitalizeWords()))
         .toList();
 
-    // print("District items: $districtItems");
-    // print("Village items: $villageItems");
-
+    // ignore: deprecated_member_use
     return WillPopScope(
       onWillPop: () async => await _showLogoutConfirmation(),
       child: Scaffold(
@@ -231,6 +291,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     label: 'Nama',
                     controller: _nameController,
                     placeholder: '',
+                    enabled: false,
                   ),
                   const SizedBox(height: 16),
                   CustomFormField(
@@ -238,10 +299,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     label: 'Email',
                     controller: _emailController,
                     isEmail: true,
+                    enabled: false,
                   ),
                   const SizedBox(height: 16),
                   CustomFormField(
-                    placeholder: 'Masukkan No. HP',
+                    placeholder: 'Contoh : 08123456789',
                     label: 'No. HP',
                     controller: _phoneController,
                     type: CustomFormFieldType.number,
@@ -250,7 +312,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                   // User Address
                   // GANTI SELURUH BLOK ALAMAT DENGAN INI
-// User Address
+                  // User Address
                   const Text(
                     'Alamat Pengguna',
                     style: TextStyle(
@@ -264,12 +326,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     placeholder: 'Pilih kecamatan',
                     controller: _districtController,
                     items: districtItems,
-                    onChanged: (value) {
-                      context
-                          .read<VillageProvider>()
-                          .fetchVillages(value ?? '');
-                      _villageController.clear();
-                    },
+                    onChanged: _handleDistrictChanged,
                   ),
                   const SizedBox(height: 16),
                   SearchableDropdownField(
@@ -277,7 +334,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     placeholder: 'Pilih desa atau kelurahan',
                     controller: _villageController,
                     items: villageItems,
+                    onChanged: _onVillageChanged,
                     enabled: _districtController.text.isNotEmpty,
+                  ),
+                  const SizedBox(height: 16),
+                  CustomFormField(
+                    label: 'Klasifikasi Wilayah',
+                    controller: _villageClassificationController,
+                    enabled: false,
+                    placeholder: '-',
                   ),
 
                   const SizedBox(height: 32),
@@ -292,7 +357,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   const SizedBox(height: 16),
                   CustomFormField(
-                    placeholder: 'DD/MM/YYYY',
+                    placeholder: 'Hari-Bulan-Tahun',
                     label: 'Tanggal Lahir',
                     type: CustomFormFieldType.date,
                     controller: _dobController,
@@ -318,8 +383,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   // if (_imt.isNotEmpty)
                   CustomFormField(
                     label: 'IMT',
-                    controller: TextEditingController(
-                        text: _imt.isNotEmpty ? '$_imt ($_imtCategory)' : '-'),
+                    controller: _imtController,
                     enabled: false,
                     placeholder: '-',
                   ),
@@ -353,8 +417,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       'Jaringan Wifi',
                     ],
                   ),
-                  const SizedBox(height: 32),
-
                   const SizedBox(height: 32),
 
                   // Buttons
