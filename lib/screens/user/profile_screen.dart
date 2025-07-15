@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/provider/auth_provider.dart';
 import 'package:srikandi_sehat_app/provider/user_profile_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
-import 'package:srikandi_sehat_app/widgets/custom_popup.dart';
 import 'package:srikandi_sehat_app/widgets/logout_tile.dart';
+import 'package:srikandi_sehat_app/widgets/profile_tile.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -77,16 +76,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: Column(
         children: [
           const SizedBox(height: 16),
-          ListTile(
-            leading: CircleAvatar(
-              radius: 30,
-              backgroundColor: Colors.pink[200],
-              child: const Icon(Icons.person, color: Colors.white, size: 32),
-            ),
-            title: Text(_name ?? 'Loading...',
-                style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text(_email ?? ''),
-            onTap: () {},
+          ProfileTile(
+            name: _name,
+            email: _email,
+            onTap: () => Navigator.pushNamed(context, '/edit-profile'),
           ),
           const Divider(),
           const Padding(

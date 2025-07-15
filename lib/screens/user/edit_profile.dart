@@ -14,6 +14,7 @@ import 'package:srikandi_sehat_app/widgets/custom_form.dart' hide DropdownItem;
 import 'package:srikandi_sehat_app/widgets/custom_popup.dart';
 import 'package:srikandi_sehat_app/utils/user_calc.dart';
 import 'package:srikandi_sehat_app/widgets/searchable_dropdown_field.dart';
+import 'package:srikandi_sehat_app/widgets/title_section_divider.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -113,9 +114,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _onDistrictChanged(value);
   }
 
-  void _handleVillageChanged(String? value) {
-    _onVillageChanged(value);
-  }
+  // void _handleVillageChanged(String? value) {
+  //   _onVillageChanged(value);
+  // }
 
   /// Handler saat kecamatan dipilih
   Future<void> _onDistrictChanged(String? value) async {
@@ -205,7 +206,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       'edu_now': _eduNowController.text,
       'edu_parent': _eduParentController.text,
       'inet_access': _internetAccessController.text,
-      'first_haid': _formatDateForAPI(_firstHaidController.text),
+      'first_haid': _firstHaidController.text,
       'job_parent': _jobParentController.text,
     };
 
@@ -264,7 +265,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         .map(
             (v) => DropdownItem(value: v.code, label: v.name.capitalizeWords()))
         .toList();
-
+    const educationList = [
+      'Tidak Sekolah',
+      'SD/MI',
+      'SMP/MTs',
+      'SMA/MA',
+      'D1/D2/D3',
+      'S1/S2/S3'
+    ];
     // ignore: deprecated_member_use
     return WillPopScope(
       onWillPop: () async => await _showLogoutConfirmation(),
@@ -309,17 +317,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     controller: _phoneController,
                     type: CustomFormFieldType.number,
                   ),
-                  const SizedBox(height: 32),
-
-                  // User Address
-                  // GANTI SELURUH BLOK ALAMAT DENGAN INI
-                  // User Address
-                  const Text(
-                    'Alamat Pengguna',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  const SectionDivider(
+                    title: 'Alamat Domisili',
+                    topSpacing: 24,
+                    bottomSpacing: 20,
+                    textSize: 18,
+                    textColor: Colors.black,
+                    lineColor: Color.fromARGB(255, 255, 161, 192),
                   ),
                   const SizedBox(height: 16),
                   SearchableDropdownField(
@@ -346,17 +350,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     placeholder: '-',
                   ),
 
-                  const SizedBox(height: 32),
-
-                  // Personal Info
-                  const Text(
-                    'Personal Information',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  const SectionDivider(
+                    title: 'Informasi Pribadi',
+                    topSpacing: 24,
+                    bottomSpacing: 20,
+                    textSize: 18,
+                    textColor: Colors.black,
+                    lineColor: Color.fromARGB(255, 255, 161, 192),
                   ),
-                  const SizedBox(height: 16),
                   CustomFormField(
                     placeholder: 'Hari-Bulan-Tahun',
                     label: 'Tanggal Lahir',
@@ -392,21 +393,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   const SizedBox(height: 16),
 
                   CustomFormField(
+                    placeholder: 'Masukkan umur pertama haid',
+                    label: 'Umur Pertama Haid',
+                    type: CustomFormFieldType.number,
+                    controller: _firstHaidController,
+                    minValue: 9,
+                    maxValue: 30,
+                  ),
+                  const SizedBox(height: 16),
+
+                  CustomFormField(
                       placeholder: 'Pilih Pendidikan Sekarang',
-                      label: 'Riwayat Pendidikan',
+                      label: 'Pendidikan Sekarang',
                       controller: _eduNowController,
                       type: CustomFormFieldType.dropdown,
-                      items: [
-                        'Tidak Sekolah',
-                        'SD/MI',
-                        'SMP/MTs',
-                        'SMA/MA',
-                        'D1/D2/D3',
-                        'S1/S2/S3'
-                      ].map((e) => DropdownItem(
-                            value: e,
-                            label: e.capitalizeWords(),
-                          ))),
+                      items: educationList),
                   const SizedBox(height: 16),
 
                   CustomFormField(
@@ -418,6 +419,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       'Jaringan Selular',
                       'Jaringan Wifi',
                     ],
+                  ),
+                  const SectionDivider(
+                    title: 'Data Orang Tua',
+                    topSpacing: 24,
+                    bottomSpacing: 20,
+                    textSize: 18,
+                    textColor: Colors.black,
+                    lineColor: Color.fromARGB(255, 255, 161, 192),
+                  ),
+
+                  CustomFormField(
+                    placeholder: 'Pilih Pendidikan Orang Tua',
+                    label: 'Riwayat Pendidikan Orang Tua',
+                    controller: _eduParentController,
+                    type: CustomFormFieldType.dropdown,
+                    items: educationList,
+                  ),
+                  const SizedBox(height: 16),
+                  CustomFormField(
+                    placeholder: 'Pekerjaan Orang Tua',
+                    label: 'Pekerjaan Orang Tua',
+                    controller: _jobParentController,
                   ),
                   const SizedBox(height: 32),
 

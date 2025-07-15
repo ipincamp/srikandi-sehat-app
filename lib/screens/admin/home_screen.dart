@@ -30,9 +30,9 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             // Bagian Sambutan
             Text(
-              'Welcome, Admin!',
+              'Selamat Datang Kembali, Admin!',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: Colors.grey[800],
               ),

@@ -209,6 +209,15 @@ class _CustomFormFieldState extends State<CustomFormField> {
                 widget.validatePasswordComplexity) {
               _checkPasswordCriteria(val);
             }
+            final num? number = double.tryParse(val);
+            if (number != null) {
+              if (widget.minValue != null && number < widget.minValue!) {
+                // lakukan sesuatu, misalnya show error di UI
+              }
+              if (widget.maxValue != null && number > widget.maxValue!) {
+                // lakukan sesuatu, misalnya reset atau show warning
+              }
+            }
           },
         ),
         AnimatedSwitcher(
@@ -230,10 +239,11 @@ class _CustomFormFieldState extends State<CustomFormField> {
 
   Widget _buildDropdownField() {
     final List<DropdownItem> options = widget.dropdownItems ??
-        (widget.items as List<String>?)
-            ?.map((e) => DropdownItem(value: e, label: e))
-            .toList() ??
-        [];
+        (widget.items != null && widget.items is List<String>
+            ? (widget.items as List<String>)
+                .map((e) => DropdownItem(value: e, label: e))
+                .toList()
+            : <DropdownItem>[]);
 
     return DropdownButtonFormField<String>(
       value: _selectedDropdownValue?.isNotEmpty == true

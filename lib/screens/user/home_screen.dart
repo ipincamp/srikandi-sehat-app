@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:srikandi_sehat_app/screens/user/profile_screen.dart';
+import 'package:srikandi_sehat_app/widgets/quick_action_button.dart';
+import 'package:srikandi_sehat_app/widgets/reminder_tile.dart';
+import 'package:srikandi_sehat_app/widgets/tips_education_list.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,34 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
           'SriKandi Sehat',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none),
-            onPressed: () {
-              // TODO: Notifikasi
-            },
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const ProfileScreen()),
-                );
-              },
-              child: const CircleAvatar(
-                radius: 15,
-                backgroundColor: Colors.pink,
-                child: Text(
-                  'U',
-                  style: TextStyle(color: Colors.white, fontSize: 12),
-                ),
-              ),
-            ),
-          ),
-        ],
+        actions: [],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -173,73 +149,14 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      // TODO: Implementasi Mulai Menstruasi
-                    },
-                    icon: const Icon(Icons.water_drop, color: Colors.white),
-                    label: const Text(
-                      'Mulai',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.pink,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      // TODO: Implementasi Akhiri Menstruasi
-                    },
-                    icon: const Icon(
-                      Icons.check_circle_outline,
-                      color: Colors.pink,
-                    ),
-                    label: const Text(
-                      'Akhiri',
-                      style: TextStyle(color: Colors.pink),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      side: const BorderSide(color: Colors.pink),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      _showLogSymptomsBottomSheet(context);
-                    },
-                    icon: const Icon(Icons.edit_note, color: Colors.white),
-                    label: const Text(
-                      'Gejala',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+
+            QuickActionButtons(
+              onStart: () {
+                // Implement start action
+              },
+              onEnd: () {
+                // Implement end action
+              },
             ),
             const SizedBox(height: 20),
 
@@ -253,40 +170,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            SizedBox(
-              height: 152,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  _buildTipCard(
-                    context,
-                    'Minum Air Cukup',
-                    'Hidrasi penting untuk kesehatanmu.',
-                    Icons.water_drop,
-                    Colors.blue.shade100,
-                    Colors.blue,
-                  ),
-                  const SizedBox(width: 10),
-                  _buildTipCard(
-                    context,
-                    'Peregangan Ringan',
-                    'Meredakan kram menstruasi.',
-                    Icons.self_improvement,
-                    Colors.green.shade100,
-                    Colors.green,
-                  ),
-                  const SizedBox(width: 10),
-                  _buildTipCard(
-                    context,
-                    'Edukasi Baru!',
-                    'Mitos dan Fakta Seputar Menstruasi.',
-                    Icons.book,
-                    Colors.purple.shade100,
-                    Colors.purple,
-                  ),
-                ],
-              ),
-            ),
+            TipsEducationList(),
             const SizedBox(height: 20),
 
             // Bagian Pengingat
@@ -299,33 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(15),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.05),
-                    spreadRadius: 1,
-                    blurRadius: 3,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.alarm, color: Colors.teal),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Perkiraan menstruasi tanggal 20 Juni!',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ReminderTile(message: 'Jangan lupa minum air cukup hari ini!'),
           ],
         ),
       ),
@@ -378,122 +236,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  // Fungsi untuk menampilkan Bottom Sheet Catat Gejala
-  void _showLogSymptomsBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext bc) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(bc).viewInsets.bottom,
-            top: 20,
-            left: 20,
-            right: 20,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Catat Gejala Hari Ini',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 20),
-              Wrap(
-                spacing: 10.0,
-                runSpacing: 10.0,
-                children: [
-                  _buildChip('Kram Perut', Icons.medical_services_outlined),
-                  _buildChip('Sakit Kepala', Icons.headphones),
-                  _buildChip('Mood Swing', Icons.mood),
-                  _buildChip('Jerawat', Icons.face),
-                  // Tambahkan lebih banyak gejala
-                ],
-              ),
-              const SizedBox(height: 20),
-              Text('Mood', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildMoodIcon(
-                    'Senang',
-                    Icons.sentiment_satisfied_alt,
-                    Colors.green,
-                  ),
-                  _buildMoodIcon('Biasa', Icons.sentiment_neutral, Colors.grey),
-                  _buildMoodIcon(
-                    'Sedih',
-                    Icons.sentiment_dissatisfied,
-                    Colors.blueGrey,
-                  ),
-                  _buildMoodIcon(
-                    'Marah',
-                    Icons.sentiment_very_dissatisfied,
-                    Colors.red,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 30),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // TODO: Simpan data gejala
-                    Navigator.pop(bc);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Gejala berhasil dicatat!')),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.pink,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: const Text(
-                    'Simpan Log',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  // Widget pembantu untuk Chip Gejala
-  Widget _buildChip(String label, IconData iconData) {
-    return Chip(
-      avatar: Icon(iconData, size: 18),
-      label: Text(label),
-      backgroundColor: Colors.pink.shade50,
-      labelStyle: const TextStyle(color: Colors.pink),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide.none,
-      ),
-    );
-  }
-
-  // Widget pembantu untuk Mood Icon
-  Widget _buildMoodIcon(String label, IconData iconData, Color color) {
-    return Column(
-      children: [
-        Icon(iconData, size: 40, color: color),
-        const SizedBox(height: 5),
-        Text(label, style: TextStyle(color: color, fontSize: 12)),
-      ],
     );
   }
 }
