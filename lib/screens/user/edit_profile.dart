@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/models/village_model.dart';
@@ -212,9 +210,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     // --- TAMBAHKAN BLOK INI UNTUK DEBUGGING ---
     // Untuk mencetak JSON dengan format yang rapi (pretty print)
-    const jsonEncoder = JsonEncoder.withIndent('  ');
-    final prettyJson = jsonEncoder.convert(payload);
-    debugPrint("✅ Payload yang akan dikirim:\n$prettyJson");
+    // const jsonEncoder = JsonEncoder.withIndent('  ');
+    // final prettyJson = jsonEncoder.convert(payload);
+    // debugPrint("✅ Payload yang akan dikirim:\n$prettyJson");
     // ------------------------------------------
 
     // Gunakan arsitektur provider yang sudah dipisah
@@ -416,8 +414,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     controller: _internetAccessController,
                     type: CustomFormFieldType.dropdown,
                     items: const [
-                      'Jaringan Selular',
-                      'Jaringan Wifi',
+                      'wifi',
+                      'seluler',
                     ],
                   ),
                   const SectionDivider(

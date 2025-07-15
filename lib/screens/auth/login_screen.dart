@@ -42,10 +42,15 @@ class _LoginScreenState extends State<LoginScreen> {
     final success = await loginProvider.login(email, password);
     final prefs = await SharedPreferences.getInstance();
     final role = prefs.getString('role');
+    await prefs.setBool('showLoginModal', true);
 
     if (success) {
       if (role == 'admin') {
-        Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/admin',
+          (route) => false,
+        );
       } else {
         Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
       }

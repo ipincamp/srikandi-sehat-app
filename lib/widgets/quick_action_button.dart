@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class QuickActionButtons extends StatelessWidget {
   final VoidCallback onStart;
   final VoidCallback onEnd;
+  final bool isMenstruating;
 
   const QuickActionButtons({
     super.key,
     required this.onStart,
     required this.onEnd,
+    required this.isMenstruating,
   });
 
   @override
@@ -15,9 +17,12 @@ class QuickActionButtons extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
+        // Tombol Mulai
         Expanded(
           child: ElevatedButton.icon(
-            onPressed: onStart,
+            onPressed: isMenstruating
+                ? null
+                : onStart, // hanya aktif jika belum menstruasi
             icon: const Icon(Icons.water_drop, color: Colors.white),
             label: const Text('Mulai', style: TextStyle(color: Colors.white)),
             style: ElevatedButton.styleFrom(
@@ -29,9 +34,13 @@ class QuickActionButtons extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
+
+        // Tombol Selesai
         Expanded(
           child: ElevatedButton.icon(
-            onPressed: onEnd,
+            onPressed: isMenstruating
+                ? onEnd
+                : null, // hanya aktif jika sedang menstruasi
             icon: const Icon(Icons.check_circle_outline, color: Colors.pink),
             label: const Text('Akhiri', style: TextStyle(color: Colors.pink)),
             style: ElevatedButton.styleFrom(
@@ -44,6 +53,8 @@ class QuickActionButtons extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
+
+        // Tombol Gejala selalu aktif
         Expanded(
           child: ElevatedButton.icon(
             onPressed: () {

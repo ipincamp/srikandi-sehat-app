@@ -60,7 +60,7 @@ class CustomChart extends StatelessWidget {
             CustomButton(
               backgroundColor: Colors.lightGreen,
               onPressed: onDownloadPressed,
-              label: 'Download CSV',
+              label: 'Download',
             ),
           ],
         )

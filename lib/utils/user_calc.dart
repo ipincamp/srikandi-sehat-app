@@ -8,15 +8,15 @@ double? calculateIMT(double heightCm, double weightKg) {
   return double.parse(imt.toStringAsFixed(1));
 }
 
-/// Mengembalikan usia berdasarkan tanggal lahir dengan format 'DD/MM/YYYY'
+/// Mengembalikan usia berdasarkan tanggal lahir dengan format 'YYYY-MM-DD'
 int? calculateAgeFromString(String dobStr) {
   try {
-    final parts = dobStr.split('/');
+    final parts = dobStr.split('-'); // Sesuai format dari backend
     if (parts.length != 3) return null;
 
-    final day = int.parse(parts[0]);
+    final year = int.parse(parts[0]);
     final month = int.parse(parts[1]);
-    final year = int.parse(parts[2]);
+    final day = int.parse(parts[2]);
 
     final dob = DateTime(year, month, day);
     final now = DateTime.now();

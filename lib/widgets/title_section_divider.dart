@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 
+enum LinePosition {
+  top,
+  bottom,
+  both,
+  none,
+}
+
 class SectionDivider extends StatelessWidget {
   final String title;
   final double topSpacing;
@@ -8,6 +15,7 @@ class SectionDivider extends StatelessWidget {
   final Color textColor;
   final Color lineColor;
   final EdgeInsetsGeometry? padding;
+  final LinePosition linePosition;
 
   const SectionDivider({
     super.key,
@@ -18,6 +26,7 @@ class SectionDivider extends StatelessWidget {
     this.textColor = Colors.black,
     this.lineColor = Colors.pink,
     this.padding,
+    this.linePosition = LinePosition.both,
   });
 
   @override
@@ -28,12 +37,14 @@ class SectionDivider extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(height: topSpacing),
-          Container(
-            height: 2,
-            width: double.infinity,
-            color: lineColor,
-            margin: EdgeInsets.symmetric(vertical: bottomSpacing),
-          ),
+          if (linePosition == LinePosition.top ||
+              linePosition == LinePosition.both)
+            Container(
+              height: 1,
+              width: double.infinity,
+              color: lineColor,
+              margin: EdgeInsets.only(bottom: bottomSpacing),
+            ),
           Text(
             title,
             style: TextStyle(
@@ -42,6 +53,14 @@ class SectionDivider extends StatelessWidget {
               color: textColor,
             ),
           ),
+          if (linePosition == LinePosition.bottom ||
+              linePosition == LinePosition.both)
+            Container(
+              height: 1,
+              width: double.infinity,
+              color: lineColor,
+              margin: EdgeInsets.only(top: bottomSpacing),
+            ),
           SizedBox(height: topSpacing),
         ],
       ),

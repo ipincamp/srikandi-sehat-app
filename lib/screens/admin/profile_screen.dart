@@ -59,7 +59,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Icon(icon, color: color),
       ),
       title: Text(label),
-      trailing: trailing ?? const Icon(Icons.arrow_forward_ios, size: 16),
+      // trailing: trailing ?? const Icon(Icons.arrow_forward_ios, size: 16),
       onTap: onTap,
     );
   }
@@ -79,7 +79,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ProfileTile(
             name: _name,
             email: _email,
-            onTap: () {
+            onIconTap: () {
               // arahkan ke EditProfile atau lainnya
             },
           ),

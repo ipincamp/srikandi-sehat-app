@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:srikandi_sehat_app/screens/user/profile_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:srikandi_sehat_app/provider/cycle_provider.dart';
+import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/quick_action_button.dart';
 import 'package:srikandi_sehat_app/widgets/reminder_tile.dart';
 import 'package:srikandi_sehat_app/widgets/tips_education_list.dart';
@@ -15,10 +17,48 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    context.read<CycleProvider>().loadCycleStatus();
+  }
+
+  // Handler: mulai siklus
+  Future<void> _handleStartCycle() async {
+    try {
+      await context.read<CycleProvider>().startCycle();
+      if (mounted) {
+        CustomAlert.show(context, 'Siklus menstruasi dimulai!',
+            type: AlertType.success);
+      }
+    } catch (e) {
+      if (mounted) {
+        CustomAlert.show(context, 'Gagal memulai siklus.',
+            type: AlertType.error);
+      }
+    }
+  }
+
+  // Handler: akhiri siklus
+  Future<void> _handleEndCycle() async {
+    try {
+      await context.read<CycleProvider>().endCycle();
+      if (mounted) {
+        CustomAlert.show(context, 'Siklus menstruasi diakhiri!',
+            type: AlertType.success);
+      }
+    } catch (e) {
+      if (mounted) {
+        CustomAlert.show(context, 'Gagal mengakhiri siklus.',
+            type: AlertType.error);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isMenstruating = context.watch<CycleProvider>().isMenstruating;
+    print('Is menstruating: $isMenstruating');
+    // final cycleProvider = context.watch<CycleProvider>();
+    // final isMenstruating = cycleProvider.isMenstruating;
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -26,14 +66,12 @@ class _HomeScreenState extends State<HomeScreen> {
           'SriKandi Sehat',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        actions: [],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Bagian Sambutan
             Text(
               'Halo, User!',
               style: TextStyle(
@@ -44,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Kartu Informasi Siklus Saat Ini
+            // Kartu Informasi Siklus
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20.0),
@@ -105,7 +143,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       ),
-                      // Progress Bar Lingkaran (Contoh sederhana)
                       Stack(
                         alignment: Alignment.center,
                         children: [
@@ -113,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             width: 60,
                             height: 60,
                             child: CircularProgressIndicator(
-                              value: 0.75, // Contoh progress (0.0 - 1.0)
+                              value: 0.75,
                               strokeWidth: 6,
                               strokeCap: StrokeCap.round,
                               backgroundColor: Colors.pink.shade100,
@@ -123,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           const Text(
-                            '75%', // Atau hari ke X dari Y
+                            '75%',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -139,7 +176,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Bagian Pembaruan Cepat (Quick Actions)
             Text(
               'Aksi Cepat',
               style: TextStyle(
@@ -151,16 +187,13 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 10),
 
             QuickActionButtons(
-              onStart: () {
-                // Implement start action
-              },
-              onEnd: () {
-                // Implement end action
-              },
+              onStart: isMenstruating ? () {} : _handleStartCycle,
+              onEnd: isMenstruating ? _handleEndCycle : () {},
+              isMenstruating: isMenstruating,
             ),
+
             const SizedBox(height: 20),
 
-            // Bagian Informasi/Tips Harian
             Text(
               'Tips & Edukasi Hari Ini',
               style: TextStyle(
@@ -173,7 +206,6 @@ class _HomeScreenState extends State<HomeScreen> {
             TipsEducationList(),
             const SizedBox(height: 20),
 
-            // Bagian Pengingat
             Text(
               'Pengingat',
               style: TextStyle(
@@ -186,55 +218,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ReminderTile(message: 'Jangan lupa minum air cukup hari ini!'),
           ],
         ),
-      ),
-    );
-  }
-
-  // Widget pembantu untuk Kartu Tips
-  Widget _buildTipCard(
-    BuildContext context,
-    String title,
-    String subtitle,
-    IconData icon,
-    Color bgColor,
-    Color iconColor,
-  ) {
-    return Container(
-      width: 180,
-      padding: const EdgeInsets.all(12.0),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: iconColor, size: 30),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: Colors.grey[800],
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
       ),
     );
   }

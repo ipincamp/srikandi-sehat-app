@@ -15,6 +15,9 @@ class UserProfileProvider with ChangeNotifier {
   String get name => _name;
   String get email => _email;
 
+  Map<String, dynamic> _userData = {};
+  Map<String, dynamic> get userData => _userData;
+
   Future<Map<String, dynamic>?> getProfile() async {
     _isLoading = true;
     notifyListeners();
@@ -39,6 +42,7 @@ class UserProfileProvider with ChangeNotifier {
         final user = responseData['data'];
         _name = user['name'] ?? '';
         _email = user['email'] ?? '';
+        _userData = user;
         _errorMessage = '';
         notifyListeners();
         return user;

@@ -79,7 +79,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ProfileTile(
             name: _name,
             email: _email,
-            onTap: () => Navigator.pushNamed(context, '/edit-profile'),
+            onIconTap: () => Navigator.pushNamed(context, '/detail-profile'),
           ),
           const Divider(),
           const Padding(
@@ -89,6 +89,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Text('Profile',
                   style: TextStyle(fontWeight: FontWeight.bold)),
             ),
+          ),
+          buildListTile(
+            icon: Icons.person,
+            label: 'Edit Profile',
+            color: Colors.orange,
+            onTap: () => {Navigator.pushNamed(context, '/riwayat-siklus')},
           ),
           buildListTile(
             icon: Icons.person,

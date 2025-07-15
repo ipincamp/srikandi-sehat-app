@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:srikandi_sehat_app/screens/user/education_screen.dart';
 import 'package:srikandi_sehat_app/screens/user/home_screen.dart';
 import 'package:srikandi_sehat_app/screens/user/profile_screen.dart';
 import 'package:srikandi_sehat_app/screens/user/support_screen.dart';
 import 'package:srikandi_sehat_app/screens/user/tracker_screen.dart';
+import 'package:srikandi_sehat_app/widgets/image_modal.dart';
+import 'package:srikandi_sehat_app/widgets/navbar_button.dart'; // Import reusable NavBarButton
 
 class User {
   final String id;
@@ -13,6 +16,7 @@ class User {
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
+
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
@@ -36,6 +40,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
+    _checkShowModalOnLogin();
   }
 
   @override
@@ -51,6 +56,25 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           _selectedIndex = index;
         });
         _slideController.reverse();
+      });
+    }
+  }
+
+  Future<void> _checkShowModalOnLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final shouldShowModal = prefs.getBool('showLoginModal') ?? false;
+
+    if (shouldShowModal) {
+      // Reset flag agar modal hanya muncul sekali
+      await prefs.setBool('showLoginModal', false);
+
+      // Delay sebentar agar context aman dipakai
+      Future.delayed(Duration.zero, () {
+        ImageModal.show(
+          context,
+          'https://pic.pnnet.dev/256x256',
+        );
       });
     }
   }
@@ -80,101 +104,45 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildNavItem(0, Icons.home_outlined, Icons.home, 'Beranda'),
-                _buildNavItem(1, Icons.calendar_month_outlined,
-                    Icons.calendar_month, 'Pelacak'),
-                _buildNavItem(
-                    2, Icons.menu_book_outlined, Icons.menu_book, 'Edukasi'),
-                _buildNavItem(3, Icons.support_agent_outlined,
-                    Icons.support_agent, 'Dukungan'),
-                _buildNavItem(4, Icons.person_outline, Icons.person, 'Profil'),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(
-      int index, IconData icon, IconData activeIcon, String label) {
-    final bool isSelected = _selectedIndex == index;
-
-    return Flexible(
-      child: GestureDetector(
-        onTap: () => _onItemTapped(index),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 55),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            margin: const EdgeInsets.symmetric(horizontal: 2),
-            padding: isSelected
-                ? const EdgeInsets.symmetric(horizontal: 16, vertical: 12)
-                : const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: isSelected ? Colors.pink : Colors.transparent,
-              borderRadius: BorderRadius.circular(isSelected ? 28 : 16),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: Colors.pink.withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
-                  : [],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AnimatedScale(
-                  scale: isSelected ? 1.1 : 1.0,
-                  duration: const Duration(milliseconds: 250),
-                  curve: Curves.elasticOut,
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    transitionBuilder:
-                        (Widget child, Animation<double> animation) {
-                      return ScaleTransition(
-                        scale: animation,
-                        child: child,
-                      );
-                    },
-                    child: Icon(
-                      isSelected ? activeIcon : icon,
-                      key: ValueKey(
-                          isSelected ? 'active_$index' : 'inactive_$index'),
-                      color: isSelected ? Colors.white : Colors.grey,
-                      size: isSelected ? 26 : 20,
-                    ),
-                  ),
+                NavBarButton(
+                  index: 0,
+                  icon: Icons.home_outlined,
+                  activeIcon: Icons.home,
+                  label: 'Beranda',
+                  isSelected: _selectedIndex == 0,
+                  onTap: () => _onItemTapped(0),
                 ),
-                AnimatedOpacity(
-                  opacity: isSelected ? 0.0 : 1.0,
-                  duration: const Duration(milliseconds: 200),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeInOut,
-                    height: isSelected ? 0 : null,
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 2),
-                        Text(
-                          label,
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
+                NavBarButton(
+                  index: 1,
+                  icon: Icons.calendar_month_outlined,
+                  activeIcon: Icons.calendar_month,
+                  label: 'Pelacak',
+                  isSelected: _selectedIndex == 1,
+                  onTap: () => _onItemTapped(1),
+                ),
+                NavBarButton(
+                  index: 2,
+                  icon: Icons.menu_book_outlined,
+                  activeIcon: Icons.menu_book,
+                  label: 'Edukasi',
+                  isSelected: _selectedIndex == 2,
+                  onTap: () => _onItemTapped(2),
+                ),
+                NavBarButton(
+                  index: 3,
+                  icon: Icons.support_agent_outlined,
+                  activeIcon: Icons.support_agent,
+                  label: 'Dukungan',
+                  isSelected: _selectedIndex == 3,
+                  onTap: () => _onItemTapped(3),
+                ),
+                NavBarButton(
+                  index: 4,
+                  icon: Icons.person_outline,
+                  activeIcon: Icons.person,
+                  label: 'Profil',
+                  isSelected: _selectedIndex == 4,
+                  onTap: () => _onItemTapped(4),
                 ),
               ],
             ),

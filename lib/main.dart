@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:srikandi_sehat_app/provider/auth_provider.dart';
+import 'package:srikandi_sehat_app/provider/cycle_provider.dart';
 import 'package:srikandi_sehat_app/provider/district_provider.dart';
 import 'package:srikandi_sehat_app/provider/password_provider.dart';
 import 'package:srikandi_sehat_app/provider/profile_change_provider.dart';
@@ -17,6 +18,7 @@ import 'package:srikandi_sehat_app/screens/user/edit_profile.dart' as user;
 import 'package:srikandi_sehat_app/screens/user/home_screen.dart' as user;
 import 'package:srikandi_sehat_app/screens/user/main_screen.dart' as user;
 import 'package:srikandi_sehat_app/screens/user/profile_screen.dart' as user;
+import 'package:srikandi_sehat_app/screens/user/detail_profile.dart' as user;
 import 'package:srikandi_sehat_app/screens/admin/home_screen.dart' as admin;
 import 'package:srikandi_sehat_app/screens/admin/main_screen.dart' as admin;
 import 'package:srikandi_sehat_app/screens/admin/profile_screen.dart' as admin;
@@ -43,6 +45,7 @@ void main() async {
           ChangeNotifierProvider(create: (_) => DistrictProvider()),
           ChangeNotifierProvider(create: (_) => VillageProvider()),
           ChangeNotifierProvider(create: (_) => PasswordProvider()),
+          ChangeNotifierProvider(create: (_) => CycleProvider()),
         ],
         child: MyApp(
           isLoggedIn: isLoggedIn,
@@ -100,6 +103,8 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => const user.ProfileScreen(),
         '/change-password': (context) => const user.ChangePasswordScreen(),
         '/edit-profile': (context) => const user.EditProfileScreen(),
+        '/detail-profile': (context) => const user.DetailProfileScreen(),
+        // '/cycle-history': (context) => const user.CycleHistoryScreen(),
 
         // Admin routes
         '/admin': (context) => const admin.MainScreen(),

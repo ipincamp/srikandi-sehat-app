@@ -111,7 +111,7 @@ class ProfileChangeProvider with ChangeNotifier {
 
     try {
       // Menggunakan http.put untuk update
-      final response = await http.put(
+      final response = await http.post(
         Uri.parse(url),
         headers: {
           'Authorization': 'Bearer $token',
@@ -120,6 +120,10 @@ class ProfileChangeProvider with ChangeNotifier {
         },
         body: jsonEncode(profileData),
       );
+
+      debugPrint("✅ Payload: ${jsonEncode(profileData)}");
+      debugPrint("🔁 Status Code: ${response.statusCode}");
+      debugPrint("🔁 Response: ${response.body}");
 
       if (response.statusCode == 200) {
         return true;

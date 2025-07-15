@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class ProfileTile extends StatelessWidget {
   final String? name;
   final String? email;
-  final VoidCallback? onTap;
+  final VoidCallback? onIconTap;
   final double avatarRadius;
   final Color avatarColor;
 
@@ -11,7 +11,7 @@ class ProfileTile extends StatelessWidget {
     super.key,
     required this.name,
     required this.email,
-    this.onTap,
+    this.onIconTap,
     this.avatarRadius = 30,
     this.avatarColor = const Color(0xFFF48FB1), // pink[200] default
   });
@@ -29,7 +29,10 @@ class ProfileTile extends StatelessWidget {
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
       subtitle: Text(email ?? ''),
-      onTap: onTap,
+      trailing: GestureDetector(
+        onTap: onIconTap,
+        child: const Icon(Icons.arrow_forward_ios, size: 16),
+      ),
     );
   }
 }
