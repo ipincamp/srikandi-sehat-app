@@ -27,7 +27,7 @@ class CycleProvider with ChangeNotifier {
     );
 
     print('Siklus dimulai');
-    if (response.statusCode == 200 || response.statusCode == 201) {
+    if (response.statusCode == 201) {
       _isMenstruating = true;
       await prefs.setBool('isMenstruating', true);
       notifyListeners();
@@ -48,8 +48,8 @@ class CycleProvider with ChangeNotifier {
         'Authorization': 'Bearer $token',
       },
     );
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
+    print('Siklus diakhiri');
+    if (response.statusCode == 200) {
       _isMenstruating = false;
       await prefs.setBool('isMenstruating', false);
       notifyListeners();

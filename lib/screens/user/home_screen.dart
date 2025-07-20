@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/provider/cycle_provider.dart';
+import 'package:srikandi_sehat_app/provider/symptom_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
-import 'package:srikandi_sehat_app/widgets/quick_action_button.dart';
+import 'package:srikandi_sehat_app/widgets/cycle_action_button.dart';
+import 'package:srikandi_sehat_app/widgets/log_symptom_button.dart';
 import 'package:srikandi_sehat_app/widgets/reminder_tile.dart';
 import 'package:srikandi_sehat_app/widgets/tips_education_list.dart';
 
@@ -18,6 +20,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     context.read<CycleProvider>().loadCycleStatus();
+    Future.microtask(() =>
+        Provider.of<SymptomProvider>(context, listen: false).fetchSymptoms());
   }
 
   // Handler: mulai siklus
@@ -185,11 +189,22 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 10),
-
-            QuickActionButtons(
-              onStart: isMenstruating ? () {} : _handleStartCycle,
-              onEnd: isMenstruating ? _handleEndCycle : () {},
-              isMenstruating: isMenstruating,
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: CycleActionButtons(
+                    onStart: isMenstruating ? () {} : _handleStartCycle,
+                    onEnd: isMenstruating ? _handleEndCycle : () {},
+                    isMenstruating: true,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  flex: 1,
+                  child: LogSymptomButton(),
+                ),
+              ],
             ),
 
             const SizedBox(height: 20),
@@ -203,9 +218,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            TipsEducationList(),
+            const TipsEducationList(),
             const SizedBox(height: 20),
-
             Text(
               'Pengingat',
               style: TextStyle(

@@ -91,32 +91,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           buildListTile(
-            icon: Icons.person,
-            label: 'Edit Profile',
-            color: Colors.orange,
-            onTap: () => {Navigator.pushNamed(context, '/riwayat-siklus')},
+            icon: Icons.history,
+            label: 'Riwayat Siklus',
+            color: Colors.pinkAccent,
+            onTap: () => {Navigator.pushNamed(context, '/cycle-history')},
           ),
           buildListTile(
             icon: Icons.person,
-            label: 'Edit Profile',
+            label: 'Ubah Profil',
             color: Colors.orange,
             onTap: () => {Navigator.pushNamed(context, '/edit-profile')},
           ),
           buildListTile(
             icon: Icons.vpn_key,
-            label: 'Change Password',
+            label: 'Ubah Kata Sandi',
             color: Colors.blue,
             onTap: () => {Navigator.pushNamed(context, '/change-password')},
           ),
-          buildListTile(
-            icon: Icons.notifications,
-            label: 'Notifications',
-            color: Colors.green,
-            trailing: Switch(
-              value: _notificationsEnabled,
-              onChanged: (val) => setState(() => _notificationsEnabled = val),
-            ),
-          ),
+          // buildListTile(
+          //   icon: Icons.notifications,
+          //   label: 'Notifications',
+          //   color: Colors.green,
+          //   trailing: Switch(
+          //     value: _notificationsEnabled,
+          //     onChanged: (val) => setState(() => _notificationsEnabled = val),
+          //   ),
+          // ),
           const Spacer(),
           const LogoutTile(),
           const Padding(

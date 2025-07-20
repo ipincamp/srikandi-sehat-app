@@ -16,8 +16,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _name;
   String? _email;
   // String? _role;
-  bool _isLoading = false;
-  bool _notificationsEnabled = true;
 
   @override
   void initState() {
@@ -26,7 +24,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadProfile() async {
-    setState(() => _isLoading = true);
     final userProvider =
         Provider.of<UserProfileProvider>(context, listen: false);
 
@@ -42,7 +39,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       CustomAlert.show(context, 'Gagal memuat profil', type: AlertType.error);
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {}
     }
   }
 
