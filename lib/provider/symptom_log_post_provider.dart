@@ -13,7 +13,7 @@ class SymptomLogProvider with ChangeNotifier {
     int? moodScore,
     String? notes,
     required String logDate,
-  }) async {
+  }) async { 
     _isLoading = true;
     notifyListeners();
 

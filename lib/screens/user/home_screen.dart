@@ -59,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final isMenstruating = context.watch<CycleProvider>().isMenstruating;
-    print('Is menstruating: $isMenstruating');
+    // print('Is menstruating: $isMenstruating');
     // final cycleProvider = context.watch<CycleProvider>();
     // final isMenstruating = cycleProvider.isMenstruating;
 

@@ -73,7 +73,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       Future.delayed(Duration.zero, () {
         ImageModal.show(
           context,
-          'https://pic.pnnet.dev/256x256',
+          'assets/images/modal-image.png'
         );
       });
     }

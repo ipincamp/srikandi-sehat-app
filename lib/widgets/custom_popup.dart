@@ -25,16 +25,16 @@ class CustomConfirmationPopup {
             children: [
               if (icon != null) ...[
                 CircleAvatar(
-                  radius: 30,
+                  radius: 20,
                   backgroundColor: confirmColor.withOpacity(0.1),
-                  child: Icon(icon, color: confirmColor, size: 32),
+                  child: Icon(icon, color: confirmColor, size: 28),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
               ],
               Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 20,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
@@ -42,7 +42,7 @@ class CustomConfirmationPopup {
               const SizedBox(height: 12),
               Text(
                 message,
-                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),

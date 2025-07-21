@@ -26,7 +26,7 @@ class ImageModal extends StatelessWidget {
             child: SizedBox(
               width: width,
               height: height,
-              child: Image.network(
+              child: Image.asset(
                 imageUrl,
                 fit: BoxFit.cover,
               ),

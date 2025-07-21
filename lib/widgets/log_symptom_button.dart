@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/provider/symptom_log_provider.dart';
+import 'package:srikandi_sehat_app/provider/symptom_log_post_provider.dart';
 import 'package:srikandi_sehat_app/provider/symptom_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_form.dart';
 

@@ -92,9 +92,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           buildListTile(
             icon: Icons.history,
-            label: 'Riwayat Siklus',
+            label: 'Riwayat Gejala',
             color: Colors.pinkAccent,
-            onTap: () => {Navigator.pushNamed(context, '/cycle-history')},
+            onTap: () => {Navigator.pushNamed(context, '/symptom-history')},
           ),
           buildListTile(
             icon: Icons.person,

@@ -8,20 +8,22 @@ import 'package:srikandi_sehat_app/provider/cycle_provider.dart';
 import 'package:srikandi_sehat_app/provider/district_provider.dart';
 import 'package:srikandi_sehat_app/provider/password_provider.dart';
 import 'package:srikandi_sehat_app/provider/profile_change_provider.dart';
-import 'package:srikandi_sehat_app/provider/symptom_log_provider.dart';
+import 'package:srikandi_sehat_app/provider/symptom_history_provider.dart';
+import 'package:srikandi_sehat_app/provider/symptom_log_get_detail.dart';
+import 'package:srikandi_sehat_app/provider/symptom_log_post_provider.dart';
 import 'package:srikandi_sehat_app/provider/symptom_provider.dart';
 import 'package:srikandi_sehat_app/provider/user_profile_provider.dart';
 import 'package:srikandi_sehat_app/provider/village_provider.dart';
 
 import 'package:srikandi_sehat_app/screens/auth/login_screen.dart';
 import 'package:srikandi_sehat_app/screens/auth/register_screen.dart';
-import 'package:srikandi_sehat_app/screens/user/change_password.dart' as user;
-import 'package:srikandi_sehat_app/screens/user/edit_profile.dart' as user;
+import 'package:srikandi_sehat_app/screens/user/change_password_screen.dart' as user;
+import 'package:srikandi_sehat_app/screens/user/edit_profile_screen.dart' as user;
 import 'package:srikandi_sehat_app/screens/user/home_screen.dart' as user;
 import 'package:srikandi_sehat_app/screens/user/main_screen.dart' as user;
 import 'package:srikandi_sehat_app/screens/user/profile_screen.dart' as user;
-import 'package:srikandi_sehat_app/screens/user/detail_profile.dart' as user;
-import 'package:srikandi_sehat_app/screens/user/cycle_history.dart' as user;
+import 'package:srikandi_sehat_app/screens/user/detail_profile_screen.dart' as user;
+import 'package:srikandi_sehat_app/screens/user/symptom_history_screen.dart' as user;
 import 'package:srikandi_sehat_app/screens/admin/home_screen.dart' as admin;
 import 'package:srikandi_sehat_app/screens/admin/main_screen.dart' as admin;
 import 'package:srikandi_sehat_app/screens/admin/profile_screen.dart' as admin;
@@ -51,6 +53,8 @@ void main() async {
           ChangeNotifierProvider(create: (_) => CycleProvider()),
           ChangeNotifierProvider(create: (_) => SymptomProvider()),
           ChangeNotifierProvider(create: (_) => SymptomLogProvider()),
+          ChangeNotifierProvider(create: (_) => SymptomHistoryProvider()),
+          ChangeNotifierProvider(create: (_) => SymptomDetailProvider()),
 
         ],
         child: MyApp(
@@ -110,7 +114,7 @@ class MyApp extends StatelessWidget {
         '/change-password': (context) => const user.ChangePasswordScreen(),
         '/edit-profile': (context) => const user.EditProfileScreen(),
         '/detail-profile': (context) => const user.DetailProfileScreen(),
-        '/cycle-history': (context) => const user.CycleHistoryScreen(),
+        '/symptom-history': (context) => const user.SymptomHistoryScreen(),
 
         // Admin routes
         '/admin': (context) => const admin.MainScreen(),
