@@ -20,8 +20,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     context.read<CycleProvider>().loadCycleStatus();
-    Future.microtask(() =>
-        Provider.of<SymptomProvider>(context, listen: false).fetchSymptoms());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<SymptomProvider>(context, listen: false).fetchSymptoms();
+    });
   }
 
   // Handler: mulai siklus
@@ -59,9 +60,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final isMenstruating = context.watch<CycleProvider>().isMenstruating;
-    // print('Is menstruating: $isMenstruating');
-    // final cycleProvider = context.watch<CycleProvider>();
-    // final isMenstruating = cycleProvider.isMenstruating;
 
     return Scaffold(
       appBar: AppBar(
@@ -110,9 +108,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Fase Luteal',
-                    style: TextStyle(
+                  Text(
+                    isMenstruating ? 'Fase Menstruasi' : 'Fase Luteal',
+                    style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                       color: Colors.pink,
@@ -127,7 +125,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Menstruasi Berikutnya dalam:',
+                              isMenstruating
+                                  ? 'Menstruasi sedang berlangsung'
+                                  : 'Menstruasi Berikutnya dalam:',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey[700],
@@ -136,9 +136,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 4),
-                            const Text(
-                              '5 Hari',
-                              style: TextStyle(
+                            Text(
+                              isMenstruating ? 'Hari ke-2' : '5 Hari',
+                              style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.pink,
@@ -154,7 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             width: 60,
                             height: 60,
                             child: CircularProgressIndicator(
-                              value: 0.75,
+                              value: isMenstruating ? 0.2 : 0.75,
                               strokeWidth: 6,
                               strokeCap: StrokeCap.round,
                               backgroundColor: Colors.pink.shade100,
@@ -163,9 +163,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                           ),
-                          const Text(
-                            '75%',
-                            style: TextStyle(
+                          Text(
+                            isMenstruating ? '20%' : '75%',
+                            style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                               color: Colors.pink,
@@ -194,9 +194,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   flex: 2,
                   child: CycleActionButtons(
-                    onStart: isMenstruating ? () {} : _handleStartCycle,
+                    onStart: !isMenstruating ? _handleStartCycle : () {},
                     onEnd: isMenstruating ? _handleEndCycle : () {},
-                    isMenstruating: true,
+                    isMenstruating:
+                        isMenstruating, // Gunakan nilai dari provider
                   ),
                 ),
                 const SizedBox(width: 10),
