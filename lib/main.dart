@@ -13,20 +13,26 @@ import 'package:srikandi_sehat_app/provider/symptom_log_get_detail.dart';
 import 'package:srikandi_sehat_app/provider/symptom_log_post_provider.dart';
 import 'package:srikandi_sehat_app/provider/symptom_provider.dart';
 import 'package:srikandi_sehat_app/provider/user_profile_provider.dart';
+import 'package:srikandi_sehat_app/provider/user_data_provider.dart';
 import 'package:srikandi_sehat_app/provider/village_provider.dart';
 
 import 'package:srikandi_sehat_app/screens/auth/login_screen.dart';
 import 'package:srikandi_sehat_app/screens/auth/register_screen.dart';
-import 'package:srikandi_sehat_app/screens/user/change_password_screen.dart' as user;
-import 'package:srikandi_sehat_app/screens/user/edit_profile_screen.dart' as user;
+import 'package:srikandi_sehat_app/screens/user/change_password_screen.dart'
+    as user;
+import 'package:srikandi_sehat_app/screens/user/edit_profile_screen.dart'
+    as user;
 import 'package:srikandi_sehat_app/screens/user/home_screen.dart' as user;
 import 'package:srikandi_sehat_app/screens/user/main_screen.dart' as user;
 import 'package:srikandi_sehat_app/screens/user/profile_screen.dart' as user;
-import 'package:srikandi_sehat_app/screens/user/detail_profile_screen.dart' as user;
-import 'package:srikandi_sehat_app/screens/user/symptom_history_screen.dart' as user;
+import 'package:srikandi_sehat_app/screens/user/detail_profile_screen.dart'
+    as user;
+import 'package:srikandi_sehat_app/screens/user/symptom_history_screen.dart'
+    as user;
 import 'package:srikandi_sehat_app/screens/admin/home_screen.dart' as admin;
 import 'package:srikandi_sehat_app/screens/admin/main_screen.dart' as admin;
 import 'package:srikandi_sehat_app/screens/admin/profile_screen.dart' as admin;
+import 'package:srikandi_sehat_app/screens/admin/user_data_screen.dart' as admin;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,7 +61,7 @@ void main() async {
           ChangeNotifierProvider(create: (_) => SymptomLogProvider()),
           ChangeNotifierProvider(create: (_) => SymptomHistoryProvider()),
           ChangeNotifierProvider(create: (_) => SymptomDetailProvider()),
-
+          ChangeNotifierProvider(create: (_) => UserDataProvider()),
         ],
         child: MyApp(
           isLoggedIn: isLoggedIn,
@@ -119,6 +125,7 @@ class MyApp extends StatelessWidget {
         // Admin routes
         '/admin': (context) => const admin.MainScreen(),
         '/admin/home': (context) => const admin.HomeScreen(),
+        '/admin/data': (context) => const admin.UserDataScreen(),
         '/admin/profile': (context) => const admin.ProfileScreen(),
       },
     );

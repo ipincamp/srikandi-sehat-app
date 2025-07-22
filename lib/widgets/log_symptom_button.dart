@@ -60,31 +60,23 @@ class LogSymptomButton extends StatelessWidget {
           type: AlertType.success,
         );
 
-        // Navigate to detail screen if ID is available
-        if (result.id != null) {
-          await Future.delayed(const Duration(milliseconds: 1500));
+        await Future.delayed(const Duration(milliseconds: 1500));
 
-          if (context.mounted) {
+        if (context.mounted) {
+          if (result.id != null) {
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (_) => ChangeNotifierProvider(
                   create: (_) => SymptomDetailProvider(),
-                  child: SymptomDetailScreen(
-                    symptomId: result.id!,
-                  ),
+                  child: SymptomDetailScreen(symptomId: result.id!),
                 ),
               ),
             );
+          } else {
+            Navigator.pushNamed(context, '/symptom-history');
           }
         }
-      } else {
-        // Show error message
-        CustomAlert.show(
-          context,
-          result.error ?? 'Gagal mencatat gejala. Silakan coba lagi.',
-          type: AlertType.error,
-        );
       }
     } catch (e) {
       if (context.mounted) {
