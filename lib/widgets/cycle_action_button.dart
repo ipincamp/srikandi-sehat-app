@@ -16,32 +16,91 @@ class CycleActionButtons extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
+        // Start Cycle Button
         Expanded(
-          child: ElevatedButton.icon(
-            onPressed: isMenstruating ? null : onStart,
-            icon: const Icon(Icons.water_drop, color: Colors.white),
-            label: const Text('Mulai', style: TextStyle(color: Colors.white)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.pink,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+          child: _buildActionButton(
+            icon: Icons.water_drop,
+            label: 'Mulai Siklus',
+            color: Colors.pink,
+            isActive: !isMenstruating,
+            onPressed: onStart,
+          ),
+        ),
+
+        const SizedBox(width: 12),
+
+        // End Cycle Button
+        Expanded(
+          child: _buildActionButton(
+            icon: Icons.check_circle_outline,
+            label: 'Akhiri Siklus',
+            color: Colors.pink,
+            isActive: isMenstruating,
+            onPressed: onEnd,
+            isOutline: true,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required bool isActive,
+    required VoidCallback onPressed,
+    bool isOutline = false,
+  }) {
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: isActive ? onPressed : null,
+          child: Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: isOutline
+                  ? Colors.white
+                  : isActive
+                      ? color.withOpacity(0.9)
+                      : color.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isOutline
+                    ? isActive
+                        ? color
+                        : color.withOpacity(0.3)
+                    : Colors.transparent,
+                width: 1.5,
+              ),
+              boxShadow: [
+                if (isActive && !isOutline)
+                  BoxShadow(
+                    color: color.withOpacity(0.2),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+              ],
+            ),
+            child: Icon(
+              icon,
+              size: 28,
+              color: isOutline
+                  ? isActive
+                      ? color
+                      : color.withOpacity(0.3)
+                  : Colors.white,
             ),
           ),
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: isMenstruating ? onEnd : null,
-            icon: const Icon(Icons.check_circle_outline, color: Colors.pink),
-            label: const Text('Akhiri', style: TextStyle(color: Colors.pink)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              side: const BorderSide(color: Colors.pink),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[700],
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
       ],

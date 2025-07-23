@@ -19,10 +19,26 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    context.read<CycleProvider>().loadCycleStatus();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<SymptomProvider>(context, listen: false).fetchSymptoms();
-    });
+    _initializeData();
+    // context.read<CycleProvider>().loadCycleStatus();
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   Provider.of<SymptomProvider>(context, listen: false).fetchSymptoms();
+    // });
+  }
+
+  Future<void> _initializeData() async {
+    try {
+      // Load cycle status first
+      await context.read<CycleProvider>().loadCycleStatus();
+
+      // Then load symptoms
+      await Provider.of<SymptomProvider>(context, listen: false)
+          .fetchSymptoms();
+    } catch (e) {
+      if (mounted) {
+        CustomAlert.show(context, 'Gagal memuat data: ${e.toString()}');
+      }
+    }
   }
 
   // Handler: mulai siklus

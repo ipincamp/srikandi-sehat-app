@@ -168,7 +168,7 @@ class CustomChart extends StatelessWidget {
       ),
       PieChartSectionData(
         value: ruralCount.toDouble(),
-        color: Colors.orange,
+        color: Colors.green,
         title: ruralCount.toString(),
         radius: radius,
         titleStyle: TextStyle(
@@ -203,7 +203,7 @@ class CustomChart extends StatelessWidget {
             ),
             if (!isSmallScreen) const SizedBox(width: 24),
             _buildLegendItem(
-              color: Colors.orange,
+              color: Colors.green,
               label: 'Pedesaan',
               value: '$ruralCount ($ruralPercentage%)',
               fontSize: fontSize,
@@ -253,7 +253,11 @@ class CustomChart extends StatelessWidget {
                 vertical: 8,
               ),
             ),
-            icon: Icon(Icons.download, size: isSmallScreen ? 14 : 16, color: Colors.white,),
+            icon: Icon(
+              Icons.download,
+              size: isSmallScreen ? 14 : 16,
+              color: Colors.white,
+            ),
             label: Text(
               'Download Data',
               style: TextStyle(
