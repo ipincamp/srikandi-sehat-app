@@ -20,12 +20,11 @@ class SymptomLogResponse {
 
   factory SymptomLogResponse.fromJson(Map<String, dynamic> json) {
     return SymptomLogResponse(
-      success: true,
-      id: json['id'] as int?,
+      success: json['status'] as bool? ?? false,
+      id: json['data']?['id'] as int?,
       message: json['message'] as String?,
     );
   }
-
   factory SymptomLogResponse.error(String error) {
     return SymptomLogResponse(
       success: false,
@@ -127,6 +126,10 @@ class SymptomLogProvider with ChangeNotifier {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = json.decode(response.body) as Map<String, dynamic>;
         _lastResponse = SymptomLogResponse.fromJson(data);
+        // Add this debug log to verify the response
+        debugPrint('Response data: $data');
+        debugPrint('Extracted ID: ${_lastResponse?.id}');
+
         return _lastResponse!;
       } else {
         // Handle different error status codes

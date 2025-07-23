@@ -8,9 +8,18 @@ import 'package:srikandi_sehat_app/models/symptom_detail_model.dart';
 class SymptomDetailProvider with ChangeNotifier {
   SymptomDetail? _detail;
   bool _isLoading = false;
+  String? _error;
+
+  void clear() {
+    _detail = null;
+    _isLoading = false;
+    _error = null;
+    notifyListeners();
+  }
 
   SymptomDetail? get detail => _detail;
   bool get isLoading => _isLoading;
+  String? get error => _error;
 
   Future<void> fetchDetail(int id) async {
     _isLoading = true;

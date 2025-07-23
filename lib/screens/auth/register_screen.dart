@@ -111,14 +111,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(height: 30),
-                CircleAvatar(
-                  radius: 80,
-                  backgroundColor: Colors.pink[100],
-                  child: Icon(
-                    Icons.bloodtype_sharp,
-                    size: 56,
-                    color: Colors.pink[400],
-                  ),
+                Image.asset(
+                  'assets/images/srikandisehat-logo.png',
+                  width: 120,
+                  height: 120,
                 ),
                 const SizedBox(height: 20),
 

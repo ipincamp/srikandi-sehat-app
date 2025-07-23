@@ -68,30 +68,32 @@ class _SymptomDetailScreenState extends State<SymptomDetailScreen> {
                 valueColor: AlwaysStoppedAnimation<Color>(Colors.pink),
               ),
             )
-          : detail == null
-              ? _buildErrorState()
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildDateCard(detail.logDate),
-                      const SizedBox(height: 20),
-                      _buildSymptomsSection(detail.loggedSymptoms),
-                      const SizedBox(height: 20),
-                      _buildRecommendationsSection(detail.recommendations),
-                      if (detail.notes != null) ...[
-                        const SizedBox(height: 20),
-                        _buildNotesSection(detail.notes!),
-                      ],
-                      const SizedBox(height: 20),
-                    ],
-                  ),
-                ),
+          : provider.error != null
+              ? _buildErrorState(provider.error!)
+              : detail == null
+                  ? _buildErrorState('Data tidak tersedia')
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildDateCard(detail.logDate),
+                          const SizedBox(height: 20),
+                          _buildSymptomsSection(detail.loggedSymptoms),
+                          const SizedBox(height: 20),
+                          _buildRecommendationsSection(detail.recommendations),
+                          if (detail.notes != null) ...[
+                            const SizedBox(height: 20),
+                            _buildNotesSection(detail.notes!),
+                          ],
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
     );
   }
 
-  Widget _buildErrorState() {
+  Widget _buildErrorState(String error) {
     return Center(
       child: Container(
         margin: const EdgeInsets.all(32),

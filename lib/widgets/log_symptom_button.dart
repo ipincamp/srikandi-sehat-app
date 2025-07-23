@@ -4,6 +4,7 @@ import 'package:srikandi_sehat_app/provider/symptom_log_post_provider.dart';
 import 'package:srikandi_sehat_app/provider/symptom_provider.dart';
 import 'package:srikandi_sehat_app/provider/symptom_log_get_detail.dart';
 import 'package:srikandi_sehat_app/screens/user/symptom_detail_screen.dart';
+import 'package:srikandi_sehat_app/widgets/action_button.dart';
 import 'package:srikandi_sehat_app/widgets/custom_form.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 
@@ -64,11 +65,19 @@ class LogSymptomButton extends StatelessWidget {
 
         if (context.mounted) {
           if (result.id != null) {
+            // Clear any previous state in the detail provider
+            final detailProvider = Provider.of<SymptomDetailProvider>(
+              context,
+              listen: false,
+            );
+            detailProvider.clear();
+
+            // Navigate to detail screen
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => ChangeNotifierProvider(
-                  create: (_) => SymptomDetailProvider(),
+                builder: (_) => ChangeNotifierProvider.value(
+                  value: detailProvider,
                   child: SymptomDetailScreen(symptomId: result.id!),
                 ),
               ),
@@ -111,42 +120,36 @@ class LogSymptomButton extends StatelessWidget {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     return Consumer<SymptomProvider>(
       builder: (context, symptomProvider, _) {
-        return ElevatedButton.icon(
-          onPressed: symptomProvider.isLoading
-              ? null
-              : () async {
-                  // Ensure symptoms are loaded before showing bottom sheet
-                  if (symptomProvider.symptoms.isEmpty) {
-                    await context.read<SymptomProvider>().fetchSymptoms();
-                  }
+        // Create a non-nullable callback
+        VoidCallback? onPressed;
+        if (!symptomProvider.isLoading) {
+          onPressed = () async {
+            if (symptomProvider.symptoms.isEmpty) {
+              await context.read<SymptomProvider>().fetchSymptoms();
+            }
+            if (context.mounted) {
+              _showLogSymptomsBottomSheet(context);
+            }
+          };
+        }
 
-                  if (context.mounted) {
-                    _showLogSymptomsBottomSheet(context);
-                  }
-                },
-          icon: const Icon(Icons.edit_note, color: Colors.white),
-          label: symptomProvider.isLoading
-              ? const SizedBox(
-                  height: 16,
-                  width: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : const Text(
-                  'Gejala',
-                  style: TextStyle(color: Colors.white),
-                ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor:
-                symptomProvider.isLoading ? Colors.grey : Colors.teal,
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+        return ActionButton(
+          icon: Icons.edit_note,
+          label: 'Gejala',
+          color: Colors.teal,
+          isActive: !symptomProvider.isLoading,
+          onPressed: onPressed ?? () {}, // Provide empty callback when null
+          loading: symptomProvider.isLoading,
+          loadingWidget: const SizedBox(
+            height: 16,
+            width: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Colors.white,
             ),
           ),
         );

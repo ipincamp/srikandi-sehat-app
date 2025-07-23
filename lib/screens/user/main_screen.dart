@@ -4,7 +4,7 @@ import 'package:srikandi_sehat_app/screens/user/education_screen.dart';
 import 'package:srikandi_sehat_app/screens/user/home_screen.dart';
 import 'package:srikandi_sehat_app/screens/user/profile_screen.dart';
 import 'package:srikandi_sehat_app/screens/user/support_screen.dart';
-import 'package:srikandi_sehat_app/screens/user/tracker_screen.dart';
+import 'package:srikandi_sehat_app/screens/user/cycle_tracking_screen.dart';
 import 'package:srikandi_sehat_app/widgets/image_modal.dart';
 import 'package:srikandi_sehat_app/widgets/navbar_button.dart'; // Import reusable NavBarButton
 
@@ -27,7 +27,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
   static const List<Widget> _widgetOptions = <Widget>[
     HomeScreen(),
-    TrackerScreen(),
+    CycleTrackingScreen(),
     EducationScreen(),
     SupportScreen(),
     ProfileScreen(),

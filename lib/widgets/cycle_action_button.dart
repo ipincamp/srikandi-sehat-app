@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:srikandi_sehat_app/widgets/action_button.dart';
 
 class CycleActionButtons extends StatelessWidget {
   final VoidCallback onStart;
@@ -18,7 +19,7 @@ class CycleActionButtons extends StatelessWidget {
       children: [
         // Start Cycle Button
         Expanded(
-          child: _buildActionButton(
+          child: ActionButton(
             icon: Icons.water_drop,
             label: 'Mulai Siklus',
             color: Colors.pink,
@@ -31,7 +32,7 @@ class CycleActionButtons extends StatelessWidget {
 
         // End Cycle Button
         Expanded(
-          child: _buildActionButton(
+          child: ActionButton(
             icon: Icons.check_circle_outline,
             label: 'Akhiri Siklus',
             color: Colors.pink,
