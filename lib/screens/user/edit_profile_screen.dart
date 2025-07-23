@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:srikandi_sehat_app/models/district_model.dart';
 import 'package:srikandi_sehat_app/models/village_model.dart';
 import 'package:srikandi_sehat_app/provider/profile_change_provider.dart';
 import 'package:srikandi_sehat_app/provider/district_provider.dart';
@@ -22,10 +23,9 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  // Ganti semua deklarasi controller Anda dengan ini
   final _formKey = GlobalKey<FormState>();
-
-// Controllers for all form fields
+  
+  // Controllers
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -40,7 +40,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _firstHaidController = TextEditingController();
   final _jobParentController = TextEditingController();
 
-// Controllers for derived fields
+  // Derived fields
   final _ageController = TextEditingController();
   final _imtController = TextEditingController();
   final _villageClassificationController = TextEditingController();
@@ -51,7 +51,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Panggil fetchDistricts dan loadInitialData
       context.read<DistrictProvider>().fetchDistricts();
       _loadInitialData();
     });
@@ -60,28 +59,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void _loadInitialData() {
     final userProfileProvider = context.read<UserProfileProvider>();
     final profileChangeProvider = context.read<ProfileChangeProvider>();
-    // Sekarang semua data ada di UserProfileProvider
+    
     _nameController.text = userProfileProvider.name ?? '';
     _emailController.text = userProfileProvider.email ?? '';
     _phoneController.text = profileChangeProvider.phone ?? '';
     _dobController.text = profileChangeProvider.dob ?? '';
     _heightController.text = profileChangeProvider.height?.toString() ?? '';
     _weightController.text = profileChangeProvider.weight?.toString() ?? '';
-    _districtController.text = profileChangeProvider.districtCode ?? '';
-    _villageController.text = profileChangeProvider.villageCode ?? '';
+    _districtController.text = profileChangeProvider.districtName ?? '';
+    _villageController.text = profileChangeProvider.villageName ?? '';
     _eduNowController.text = profileChangeProvider.eduNow ?? '';
     _eduParentController.text = profileChangeProvider.eduParent ?? '';
     _internetAccessController.text = profileChangeProvider.internetAccess ?? '';
     _firstHaidController.text = profileChangeProvider.firstHaid ?? '';
     _jobParentController.text = profileChangeProvider.jobParent ?? '';
 
-    if (_districtController.text.isNotEmpty) {
-      context.read<VillageProvider>().fetchVillages(_districtController.text);
+    if (profileChangeProvider.districtCode != null) {
+      context.read<VillageProvider>().fetchVillages(profileChangeProvider.districtCode!);
     }
 
     if (_dobController.text.isNotEmpty) _onDOBChanged();
-    if (_heightController.text.isNotEmpty &&
-        _weightController.text.isNotEmpty) {
+    if (_heightController.text.isNotEmpty && _weightController.text.isNotEmpty) {
       _onHeightWeightChanged();
     }
   }
@@ -94,7 +92,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _districtController.dispose();
     _villageController.dispose();
     _villageClassificationController.dispose();
-
     _dobController.dispose();
     _heightController.dispose();
     _weightController.dispose();
@@ -108,59 +105,48 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
-  void _handleDistrictChanged(String? value) {
-    _onDistrictChanged(value);
-  }
+  Future<void> _onDistrictChanged(String? districtCode) async {
+    if (districtCode == null || districtCode.isEmpty) return;
 
-  // void _handleVillageChanged(String? value) {
-  //   _onVillageChanged(value);
-  // }
+    final districtProvider = context.read<DistrictProvider>();
+    final selectedDistrict = districtProvider.districts.firstWhere(
+      (d) => d.code == districtCode,
+      orElse: () => District(code: '', name: ''),
+    );
 
-  /// Handler saat kecamatan dipilih
-  Future<void> _onDistrictChanged(String? value) async {
-    if (value == null || value.isEmpty) return;
-
-    _districtController.text = value;
+    _districtController.text = selectedDistrict.name;
     _villageController.clear();
     _villageClassificationController.clear();
 
     final villageProvider = context.read<VillageProvider>();
-    await villageProvider.fetchVillages(value);
+    await villageProvider.fetchVillages(districtCode);
 
-    // Jika user sudah pernah memilih desa sebelumnya, update classification-nya
-    final selectedVillage =
-        villageProvider.villages.cast<Village?>().firstWhere(
-              (v) => v?.code == _villageController.text,
-              orElse: () => null,
-            );
-
-    if (selectedVillage != null) {
-      _villageClassificationController.text =
-          selectedVillage.classification.capitalizeWords();
-    }
+    // Update profile change provider
+    context.read<ProfileChangeProvider>().setDistrictCode(districtCode);
+    context.read<ProfileChangeProvider>().setDistrictName(selectedDistrict.name);
   }
 
-  /// Handler saat desa dipilih
-  void _onVillageChanged(String? value) {
-    _villageController.text = value ?? '';
+  void _onVillageChanged(String? villageCode) {
+    if (villageCode == null || villageCode.isEmpty) return;
 
-    final villages = context.read<VillageProvider>().villages;
-    final village = villages.cast<Village?>().firstWhere(
-          (v) => v?.code == value,
-          orElse: () => null,
-        );
+    final villageProvider = context.read<VillageProvider>();
+    final selectedVillage = villageProvider.villages.firstWhere(
+      (v) => v.code == villageCode,
+      orElse: () => Village(code: '', name: '', classification: ''),
+    );
 
-    if (village != null) {
-      _villageClassificationController.text =
-          village.classification.capitalizeWords(); // "Desa" atau "Kota"
-    } else {
-      _villageClassificationController.clear();
-    }
+    _villageController.text = selectedVillage.name;
+    _villageClassificationController.text = selectedVillage.classification.capitalizeWords();
+
+    // Update profile change provider
+    context.read<ProfileChangeProvider>().setVillageCode(villageCode);
+    context.read<ProfileChangeProvider>().setVillageName(selectedVillage.name);
   }
 
   void _onHeightWeightChanged() {
     final height = double.tryParse(_heightController.text);
     final weight = double.tryParse(_weightController.text);
+    
     if (height != null && weight != null && height > 0) {
       final imtValue = calculateIMT(height, weight);
       if (imtValue == null) return;
@@ -180,7 +166,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (date.isEmpty || !date.contains('/')) return '';
     try {
       final parts = date.split('/');
-      return '${parts[2]}-${parts[1]}-${parts[0]}'; // YYYY-MM-DD
+      return '${parts[2]}-${parts[1]}-${parts[0]}';
     } catch (e) {
       return '';
     }
@@ -191,13 +177,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     setState(() => _isLoading = true);
 
-    // Sesuaikan dengan nama provider yang benar untuk update profil
-    final profileProvider = context.read<UserProfileProvider>();
+    final profileChangeProvider = context.read<ProfileChangeProvider>();
     final Map<String, dynamic> payload = {
       'name': _nameController.text,
       'email': _emailController.text,
       'phone': _phoneController.text,
-      'address': _villageController.text,
+      'address': profileChangeProvider.villageCode ?? '',
       'birthdate': _formatDateForAPI(_dobController.text),
       'tb_cm': int.tryParse(_heightController.text) ?? 0,
       'bb_kg': double.tryParse(_weightController.text) ?? 0,
@@ -206,63 +191,59 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       'inet_access': _internetAccessController.text,
       'first_haid': _firstHaidController.text,
       'job_parent': _jobParentController.text,
+      'district': profileChangeProvider.districtCode ?? '',
     };
 
-    // --- TAMBAHKAN BLOK INI UNTUK DEBUGGING ---
-    // Untuk mencetak JSON dengan format yang rapi (pretty print)
-    // const jsonEncoder = JsonEncoder.withIndent('  ');
-    // final prettyJson = jsonEncoder.convert(payload);
-    // debugPrint("✅ Payload yang akan dikirim:\n$prettyJson");
-    // ------------------------------------------
-
-    // Gunakan arsitektur provider yang sudah dipisah
-    final profileChangeProvider = context.read<ProfileChangeProvider>();
-    final success = await profileChangeProvider.getProfile(payload);
+    await profileChangeProvider.updateProfile(payload);
 
     if (!mounted) return;
     setState(() => _isLoading = false);
 
-    if (success) {
-      // Panggil getProfile dari UserProfileProvider untuk refresh data di seluruh app
+    // Check if there's an error message to determine success
+    if (profileChangeProvider.errorMessage == null || profileChangeProvider.errorMessage!.isEmpty) {
       await context.read<UserProfileProvider>().getProfile();
       if (mounted) {
-        CustomAlert.show(context, 'Profil berhasil diperbarui',
-            type: AlertType.success);
-        Navigator.pop(context);
+        CustomAlert.show(
+          context, 
+          'Profil berhasil diperbarui',
+          type: AlertType.success,
+        );
+        Navigator.pushReplacementNamed(context, '/detail-profile');
       }
     } else {
-      // CustomAlert.show(context, profileProvider.errorMessage,
-      //     type: AlertType.error);
-      print(profileProvider.errorMessage);
+      if (mounted) {
+        CustomAlert.show(
+          context, 
+          'Gagal memperbarui profil: ${profileChangeProvider.errorMessage}',
+          type: AlertType.error,
+        );
+      }
     }
   }
 
-  Future<bool> _showLogoutConfirmation() async {
+  Future<bool> _showCancelConfirmation() async {
     return await CustomConfirmationPopup.show(
-          context,
-          title: 'Konfirmasi Batal',
-          message: 'Apakah Anda yakin ingin membatalkan pengeditan?',
-          confirmText: 'Ya',
-          cancelText: 'Batal',
-          icon: Icons.cancel,
-        ) ??
-        false;
+      context,
+      title: 'Konfirmasi Batal',
+      message: 'Apakah Anda yakin ingin membatalkan pengeditan?',
+      confirmText: 'Ya',
+      cancelText: 'Tidak',
+      icon: Icons.warning,
+      confirmColor: Colors.pink,
+    ) ?? false;
   }
 
   @override
   Widget build(BuildContext context) {
-    final districtProvider = Provider.of<DistrictProvider>(context);
+    final districtProvider = context.watch<DistrictProvider>();
     final districtItems = districtProvider.districts
-        .map(
-            (e) => DropdownItem(value: e.code, label: e.name.capitalizeWords()))
+        .map((e) => DropdownItem(value: e.code, label: e.name.capitalizeWords()))
         .toList();
 
-    final villageItems = context
-        .watch<VillageProvider>()
-        .villages
-        .map(
-            (v) => DropdownItem(value: v.code, label: v.name.capitalizeWords()))
+    final villageItems = context.watch<VillageProvider>().villages
+        .map((v) => DropdownItem(value: v.code, label: v.name.capitalizeWords()))
         .toList();
+
     const educationList = [
       'Tidak Sekolah',
       'SD/MI',
@@ -271,206 +252,313 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       'D1/D2/D3',
       'S1/S2/S3'
     ];
-    // ignore: deprecated_member_use
+
     return WillPopScope(
-      onWillPop: () async => await _showLogoutConfirmation(),
+      onWillPop: () async {
+        final shouldCancel = await _showCancelConfirmation();
+        if (shouldCancel && mounted) Navigator.pop(context);
+        return false;
+      },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Edit Profile'),
+          title: const Text(
+            'Edit Profile',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          backgroundColor: Colors.pink,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () async {
-              final cancel = await _showLogoutConfirmation();
-              if (cancel && mounted) Navigator.pop(context);
+              final shouldCancel = await _showCancelConfirmation();
+              if (shouldCancel && mounted) Navigator.pop(context);
             },
           ),
+          elevation: 0,
         ),
-        body: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Basic Info
-                  CustomFormField(
-                    label: 'Nama',
-                    controller: _nameController,
-                    placeholder: '',
-                    enabled: false,
-                  ),
-                  const SizedBox(height: 16),
-                  CustomFormField(
-                    placeholder: 'Masukkan email',
-                    label: 'Email',
-                    controller: _emailController,
-                    isEmail: true,
-                    enabled: false,
-                  ),
-                  const SizedBox(height: 16),
-                  CustomFormField(
-                    placeholder: 'Contoh : 08123456789',
-                    label: 'No. HP',
-                    controller: _phoneController,
-                    type: CustomFormFieldType.number,
-                  ),
-                  const SectionDivider(
-                    title: 'Alamat Domisili',
-                    topSpacing: 24,
-                    bottomSpacing: 20,
-                    textSize: 18,
-                    textColor: Colors.black,
-                    lineColor: Color.fromARGB(255, 255, 161, 192),
-                  ),
-                  const SizedBox(height: 16),
-                  SearchableDropdownField(
-                    label: 'Kecamatan',
-                    placeholder: 'Pilih kecamatan',
-                    controller: _districtController,
-                    items: districtItems,
-                    onChanged: _handleDistrictChanged,
-                  ),
-                  const SizedBox(height: 16),
-                  SearchableDropdownField(
-                    label: 'Desa/Kelurahan',
-                    placeholder: 'Pilih desa atau kelurahan',
-                    controller: _villageController,
-                    items: villageItems,
-                    onChanged: _onVillageChanged,
-                    enabled: _districtController.text.isNotEmpty,
-                  ),
-                  const SizedBox(height: 16),
-                  CustomFormField(
-                    label: 'Klasifikasi Wilayah',
-                    controller: _villageClassificationController,
-                    enabled: false,
-                    placeholder: '-',
-                  ),
-
-                  const SectionDivider(
-                    title: 'Informasi Pribadi',
-                    topSpacing: 24,
-                    bottomSpacing: 20,
-                    textSize: 18,
-                    textColor: Colors.black,
-                    lineColor: Color.fromARGB(255, 255, 161, 192),
-                  ),
-                  CustomFormField(
-                    placeholder: 'Hari-Bulan-Tahun',
-                    label: 'Tanggal Lahir',
-                    type: CustomFormFieldType.date,
-                    controller: _dobController,
-                    onChanged: (_) => _onDOBChanged(),
-                  ),
-                  const SizedBox(height: 16),
-                  CustomFormField(
-                    placeholder: 'Masukkan tinggi badan',
-                    label: 'Tinggi Badan (cm)',
-                    controller: _heightController,
-                    type: CustomFormFieldType.number,
-                    onChanged: (_) => _onHeightWeightChanged(),
-                  ),
-                  const SizedBox(height: 16),
-                  CustomFormField(
-                    placeholder: 'Masukkan berat badan',
-                    label: 'Berat Badan (kg)',
-                    controller: _weightController,
-                    type: CustomFormFieldType.number,
-                    onChanged: (_) => _onHeightWeightChanged(),
-                  ),
-                  const SizedBox(height: 16),
-                  // if (_imt.isNotEmpty)
-                  CustomFormField(
-                    label: 'IMT',
-                    controller: _imtController,
-                    enabled: false,
-                    placeholder: '-',
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  CustomFormField(
-                    placeholder: 'Masukkan umur pertama haid',
-                    label: 'Umur Pertama Haid',
-                    type: CustomFormFieldType.number,
-                    controller: _firstHaidController,
-                    minValue: 9,
-                    maxValue: 30,
-                  ),
-                  const SizedBox(height: 16),
-
-                  CustomFormField(
-                      placeholder: 'Pilih Pendidikan Sekarang',
-                      label: 'Pendidikan Sekarang',
-                      controller: _eduNowController,
-                      type: CustomFormFieldType.dropdown,
-                      items: educationList),
-                  const SizedBox(height: 16),
-
-                  CustomFormField(
-                    placeholder: 'Pilih akses internet',
-                    label: 'Akses Internet',
-                    controller: _internetAccessController,
-                    type: CustomFormFieldType.dropdown,
-                    items: const [
-                      'wifi',
-                      'seluler',
-                    ],
-                  ),
-                  const SectionDivider(
-                    title: 'Data Orang Tua',
-                    topSpacing: 24,
-                    bottomSpacing: 20,
-                    textSize: 18,
-                    textColor: Colors.black,
-                    lineColor: Color.fromARGB(255, 255, 161, 192),
-                  ),
-
-                  CustomFormField(
-                    placeholder: 'Pilih Pendidikan Orang Tua',
-                    label: 'Riwayat Pendidikan Orang Tua',
-                    controller: _eduParentController,
-                    type: CustomFormFieldType.dropdown,
-                    items: educationList,
-                  ),
-                  const SizedBox(height: 16),
-                  CustomFormField(
-                    placeholder: 'Pekerjaan Orang Tua',
-                    label: 'Pekerjaan Orang Tua',
-                    controller: _jobParentController,
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Buttons
-                  _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : Row(
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.pink, Colors.white],
+              stops: [0.1, 0.1],
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Form(
+              key: _formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Basic Info Section
+                    Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
                           children: [
-                            Expanded(
-                              child: CustomButton(
-                                label: 'Batal',
-                                backgroundColor:
-                                    Colors.grey[300] ?? Colors.grey,
-                                textColor: Colors.black,
-                                onPressed: () async {
-                                  final cancel =
-                                      await _showLogoutConfirmation();
-                                  if (cancel && mounted) Navigator.pop(context);
-                                },
-                              ),
+                            CustomFormField(
+                              label: 'Nama',
+                              controller: _nameController,
+                              placeholder: '',
+                              enabled: false,
+                              prefixIcon: Icons.person,
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: CustomButton(
-                                label: 'Simpan',
-                                onPressed: _saveProfile,
-                              ),
+                            const SizedBox(height: 16),
+                            CustomFormField(
+                              label: 'Email',
+                              controller: _emailController,
+                              placeholder: 'Masukkan email',
+                              isEmail: true,
+                              enabled: false,
+                              prefixIcon: Icons.email,
+                            ),
+                            const SizedBox(height: 16),
+                            CustomFormField(
+                              label: 'No. HP',
+                              controller: _phoneController,
+                              placeholder: 'Contoh: 08123456789',
+                              type: CustomFormFieldType.number,
+                              prefixIcon: Icons.phone,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Nomor HP tidak boleh kosong';
+                                }
+                                if (value.length < 11) {
+                                  return 'Nomor HP minimal 11 digit';
+                                }
+                                if (value.length > 15) {
+                                  return 'Nomor HP maksimal 15 digit';
+                                }
+                                return null;
+                              },
                             ),
                           ],
                         ),
-                  const SizedBox(width: 32),
-                ],
+                      ),
+                    ),
+
+                    // Address Section
+                    const SectionDivider(
+                      title: 'Alamat Domisili',
+                      topSpacing: 24,
+                      bottomSpacing: 16,
+                      textSize: 18,
+                      textColor: Colors.black87,
+                      lineColor: Colors.pink,
+                    ),
+                    Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            SearchableDropdownField(
+                              label: 'Kecamatan',
+                              placeholder: 'Pilih kecamatan',
+                              controller: _districtController,
+                              items: districtItems,
+                              onChanged: _onDistrictChanged,
+                            ),
+                            const SizedBox(height: 16),
+                            SearchableDropdownField(
+                              label: 'Desa/Kelurahan',
+                              placeholder: 'Pilih desa atau kelurahan',
+                              controller: _villageController,
+                              items: villageItems,
+                              onChanged: _onVillageChanged,
+                              enabled: _districtController.text.isNotEmpty,
+                            ),
+                            const SizedBox(height: 16),
+                            CustomFormField(
+                              label: 'Klasifikasi Wilayah',
+                              controller: _villageClassificationController,
+                              enabled: false,
+                              placeholder: '-',
+                              prefixIcon: Icons.location_city,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // Personal Info Section
+                    const SectionDivider(
+                      title: 'Informasi Pribadi',
+                      topSpacing: 24,
+                      bottomSpacing: 16,
+                      textSize: 18,
+                      textColor: Colors.black87,
+                      lineColor: Colors.pink,
+                    ),
+                    Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            CustomFormField(
+                              label: 'Tanggal Lahir',
+                              placeholder: 'Hari-Bulan-Tahun',
+                              type: CustomFormFieldType.date,
+                              controller: _dobController,
+                              onChanged: (_) => _onDOBChanged(),
+                              prefixIcon: Icons.calendar_today,
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: CustomFormField(
+                                    label: 'Tinggi Badan (cm)',
+                                    placeholder: 'Masukkan tinggi badan',
+                                    controller: _heightController,
+                                    type: CustomFormFieldType.number,
+                                    onChanged: (_) => _onHeightWeightChanged(),
+                                    prefixIcon: Icons.height,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: CustomFormField(
+                                    label: 'Berat Badan (kg)',
+                                    placeholder: 'Masukkan berat badan',
+                                    controller: _weightController,
+                                    type: CustomFormFieldType.number,
+                                    onChanged: (_) => _onHeightWeightChanged(),
+                                    prefixIcon: Icons.monitor_weight,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            CustomFormField(
+                              label: 'IMT',
+                              controller: _imtController,
+                              enabled: false,
+                              placeholder: '-',
+                              prefixIcon: Icons.calculate,
+                            ),
+                            const SizedBox(height: 16),
+                            CustomFormField(
+                              label: 'Umur Pertama Haid',
+                              placeholder: 'Masukkan umur pertama haid',
+                              type: CustomFormFieldType.number,
+                              controller: _firstHaidController,
+                              minValue: 9,
+                              maxValue: 30,
+                              prefixIcon: Icons.female,
+                            ),
+                            const SizedBox(height: 16),
+                            CustomFormField(
+                              label: 'Pendidikan Sekarang',
+                              placeholder: 'Pilih Pendidikan Sekarang',
+                              controller: _eduNowController,
+                              type: CustomFormFieldType.dropdown,
+                              items: educationList,
+                              prefixIcon: Icons.school,
+                            ),
+                            const SizedBox(height: 16),
+                            CustomFormField(
+                              label: 'Akses Internet',
+                              placeholder: 'Pilih akses internet',
+                              controller: _internetAccessController,
+                              type: CustomFormFieldType.dropdown,
+                              items: const ['wifi', 'seluler'],
+                              prefixIcon: Icons.wifi,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // Parent Data Section
+                    const SectionDivider(
+                      title: 'Data Orang Tua',
+                      topSpacing: 24,
+                      bottomSpacing: 16,
+                      textSize: 18,
+                      textColor: Colors.black87,
+                      lineColor: Colors.pink,
+                    ),
+                    Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            CustomFormField(
+                              label: 'Riwayat Pendidikan Orang Tua',
+                              placeholder: 'Pilih Pendidikan Orang Tua',
+                              controller: _eduParentController,
+                              type: CustomFormFieldType.dropdown,
+                              items: educationList,
+                              prefixIcon: Icons.school,
+                            ),
+                            const SizedBox(height: 16),
+                            CustomFormField(
+                              label: 'Pekerjaan Orang Tua',
+                              placeholder: 'Pekerjaan Orang Tua',
+                              controller: _jobParentController,
+                              prefixIcon: Icons.work,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // Action Buttons
+                    const SizedBox(height: 32),
+                    _isLoading
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.pink),
+                            ),
+                          )
+                        : Row(
+                            children: [
+                              Expanded(
+                                child: CustomButton(
+                                  label: 'Batal',
+                                  backgroundColor: Colors.grey[300]!,
+                                  textColor: Colors.black,
+                                  onPressed: () async {
+                                    final shouldCancel = await _showCancelConfirmation();
+                                    if (shouldCancel && mounted) Navigator.pop(context);
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: CustomButton(
+                                  label: 'Simpan',
+                                  backgroundColor: Colors.pink,
+                                  textColor: Colors.white,
+                                  onPressed: _saveProfile,
+                                ),
+                              ),
+                            ],
+                          ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
             ),
           ),

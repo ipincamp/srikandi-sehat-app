@@ -2,41 +2,77 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/provider/user_profile_provider.dart';
 import 'package:srikandi_sehat_app/utils/user_calc.dart';
-import 'package:srikandi_sehat_app/widgets/title_section_divider.dart';
 
 class DetailProfileScreen extends StatelessWidget {
   const DetailProfileScreen({super.key});
 
-  Widget buildListTile({
+  Widget buildProfileCard({
     required IconData icon,
     required String title,
-    required dynamic subtitle,
+    required dynamic value,
     required Color color,
     Widget? trailing,
-    VoidCallback? onTap,
   }) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: color.withOpacity(0.2),
-        child: Icon(icon, color: color),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 2,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      title: Text(
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(
+            value.toString(),
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+        trailing: trailing,
+      ),
+    );
+  }
+
+  Widget buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Text(
         title,
         style: const TextStyle(
-          fontSize: 12, // label kecil
-          color: Color.fromARGB(255, 77, 77, 77),
-        ),
-      ),
-      subtitle: Text(
-        subtitle.toString(),
-        style: const TextStyle(
-          fontSize: 14, // isi lebih besar
+          fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: Colors.black87,
+          color: Colors.pink,
         ),
       ),
-      trailing: trailing,
-      onTap: onTap,
     );
   }
 
@@ -44,128 +80,115 @@ class DetailProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = context.watch<UserProfileProvider>().userData;
     final detail = user['profile'] ?? {};
+    Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detail Profile'),
+        title: const Text(
+          'Detail Profil',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.pink,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+      body: Container(
+        decoration: const BoxDecoration(color: Colors.transparent),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SectionDivider(
-                title: 'Kontak Pribadi',
-                topSpacing: 16,
-                bottomSpacing: 8,
-                textSize: 18,
-                textColor: Colors.black87,
-                lineColor: Colors.grey,
-                linePosition: LinePosition.bottom,
+              // Personal Contact Section
+              buildSectionHeader('Kontak Pribadi'),
+              buildProfileCard(
+                icon: Icons.person_outline,
+                title: 'Nama Lengkap',
+                value: user['name'] ?? 'Belum diisi',
+                color: Colors.blueAccent,
               ),
-              buildListTile(
-                icon: Icons.person,
-                title: 'Nama',
-                subtitle: user['name'] ?? 'Tidak tersedia',
-                color: Colors.blue,
-              ),
-              buildListTile(
-                icon: Icons.email,
+              buildProfileCard(
+                icon: Icons.email_outlined,
                 title: 'Email',
-                subtitle: user['email'] ?? 'Tidak tersedia',
+                value: user['email'] ?? 'Belum diisi',
                 color: Colors.green,
               ),
-              buildListTile(
-                icon: Icons.phone,
-                title: 'Telepon',
-                subtitle: detail['phone'] ?? 'Tidak tersedia',
+              buildProfileCard(
+                icon: Icons.phone_android_outlined,
+                title: 'Nomor Telepon',
+                value: detail['phone'] ?? 'Belum diisi',
                 color: Colors.orange,
               ),
-              // buildListTile(
-              //   icon: Icons.location_on,
-              //   title: 'Alamat',
-              //   subtitle: detail['address'] ?? 'Tidak tersedia',
-              //   color: Colors.red,
-              // ),
-              const SectionDivider(
-                title: 'Informasi Pribadi',
-                topSpacing: 24,
-                bottomSpacing: 12,
-                textSize: 18,
-                textColor: Colors.black87,
-                lineColor: Colors.grey,
-                linePosition: LinePosition.bottom,
-              ),
-              buildListTile(
-                icon: Icons.calendar_month_rounded,
+
+              // Personal Information Section
+              buildSectionHeader('Informasi Pribadi'),
+              buildProfileCard(
+                icon: Icons.cake_outlined,
                 title: 'Tanggal Lahir',
-                subtitle: detail['birthdate'] != null
-                    ? '${detail['birthdate']} | ${calculateAgeFromString(detail['birthdate'])} tahun'
-                    : 'Tidak tersedia',
-                color: Colors.orange,
+                value: detail['birthdate'] != null
+                    ? '${detail['birthdate']}\n(${calculateAgeFromString(detail['birthdate'])} tahun)'
+                    : 'Belum diisi',
+                color: Colors.purple,
               ),
-              buildListTile(
-                icon: Icons.accessibility,
-                title: 'Tinggi Badan dan Berat Badan',
-                subtitle:
-                    '${detail['height_cm']} cm | ${detail['weight_kg']} kg',
+              buildProfileCard(
+                icon: Icons.height_outlined,
+                title: 'Tinggi & Berat Badan',
+                value:
+                    '${detail['height_cm'] ?? '-'} cm | ${detail['weight_kg'] ?? '-'} kg',
                 color: Colors.blue,
               ),
-
-              buildListTile(
-                icon: Icons.monitor_weight,
-                title: 'Indeks Massa Tubuh (BMI)',
-                subtitle: detail['bmi'] != null && detail['bmi'] is num
-                    ? '${detail['bmi']} kg/m² | ${getIMTCategory(detail['bmi'])}'
-                    : 'Tidak tersedia',
-                color: Colors.green,
+              buildProfileCard(
+                icon: Icons.monitor_weight_outlined,
+                title: 'Indeks Massa Tubuh (IMT)',
+                value: detail['bmi'] != null && detail['bmi'] is num
+                    ? '${detail['bmi']} kg/m² (${getIMTCategory(detail['bmi'])})'
+                    : 'Belum dihitung',
+                color: Colors.teal,
               ),
-
-              buildListTile(
-                icon: Icons.location_on,
+              buildProfileCard(
+                icon: Icons.location_on_outlined,
                 title: 'Alamat',
-                subtitle: detail['address'] ?? 'Tidak tersedia',
-                color: Colors.red,
+                value: detail['address'] ?? 'Belum diisi',
+                color: Colors.redAccent,
               ),
-              buildListTile(
-                icon: Icons.location_on_rounded,
+              buildProfileCard(
+                icon: Icons.category_outlined,
                 title: 'Kategori Tempat Tinggal',
-                subtitle: 'Tidak tersedia',
-                color: Colors.blue,
+                value: 'Belum diisi',
+                color: Colors.indigo,
               ),
-              buildListTile(
-                icon: Icons.school,
+              buildProfileCard(
+                icon: Icons.school_outlined,
                 title: 'Pendidikan Terakhir',
-                subtitle: detail['last_education'] ?? 'Tidak tersedia',
-                color: Colors.orangeAccent,
+                value: detail['last_education'] ?? 'Belum diisi',
+                color: Colors.amber,
               ),
-              buildListTile(
-                icon: Icons.wifi,
+              buildProfileCard(
+                icon: Icons.wifi_outlined,
                 title: 'Akses Internet',
-                subtitle: detail['internet_access'] ?? 'Tidak tersedia',
-                color: Colors.greenAccent,
+                value: detail['internet_access'] ?? 'Belum diisi',
+                color: Colors.lightBlue,
               ),
-              const SectionDivider(
-                title: 'Informasi Orang Tua',
-                topSpacing: 16,
-                bottomSpacing: 8,
-                textSize: 18,
-                textColor: Colors.black87,
-                lineColor: Colors.grey,
-                linePosition: LinePosition.bottom,
-              ),
-              buildListTile(
+
+              // Parent Information Section
+              buildSectionHeader('Informasi Orang Tua'),
+              buildProfileCard(
                 icon: Icons.school_outlined,
                 title: 'Pendidikan Terakhir Orang Tua',
-                subtitle: detail['last_parent_education'] ?? 'Tidak tersedia',
-                color: Colors.blue,
+                value: detail['last_parent_education'] ?? 'Belum diisi',
+                color: Colors.deepOrange,
               ),
-              buildListTile(
+              buildProfileCard(
                 icon: Icons.work_outline,
                 title: 'Pekerjaan Orang Tua',
-                subtitle: detail['last_parent_job'] ?? 'Tidak tersedia',
-                color: Colors.blue,
+                value: detail['last_parent_job'] ?? 'Belum diisi',
+                color: Colors.brown,
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),

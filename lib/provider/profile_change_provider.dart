@@ -44,8 +44,12 @@ class ProfileChangeProvider with ChangeNotifier {
   String? get firstHaid => _firstHaid;
   String? get jobParent => _jobParent;
 
+  get districtName => null;
+
+  get villageName => null;
+
   // FIX: Hapus parameter yang tidak perlu dari signature
-  Future<void> updateProfile() async {
+  Future<void> updateProfile([Map<String, dynamic>? payload]) async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
@@ -140,4 +144,12 @@ class ProfileChangeProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void setDistrictCode(String districtCode) {}
+
+  void setDistrictName(String name) {}
+
+  void setVillageCode(String villageCode) {}
+
+  void setVillageName(String name) {}
 }

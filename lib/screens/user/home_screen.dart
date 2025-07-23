@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:srikandi_sehat_app/provider/cycle_provider.dart';
 import 'package:srikandi_sehat_app/provider/symptom_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
@@ -16,14 +17,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  bool _showProfileCard = false;
+
   @override
   void initState() {
     super.initState();
     _initializeData();
-    // context.read<CycleProvider>().loadCycleStatus();
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   Provider.of<SymptomProvider>(context, listen: false).fetchSymptoms();
-    // });
+    _checkProfileStatus();
   }
 
   Future<void> _initializeData() async {
@@ -41,7 +41,13 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Handler: mulai siklus
+  Future<void> _checkProfileStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _showProfileCard = !(prefs.getBool('hasProfile') ?? false);
+    });
+  }
+
   Future<void> _handleStartCycle() async {
     try {
       await context.read<CycleProvider>().startCycle();
@@ -57,7 +63,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Handler: akhiri siklus
   Future<void> _handleEndCycle() async {
     try {
       await context.read<CycleProvider>().endCycle();
@@ -73,6 +78,56 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Widget _buildProfileCompletionCard() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(context, '/edit-profile').then((_) async {
+          await _checkProfileStatus();
+        });
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16.0),
+        margin: const EdgeInsets.only(bottom: 20),
+        decoration: BoxDecoration(
+          color: Colors.orange.shade50,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: Colors.orange.shade200),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.warning_amber, color: Colors.orange.shade600),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Lengkapi Profil Anda',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange.shade800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Silakan lengkapi data profil Anda untuk melanjutkan',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.orange.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: Colors.orange.shade600),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMenstruating = context.watch<CycleProvider>().isMenstruating;
@@ -82,25 +137,17 @@ class _HomeScreenState extends State<HomeScreen> {
         automaticallyImplyLeading: false,
         title: const Text(
           'SriKandi Sehat',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
+        backgroundColor: Colors.pink,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Halo, User!',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Kartu Informasi Siklus
+            const SizedBox(height: 10),
+            if (_showProfileCard) _buildProfileCompletionCard(),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20.0),
@@ -195,7 +242,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 20),
-
             Text(
               'Aksi Cepat',
               style: TextStyle(
@@ -212,8 +258,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: CycleActionButtons(
                     onStart: !isMenstruating ? _handleStartCycle : () {},
                     onEnd: isMenstruating ? _handleEndCycle : () {},
-                    isMenstruating:
-                        isMenstruating, // Gunakan nilai dari provider
+                    isMenstruating: isMenstruating,
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -223,9 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-
             const SizedBox(height: 20),
-
             Text(
               'Tips & Edukasi Hari Ini',
               style: TextStyle(
@@ -246,7 +289,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            ReminderTile(message: 'Jangan lupa minum air cukup hari ini!'),
+            const ReminderTile(
+                message: 'Jangan lupa minum air cukup hari ini!'),
           ],
         ),
       ),

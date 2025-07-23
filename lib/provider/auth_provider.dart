@@ -40,6 +40,7 @@ class AuthProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         final data = responseData['data'] as Map<String, dynamic>;
         final user = data['user'] as Map<String, dynamic>;
+        final profile = user['profile'] as Map<String, dynamic>?;
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isLoggedIn', true);
@@ -47,6 +48,9 @@ class AuthProvider with ChangeNotifier {
         await prefs.setString('token', data['token'] ?? '');
         await prefs.setString('role', user['role'] ?? '');
         await prefs.setString('name', user['name'] ?? '');
+
+        // Hanya simpan status apakah profile ada atau tidak
+        await prefs.setBool('hasProfile', profile != null);
 
         notifyListeners();
         return true;
