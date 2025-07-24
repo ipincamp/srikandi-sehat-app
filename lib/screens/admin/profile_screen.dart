@@ -13,6 +13,9 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  bool _isLoading = false;
+  bool _notificationsEnabled = true;
+
   String? _name;
   String? _email;
   // String? _role;
@@ -20,26 +23,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(_loadProfile);
+    Future.microtask(
+      _loadProfile,
+    );
   }
 
-  Future<void> _loadProfile() async {
+  Future<void> _loadProfile({bool forceRefresh = false}) async {
+    setState(() => _isLoading = true);
     final userProvider =
         Provider.of<UserProfileProvider>(context, listen: false);
 
     try {
-      final profile = await userProvider.getProfile();
-      if (profile != null && mounted) {
-        setState(() {
-          _name = profile['name'];
-          _email = profile['email'];
-          // _role = profile['role'];
-        });
-      }
+      await userProvider.getProfile(forceRefresh: forceRefresh);
     } catch (e) {
-      CustomAlert.show(context, 'Gagal memuat profil', type: AlertType.error);
+      if (mounted) {
+        CustomAlert.show(context, 'Gagal memuat profil', type: AlertType.error);
+      }
     } finally {
-      if (mounted) {}
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -63,6 +64,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProfileProvider>(context);
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -74,8 +76,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           const SizedBox(height: 16),
           ProfileTile(
-            name: _name,
-            email: _email,
+            name: userProvider.name,
+            email: userProvider.email,
             onIconTap: () {
               // arahkan ke EditProfile atau lainnya
             },

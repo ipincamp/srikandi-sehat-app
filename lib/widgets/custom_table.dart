@@ -109,7 +109,7 @@ class CustomTable extends StatelessWidget {
               final user = users[index];
               return Container(
                 padding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                    const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
                 decoration: BoxDecoration(
                   color: index % 2 == 0 ? Colors.white : Colors.grey[50],
                   border: const Border(
@@ -146,7 +146,7 @@ class CustomTable extends StatelessWidget {
                         label: 'Detail',
                         textSize: 12,
                         padding: const EdgeInsets.symmetric(
-                            vertical: 6, horizontal: 8),
+                            vertical: 2, horizontal: 4),
                         onPressed: () {},
                       ),
                     ),

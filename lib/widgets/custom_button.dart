@@ -29,7 +29,7 @@ class CustomButton extends StatelessWidget {
     this.isLoading = false,
     this.isDisabled = false,
     this.fontWeight = FontWeight.w600,
-    this.padding = const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+    this.padding = const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
   });
 
   @override

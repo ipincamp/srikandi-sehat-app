@@ -5,7 +5,7 @@ import 'package:srikandi_sehat_app/screens/user/home_screen.dart';
 import 'package:srikandi_sehat_app/screens/user/profile_screen.dart';
 import 'package:srikandi_sehat_app/screens/user/support_screen.dart';
 import 'package:srikandi_sehat_app/screens/user/cycle_tracking_screen.dart';
-import 'package:srikandi_sehat_app/widgets/image_modal.dart';
+import 'package:srikandi_sehat_app/widgets/health_tips_modal.dart';
 import 'package:srikandi_sehat_app/widgets/navbar_button.dart'; // Import reusable NavBarButton
 
 class User {
@@ -71,9 +71,16 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
       // Delay sebentar agar context aman dipakai
       Future.delayed(Duration.zero, () {
-        ImageModal.show(
+        HealthTipsModal.show(
           context,
-          'assets/images/modal-image.png'
+          'Kebersihan Diri',
+          [
+            'Mengganti pembalut sebanyak 3-5 kali dalam sehari.',
+            'Membersihkan organ intim terlebih dulu sebelum mengganti pembalut.',
+            'Cuci tangan sampai bersih usai membuang pembalut serta sebelum mengganti pembalut.',
+            'Rutin mengganti celana dalam untuk menghindari resiko tidak nyaman di area kewanitaan. Pastikan memakai celana dalam yang terbuat dari bahan yang menyerap keringat.',
+            'Menjaga kebersihan badan dengan mandi, keramas, dan potong kuku/ menjaga kebersihan kuku.',
+          ],
         );
       });
     }

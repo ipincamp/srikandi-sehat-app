@@ -135,6 +135,7 @@ class AuthProvider with ChangeNotifier {
           'Authorization': 'Bearer $token',
         },
       );
+      await prefs.clear();
 
       if (response.statusCode == 200) {
         await prefs.setBool('isLoggedIn', false);
@@ -144,8 +145,6 @@ class AuthProvider with ChangeNotifier {
         notifyListeners();
         return true;
       } else if (response.statusCode == 401) {
-        // ✅ Token expired — clear & redirect
-        await prefs.clear();
         notifyListeners();
         if (context.mounted) {
           Navigator.of(context)

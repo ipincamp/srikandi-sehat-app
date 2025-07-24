@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/provider/symptom_log_post_provider.dart';
-import 'package:srikandi_sehat_app/provider/symptom_provider.dart';
+import 'package:srikandi_sehat_app/provider/symptom_get_provider.dart';
 import 'package:srikandi_sehat_app/provider/symptom_log_get_detail.dart';
 import 'package:srikandi_sehat_app/screens/user/symptom_detail_screen.dart';
 import 'package:srikandi_sehat_app/widgets/action_button.dart';

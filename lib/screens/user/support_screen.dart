@@ -6,7 +6,12 @@ class SupportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Dukungan')),
+      appBar: AppBar(
+          backgroundColor: Colors.pink,
+          title: const Text(
+            'Dukungan',
+            style: TextStyle(color: Colors.white),
+          )),
       body: const Center(child: Text('Butuh Bantuan? Hubungi Ahli Kami!')),
     );
   }

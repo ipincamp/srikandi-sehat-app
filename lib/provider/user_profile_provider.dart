@@ -7,18 +7,28 @@ import 'package:shared_preferences/shared_preferences.dart';
 class UserProfileProvider with ChangeNotifier {
   bool _isLoading = false;
   String _errorMessage = '';
-  String _name = '';
-  String _email = '';
+  Map<String, dynamic> _userData = {};
+  DateTime? _lastFetched;
 
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
-  String get name => _name;
-  String get email => _email;
-
-  Map<String, dynamic> _userData = {};
   Map<String, dynamic> get userData => _userData;
+  String get name => _userData['name'] ?? '';
+  String get email => _userData['email'] ?? '';
+  String? get role => _userData['role'];
 
-  Future<Map<String, dynamic>?> getProfile() async {
+  // Cache duration (5 minutes)
+  static const Duration cacheDuration = Duration(minutes: 5);
+
+  Future<Map<String, dynamic>?> getProfile({bool forceRefresh = false}) async {
+    // Return cached data if it's still fresh and not forcing refresh
+    if (!forceRefresh &&
+        _lastFetched != null &&
+        DateTime.now().difference(_lastFetched!) < cacheDuration &&
+        _userData.isNotEmpty) {
+      return _userData;
+    }
+
     _isLoading = true;
     notifyListeners();
 
@@ -39,13 +49,11 @@ class UserProfileProvider with ChangeNotifier {
       final responseData = jsonDecode(response.body);
 
       if (response.statusCode == 200 && responseData['data'] != null) {
-        final user = responseData['data'];
-        _name = user['name'] ?? '';
-        _email = user['email'] ?? '';
-        _userData = user;
+        _userData = responseData['data'];
         _errorMessage = '';
+        _lastFetched = DateTime.now();
         notifyListeners();
-        return user;
+        return _userData;
       } else {
         _errorMessage = responseData['message'] ?? 'Gagal mengambil profil.';
         return null;
@@ -57,5 +65,11 @@ class UserProfileProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> clearCache() async {
+    _userData = {};
+    _lastFetched = null;
+    notifyListeners();
   }
 }

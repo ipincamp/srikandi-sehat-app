@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/provider/auth_provider.dart';
+import 'package:srikandi_sehat_app/provider/user_profile_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/custom_popup.dart';
 
@@ -9,19 +10,31 @@ class LogoutTile extends StatelessWidget {
 
   Future<void> _logout(BuildContext context) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await authProvider.logout(context);
+    final profileProvider =
+        Provider.of<UserProfileProvider>(context, listen: false);
 
-    if (success) {
-      CustomAlert.show(context, 'Berhasil logout', type: AlertType.success);
-      await Future.delayed(const Duration(milliseconds: 700));
-      if (context.mounted) {
-        Navigator.pushReplacementNamed(context, '/login');
+    try {
+      // Clear profile cache terlebih dahulu
+      await profileProvider.clearCache();
+
+      // Lakukan logout
+      final success = await authProvider.logout(context);
+
+      if (success) {
+        CustomAlert.show(context, 'Berhasil logout', type: AlertType.success);
+        await Future.delayed(const Duration(milliseconds: 700));
+        if (context.mounted) {
+          Navigator.pushNamedAndRemoveUntil(
+              context, '/login', (route) => false);
+        }
+      } else {
+        if (authProvider.errorMessage.isNotEmpty) {
+          CustomAlert.show(context, authProvider.errorMessage,
+              type: AlertType.error);
+        }
       }
-    } else {
-      if (authProvider.errorMessage.isNotEmpty) {
-        CustomAlert.show(context, authProvider.errorMessage,
-            type: AlertType.error);
-      }
+    } catch (e) {
+      CustomAlert.show(context, 'Error saat logout: $e', type: AlertType.error);
     }
   }
 

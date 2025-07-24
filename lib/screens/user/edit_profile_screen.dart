@@ -280,12 +280,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         body: Container(
           decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.pink, Colors.white],
-              stops: [0.1, 0.1],
-            ),
+            color: Colors.transparent,
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),

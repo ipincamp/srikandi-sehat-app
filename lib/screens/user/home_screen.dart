@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:srikandi_sehat_app/provider/cycle_provider.dart';
-import 'package:srikandi_sehat_app/provider/symptom_provider.dart';
+import 'package:srikandi_sehat_app/provider/symptom_get_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/cycle_action_button.dart';
 import 'package:srikandi_sehat_app/widgets/log_symptom_button.dart';

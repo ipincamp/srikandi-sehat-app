@@ -12,7 +12,7 @@ import 'package:srikandi_sehat_app/provider/profile_change_provider.dart';
 import 'package:srikandi_sehat_app/provider/symptom_history_provider.dart';
 import 'package:srikandi_sehat_app/provider/symptom_log_get_detail.dart';
 import 'package:srikandi_sehat_app/provider/symptom_log_post_provider.dart';
-import 'package:srikandi_sehat_app/provider/symptom_provider.dart';
+import 'package:srikandi_sehat_app/provider/symptom_get_provider.dart';
 import 'package:srikandi_sehat_app/provider/user_profile_provider.dart';
 import 'package:srikandi_sehat_app/provider/user_data_provider.dart';
 import 'package:srikandi_sehat_app/provider/village_provider.dart';
