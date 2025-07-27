@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:srikandi_sehat_app/provider/auth_provider.dart';
+import 'package:srikandi_sehat_app/provider/csv_download_provider.dart';
 import 'package:srikandi_sehat_app/provider/cycle_history_provider.dart';
 import 'package:srikandi_sehat_app/provider/cycle_provider.dart';
 import 'package:srikandi_sehat_app/provider/district_provider.dart';
@@ -64,6 +65,7 @@ void main() async {
           ChangeNotifierProvider(create: (_) => SymptomHistoryProvider()),
           ChangeNotifierProvider(create: (_) => SymptomDetailProvider()),
           ChangeNotifierProvider(create: (_) => UserDataProvider()),
+          ChangeNotifierProvider(create: (_) => CsvDownloadProvider()),
         ],
         child: MyApp(
           isLoggedIn: isLoggedIn,

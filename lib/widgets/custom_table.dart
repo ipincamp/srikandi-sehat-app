@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:srikandi_sehat_app/screens/admin/user_detail_screen.dart';
 import 'package:srikandi_sehat_app/widgets/custom_button.dart';
 
 class CustomTable extends StatelessWidget {
-  final List<Map<String, String>> users;
+  final List<Map<String, dynamic>> users;
   final int currentPage;
   final int itemsPerPage;
   final int pageCount;
@@ -107,6 +108,8 @@ class CustomTable extends StatelessWidget {
             itemCount: users.length,
             itemBuilder: (context, index) {
               final user = users[index];
+              final userId = user['id'] ?? '';
+
               return Container(
                 padding:
                     const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
@@ -147,7 +150,16 @@ class CustomTable extends StatelessWidget {
                         textSize: 12,
                         padding: const EdgeInsets.symmetric(
                             vertical: 2, horizontal: 4),
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => UserDetailScreen(
+                                userId: userId,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:srikandi_sehat_app/provider/csv_download_provider.dart';
 import 'package:srikandi_sehat_app/provider/user_data_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_chart.dart';
 import 'package:srikandi_sehat_app/widgets/custom_table.dart';
@@ -49,10 +50,14 @@ class _UserDataScreenState extends State<UserDataScreen> {
               child: Column(
                 children: [
                   CustomChart(
-                    urbanCount: urbanCount,
-                    ruralCount: ruralCount,
-                    onDownloadPressed: () {},
-                  ),
+                      urbanCount: urbanCount,
+                      ruralCount: ruralCount,
+                      onDownloadPressed: () {
+                        final provider = Provider.of<CsvDownloadProvider>(
+                            context,
+                            listen: false);
+                        provider.downloadUserCsv();
+                      }),
                   const SizedBox(height: 20),
                   // Filter Buttons (with improved styling)
                   Container(
