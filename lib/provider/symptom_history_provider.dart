@@ -38,11 +38,9 @@ class SymptomHistoryProvider with ChangeNotifier {
         _symptomHistory = List<Symptom>.from(
           data['data'].map((json) => Symptom.fromJson(json)),
         );
-        print('Fetched symptom data: ${response.body}');
         notifyListeners();
         return true;
       } else {
-        debugPrint('Failed to fetch history: ${response.statusCode}');
         notifyListeners();
         return false;
       }

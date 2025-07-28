@@ -61,31 +61,34 @@ class LogSymptomButton extends StatelessWidget {
           type: AlertType.success,
         );
 
-        await Future.delayed(const Duration(milliseconds: 1500));
+        if (!context.mounted) return;
 
-        if (context.mounted) {
-          if (result.id != null) {
-            // Clear any previous state in the detail provider
-            final detailProvider = Provider.of<SymptomDetailProvider>(
-              context,
-              listen: false,
-            );
-            detailProvider.clear();
-
-            // Navigate to detail screen
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ChangeNotifierProvider.value(
-                  value: detailProvider,
-                  child: SymptomDetailScreen(symptomId: result.id!),
-                ),
+        // If we have an ID, navigate to detail screen
+        if (result.id != null && result.id! > 0) {
+          // Navigate to detail screen with a new provider instance
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ChangeNotifierProvider(
+                create: (_) {
+                  debugPrint(
+                      'Creating new SymptomDetailProvider with ID: ${result.id}');
+                  return SymptomDetailProvider();
+                },
+                child: SymptomDetailScreen(symptomId: result.id!),
               ),
-            );
-          } else {
-            Navigator.pushNamed(context, '/symptom-history');
-          }
+            ),
+          );
+        } else {
+          // Fallback to symptom history if no ID is returned
+          Navigator.pushNamed(context, '/symptom-history');
         }
+      } else if (result.error != null) {
+        CustomAlert.show(
+          context,
+          result.error!,
+          type: AlertType.error,
+        );
       }
     } catch (e) {
       if (context.mounted) {

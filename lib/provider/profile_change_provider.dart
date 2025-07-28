@@ -125,10 +125,6 @@ class ProfileChangeProvider with ChangeNotifier {
         body: jsonEncode(profileData),
       );
 
-      debugPrint("✅ Payload: ${jsonEncode(profileData)}");
-      debugPrint("🔁 Status Code: ${response.statusCode}");
-      debugPrint("🔁 Response: ${response.body}");
-
       if (response.statusCode == 200) {
         return true;
       } else {

@@ -127,8 +127,8 @@ class SymptomLogProvider with ChangeNotifier {
         final data = json.decode(response.body) as Map<String, dynamic>;
         _lastResponse = SymptomLogResponse.fromJson(data);
         // Add this debug log to verify the response
-        debugPrint('Response data: $data');
-        debugPrint('Extracted ID: ${_lastResponse?.id}');
+        // debugPrint('Response data: $data');
+        // debugPrint('Extracted ID: ${_lastResponse?.id}');
 
         return _lastResponse!;
       } else {

@@ -16,7 +16,10 @@ class CycleProvider with ChangeNotifier {
       final apiUrl = dotenv.env['API_URL'];
 
       // First try to load from server
-      if (token != null && token.isNotEmpty && apiUrl != null && apiUrl.isNotEmpty) {
+      if (token != null &&
+          token.isNotEmpty &&
+          apiUrl != null &&
+          apiUrl.isNotEmpty) {
         final response = await http.get(
           Uri.parse('$apiUrl/cycles/current'),
           headers: {
@@ -30,12 +33,11 @@ class CycleProvider with ChangeNotifier {
           await prefs.setBool('isMenstruating', _isMenstruating);
         }
       }
-      
+
       // Fallback to local storage if server fails
       _isMenstruating = prefs.getBool('isMenstruating') ?? false;
       notifyListeners();
     } catch (e) {
-      print('Error loading cycle status: $e');
       // Use local storage as fallback
       final prefs = await SharedPreferences.getInstance();
       _isMenstruating = prefs.getBool('isMenstruating') ?? false;

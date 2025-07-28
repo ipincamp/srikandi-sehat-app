@@ -22,6 +22,7 @@ class SymptomDetailProvider with ChangeNotifier {
   String? get error => _error;
 
   Future<void> fetchDetail(int id) async {
+    debugPrint('Fetching detail for symptom ID: $id');
     _isLoading = true;
     notifyListeners();
 
