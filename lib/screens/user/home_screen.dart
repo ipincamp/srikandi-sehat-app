@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:srikandi_sehat_app/provider/cycle_provider.dart';
 import 'package:srikandi_sehat_app/provider/symptom_get_provider.dart';
+import 'package:srikandi_sehat_app/screens/user/cycle_status_card.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
+import 'package:srikandi_sehat_app/widgets/custom_popup.dart';
 import 'package:srikandi_sehat_app/widgets/cycle_action_button.dart';
 import 'package:srikandi_sehat_app/widgets/log_symptom_button.dart';
 import 'package:srikandi_sehat_app/widgets/reminder_tile.dart';
@@ -49,6 +51,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleStartCycle() async {
+    final confirmed = await CustomConfirmationPopup.show(
+      context,
+      title: 'Mulai Siklus Menstruasi',
+      message: 'Apakah Anda yakin ingin memulai siklus menstruasi?',
+      confirmText: 'Mulai',
+      cancelText: 'Batal',
+      confirmColor: Colors.pink,
+      icon: Icons.play_circle_fill,
+    );
+
+    if (confirmed != true) return;
+
     try {
       await context.read<CycleProvider>().startCycle();
       if (mounted) {
@@ -64,6 +78,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleEndCycle() async {
+    final confirmed = await CustomConfirmationPopup.show(
+      context,
+      title: 'Akhiri Siklus Menstruasi',
+      message: 'Apakah Anda yakin ingin mengakhiri siklus menstruasi?',
+      confirmText: 'Akhiri',
+      cancelText: 'Batal',
+      confirmColor: Colors.pink,
+      icon: Icons.stop_circle,
+    );
+
+    if (confirmed != true) return;
+
     try {
       await context.read<CycleProvider>().endCycle();
       if (mounted) {
@@ -148,99 +174,8 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const SizedBox(height: 10),
             if (_showProfileCard) _buildProfileCompletionCard(),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20.0),
-              decoration: BoxDecoration(
-                color: Colors.pink.shade50,
-                borderRadius: BorderRadius.circular(15),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 2,
-                    blurRadius: 5,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Perkiraan Hari Ini:',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    isMenstruating ? 'Fase Menstruasi' : 'Fase Luteal',
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.pink,
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              isMenstruating
-                                  ? 'Menstruasi sedang berlangsung'
-                                  : 'Menstruasi Berikutnya dalam:',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[700],
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              isMenstruating ? 'Hari ke-2' : '5 Hari',
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.pink,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          SizedBox(
-                            width: 60,
-                            height: 60,
-                            child: CircularProgressIndicator(
-                              value: isMenstruating ? 0.2 : 0.75,
-                              strokeWidth: 6,
-                              strokeCap: StrokeCap.round,
-                              backgroundColor: Colors.pink.shade100,
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                Colors.pink,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            isMenstruating ? '20%' : '75%',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.pink,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            const SizedBox(height: 4),
+            const CycleStatusCard(),
             const SizedBox(height: 20),
             Text(
               'Aksi Cepat',

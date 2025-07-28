@@ -34,7 +34,8 @@ import 'package:srikandi_sehat_app/screens/user/symptom_history_screen.dart'
 import 'package:srikandi_sehat_app/screens/admin/home_screen.dart' as admin;
 import 'package:srikandi_sehat_app/screens/admin/main_screen.dart' as admin;
 import 'package:srikandi_sehat_app/screens/admin/profile_screen.dart' as admin;
-import 'package:srikandi_sehat_app/screens/admin/user_data_screen.dart' as admin;
+import 'package:srikandi_sehat_app/screens/admin/user_data_screen.dart'
+    as admin;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -1,14 +1,19 @@
+// providers/cycle_provider.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
+import 'package:srikandi_sehat_app/models/cycle_status_model.dart';
+
 class CycleProvider with ChangeNotifier {
   bool _isMenstruating = false;
-  bool get isMenstruating => _isMenstruating;
+  CycleStatus? _cycleStatus;
 
-  // Load cycle status from both local and server
+  bool get isMenstruating => _isMenstruating;
+  CycleStatus? get cycleStatus => _cycleStatus;
+
   Future<void> loadCycleStatus() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -21,7 +26,7 @@ class CycleProvider with ChangeNotifier {
           apiUrl != null &&
           apiUrl.isNotEmpty) {
         final response = await http.get(
-          Uri.parse('$apiUrl/cycles/current'),
+          Uri.parse('$apiUrl/cycles/status'),
           headers: {
             'Authorization': 'Bearer $token',
           },
@@ -29,13 +34,19 @@ class CycleProvider with ChangeNotifier {
 
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
-          _isMenstruating = data['isMenstruating'] ?? false;
+          _cycleStatus = CycleStatus.fromJson(data['data']);
+          _isMenstruating = _cycleStatus?.isMenstruating ?? false;
+
+          // Save to local storage
           await prefs.setBool('isMenstruating', _isMenstruating);
         }
       }
 
       // Fallback to local storage if server fails
-      _isMenstruating = prefs.getBool('isMenstruating') ?? false;
+      if (_cycleStatus == null) {
+        _isMenstruating = prefs.getBool('isMenstruating') ?? false;
+      }
+
       notifyListeners();
     } catch (e) {
       // Use local storage as fallback
@@ -65,7 +76,7 @@ class CycleProvider with ChangeNotifier {
       if (response.statusCode == 201) {
         _isMenstruating = true;
         await prefs.setBool('isMenstruating', true);
-        notifyListeners();
+        await loadCycleStatus(); // Refresh the status
       } else {
         throw Exception('Failed to start cycle');
       }
@@ -95,7 +106,7 @@ class CycleProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         _isMenstruating = false;
         await prefs.setBool('isMenstruating', false);
-        notifyListeners();
+        await loadCycleStatus(); // Refresh the status
       } else {
         throw Exception('Failed to end cycle');
       }
