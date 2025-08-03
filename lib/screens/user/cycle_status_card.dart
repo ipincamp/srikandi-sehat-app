@@ -11,7 +11,7 @@ class CycleStatusCard extends StatelessWidget {
     if (periodStatus == 'follicular') return 'Fase Folikular';
     if (periodStatus == 'ovulation') return 'Fase Ovulasi';
     if (periodStatus == 'luteal') return 'Fase Luteal';
-    return 'Fase Luteal'; // Default
+    return 'Fase Normal'; // Default
   }
 
   String _getStatusText(bool isMenstruating, int? day) {

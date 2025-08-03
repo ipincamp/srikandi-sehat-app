@@ -126,7 +126,7 @@ class UserDetailScreen extends StatelessWidget {
             _buildInfoItem(context, 'Tanggal Lahir', profile.birthdate),
             _buildInfoItem(context, 'Tinggi Badan', '${profile.heightCm} cm'),
             _buildInfoItem(context, 'Berat Badan', '${profile.weightKg} kg'),
-            _buildInfoItem(context, 'BMI', profile.bmi.toStringAsFixed(2)),
+            _buildInfoItem(context, 'IMT', profile.bmi.toStringAsFixed(2) ),
             _buildInfoItem(
                 context, 'Pendidikan Terakhir', profile.lastEducation),
             _buildInfoItem(
