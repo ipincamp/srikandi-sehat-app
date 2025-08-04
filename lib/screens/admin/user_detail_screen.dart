@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/provider/user_detail_provider.dart';
 import 'package:srikandi_sehat_app/models/user_detail_model.dart';
 import 'package:intl/intl.dart';
+import 'package:srikandi_sehat_app/utils/user_calc.dart';
 
 class UserDetailScreen extends StatelessWidget {
   final String userId;
@@ -126,7 +127,8 @@ class UserDetailScreen extends StatelessWidget {
             _buildInfoItem(context, 'Tanggal Lahir', profile.birthdate),
             _buildInfoItem(context, 'Tinggi Badan', '${profile.heightCm} cm'),
             _buildInfoItem(context, 'Berat Badan', '${profile.weightKg} kg'),
-            _buildInfoItem(context, 'IMT', profile.bmi.toStringAsFixed(2) ),
+            _buildInfoItem(context, 'IMT', profile.bmi.toStringAsFixed(2)),
+            _buildInfoItem(context, 'Kategori IMT', classifyBMI(profile.bmi)),
             _buildInfoItem(
                 context, 'Pendidikan Terakhir', profile.lastEducation),
             _buildInfoItem(

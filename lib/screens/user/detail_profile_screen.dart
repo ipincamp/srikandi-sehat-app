@@ -145,7 +145,7 @@ class DetailProfileScreen extends StatelessWidget {
                 icon: Icons.monitor_weight_outlined,
                 title: 'Indeks Massa Tubuh (IMT)',
                 value: detail['bmi'] != null && detail['bmi'] is num
-                    ? '${detail['bmi']} kg/m² (${getIMTCategory(detail['bmi'])})'
+                    ? '${detail['bmi']} kg/m² (${classifyBMI(detail['bmi'])})'
                     : 'Belum dihitung',
                 color: Colors.teal,
               ),

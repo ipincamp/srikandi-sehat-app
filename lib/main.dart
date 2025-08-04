@@ -14,6 +14,8 @@ import 'package:srikandi_sehat_app/provider/symptom_history_provider.dart';
 import 'package:srikandi_sehat_app/provider/symptom_log_get_detail.dart';
 import 'package:srikandi_sehat_app/provider/symptom_log_post_provider.dart';
 import 'package:srikandi_sehat_app/provider/symptom_get_provider.dart';
+import 'package:srikandi_sehat_app/provider/user_data_stats_provider.dart';
+import 'package:srikandi_sehat_app/provider/user_detail_provider.dart';
 import 'package:srikandi_sehat_app/provider/user_profile_provider.dart';
 import 'package:srikandi_sehat_app/provider/user_data_provider.dart';
 import 'package:srikandi_sehat_app/provider/village_provider.dart';
@@ -66,7 +68,9 @@ void main() async {
           ChangeNotifierProvider(create: (_) => SymptomHistoryProvider()),
           ChangeNotifierProvider(create: (_) => SymptomDetailProvider()),
           ChangeNotifierProvider(create: (_) => UserDataProvider()),
+          ChangeNotifierProvider(create: (_) => UserDetailProvider()),
           ChangeNotifierProvider(create: (_) => CsvDownloadProvider()),
+          ChangeNotifierProvider(create: (_) => UserDataStatsProvider()),
         ],
         child: MyApp(
           isLoggedIn: isLoggedIn,

@@ -34,17 +34,35 @@ class CycleProvider with ChangeNotifier {
 
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
-          _cycleStatus = CycleStatus.fromJson(data['data']);
-          _isMenstruating = _cycleStatus?.isMenstruating ?? false;
+          if (data['data'] != null) {
+            _cycleStatus = CycleStatus.fromJson(data['data']);
+            // Determine if menstruating based on period_status
+            _isMenstruating =
+                _cycleStatus?.periodStatus?.toLowerCase() == 'menstruating';
 
-          // Save to local storage
-          await prefs.setBool('isMenstruating', _isMenstruating);
+            // Save relevant data to local storage
+            await prefs.setBool('isMenstruating', _isMenstruating);
+            if (_cycleStatus != null) {
+              await prefs.setInt(
+                  'periodLengthDays', _cycleStatus!.periodLengthDays);
+              await prefs.setInt(
+                  'cycleDurationDays', _cycleStatus!.cycleDurationDays);
+            }
+          }
         }
       }
 
-      // Fallback to local storage if server fails
+      // Fallback to local storage if server fails or data is null
       if (_cycleStatus == null) {
         _isMenstruating = prefs.getBool('isMenstruating') ?? false;
+        final periodLengthDays = prefs.getInt('periodLengthDays') ?? 0;
+        final cycleDurationDays = prefs.getInt('cycleDurationDays') ?? 0;
+
+        _cycleStatus = CycleStatus(
+          periodLengthDays: periodLengthDays,
+          cycleDurationDays: cycleDurationDays,
+          isMenstruating: _isMenstruating,
+        );
       }
 
       notifyListeners();
@@ -52,6 +70,14 @@ class CycleProvider with ChangeNotifier {
       // Use local storage as fallback
       final prefs = await SharedPreferences.getInstance();
       _isMenstruating = prefs.getBool('isMenstruating') ?? false;
+      final periodLengthDays = prefs.getInt('periodLengthDays') ?? 0;
+      final cycleDurationDays = prefs.getInt('cycleDurationDays') ?? 0;
+
+      _cycleStatus = CycleStatus(
+        periodLengthDays: periodLengthDays,
+        cycleDurationDays: cycleDurationDays,
+        isMenstruating: _isMenstruating,
+      );
       notifyListeners();
     }
   }

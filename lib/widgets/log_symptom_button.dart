@@ -8,6 +8,8 @@ import 'package:srikandi_sehat_app/widgets/action_button.dart';
 import 'package:srikandi_sehat_app/widgets/custom_form.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 
+import '../models/symptom_model.dart';
+
 class LogSymptomButton extends StatelessWidget {
   const LogSymptomButton({super.key});
 
@@ -326,8 +328,10 @@ class _SymptomLogBottomSheetState extends State<_SymptomLogBottomSheet> {
       spacing: 8.0,
       runSpacing: 8.0,
       children: widget.symptoms.map((symptom) {
-        final isSelected = selectedSymptoms.contains(symptom.name);
-        final symptomColor = widget.getSymptomColor(symptom.name);
+        // Cast the symptom to Symptom model
+        final symptomModel = symptom as Symptom;
+        final isSelected = selectedSymptoms.contains(symptomModel.name);
+        final symptomColor = widget.getSymptomColor(symptomModel.name);
 
         return FilterChip(
           selected: isSelected,
@@ -335,13 +339,13 @@ class _SymptomLogBottomSheetState extends State<_SymptomLogBottomSheet> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                widget.getSymptomIcon(symptom.name),
+                widget.getSymptomIcon(symptomModel.name),
                 size: 18,
                 color: isSelected ? Colors.white : symptomColor,
               ),
               const SizedBox(width: 6),
               Text(
-                symptom.name,
+                symptomModel.name,
                 style: TextStyle(
                   color: isSelected ? Colors.white : symptomColor,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
@@ -352,11 +356,11 @@ class _SymptomLogBottomSheetState extends State<_SymptomLogBottomSheet> {
           onSelected: (bool selected) {
             setState(() {
               if (selected) {
-                selectedSymptoms.add(symptom.name);
+                selectedSymptoms.add(symptomModel.name);
               } else {
-                selectedSymptoms.remove(symptom.name);
+                selectedSymptoms.remove(symptomModel.name);
                 // Reset mood if Mood Swing is deselected
-                if (symptom.name == 'Mood Swing') {
+                if (symptomModel.name == 'Mood Swing') {
                   selectedMood = null;
                 }
               }

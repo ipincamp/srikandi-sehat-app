@@ -10,26 +10,21 @@ class SymptomDetailProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _error;
 
-  void clear() {
-    _detail = null;
-    _isLoading = false;
-    _error = null;
-    notifyListeners();
-  }
-
   SymptomDetail? get detail => _detail;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
   Future<void> fetchDetail(int id) async {
-    debugPrint('Fetching detail for symptom ID: $id');
+    if (_isLoading) return;
+
     _isLoading = true;
+    _error = null;
     notifyListeners();
 
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? '';
-      final baseUrl = dotenv.env['API_URL'];
+      final baseUrl = dotenv.env['API_URL'] ?? '';
       final url = '$baseUrl/cycles/symptoms/$id';
 
       final response = await http.get(
@@ -37,23 +32,27 @@ class SymptomDetailProvider with ChangeNotifier {
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
         },
       );
 
-      _isLoading = false;
-
-      final data = json.decode(response.body);
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        _detail = SymptomDetail.fromJson(data['data']);
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        _detail = SymptomDetail.fromJson(jsonData['data']);
+      } else {
+        _error = 'Failed to load data: ${response.statusCode}';
       }
-      print('Response: ${data}');
     } catch (e) {
-      debugPrint('Error fetchDetail: $e');
+      _error = 'Error: ${e.toString()}';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
+  }
 
+  void clear() {
+    _detail = null;
     _isLoading = false;
+    _error = null;
     notifyListeners();
   }
 }

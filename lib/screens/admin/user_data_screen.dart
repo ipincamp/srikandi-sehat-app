@@ -157,6 +157,7 @@ class _UserDataScreenState extends State<UserDataScreen> {
                   CustomTable(
                     users: allUsers
                         .map((u) => {
+                              'id': u.id,
                               'name': u.name,
                               'region': u.scope == 1 ? 'Kota' : 'Desa',
                             })

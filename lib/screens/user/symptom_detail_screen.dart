@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:srikandi_sehat_app/models/symptom_detail_model.dart';
 import 'package:srikandi_sehat_app/provider/symptom_log_get_detail.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SymptomDetailScreen extends StatefulWidget {
   final int symptomId;
@@ -15,471 +17,87 @@ class _SymptomDetailScreenState extends State<SymptomDetailScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() =>
-        Provider.of<SymptomDetailProvider>(context, listen: false)
-            .fetchDetail(widget.symptomId));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
   }
 
-  // Mapping icon untuk nama gejala tertentu
-  IconData getSymptomIcon(String name) {
-    final lower = name.toLowerCase();
-    if (lower.contains('dismenorea')) return Icons.healing;
-    if (lower.contains('mood')) return Icons.mood;
-    if (lower.contains('5l')) return Icons.water_drop;
-    if (lower.contains('kram')) return Icons.sick;
-    if (lower.contains('mual')) return Icons.sick_outlined;
-    if (lower.contains('pusing')) return Icons.blur_on;
-    return Icons.medical_services;
-  }
-
-  Color getSymptomColor(String name) {
-    final lower = name.toLowerCase();
-    if (lower.contains('dismenorea')) return Colors.pink;
-    if (lower.contains('mood')) return Colors.purple;
-    if (lower.contains('5l')) return Colors.blue;
-    if (lower.contains('kram')) return Colors.orange;
-    return Colors.pink;
+  Future<void> _loadData() async {
+    await Provider.of<SymptomDetailProvider>(context, listen: false)
+        .fetchDetail(widget.symptomId);
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<SymptomDetailProvider>(context);
-    final detail = provider.detail;
-
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text(
-          'Detail Gejala',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
+        title: const Text('Detail Gejala'),
         backgroundColor: Colors.pink,
         foregroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
       ),
-      body: provider.isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.pink),
-              ),
-            )
-          : provider.error != null
-              ? _buildErrorState(provider.error!)
-              : detail == null
-                  ? _buildErrorState('Data tidak tersedia')
-                  : SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildDateCard(detail.logDate),
-                          const SizedBox(height: 20),
-                          _buildSymptomsSection(detail.loggedSymptoms),
-                          const SizedBox(height: 20),
-                          _buildRecommendationsSection(detail.recommendations),
-                          if (detail.notes != null) ...[
-                            const SizedBox(height: 20),
-                            _buildNotesSection(detail.notes!),
-                          ],
-                          const SizedBox(height: 20),
-                        ],
-                      ),
-                    ),
-    );
-  }
+      body: Consumer<SymptomDetailProvider>(
+        builder: (context, provider, _) {
+          if (provider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-  Widget _buildErrorState(String error) {
-    return Center(
-      child: Container(
-        margin: const EdgeInsets.all(32),
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: Colors.pink.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.error_outline,
-                size: 40,
-                color: Colors.pink,
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Data Tidak Ditemukan',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Detail gejala tidak dapat dimuat',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDateCard(String logDate) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.pink,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.pink.withOpacity(0.3),
-            spreadRadius: 1,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.calendar_today_rounded,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Tanggal Pencatatan',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _formatDate(logDate),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSymptomsSection(List<String> symptoms) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.pink.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.assignment_rounded,
-                  color: Colors.pink,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Gejala yang Dialami',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: symptoms
-                .map((symptom) => Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: getSymptomColor(symptom).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: getSymptomColor(symptom).withOpacity(0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            getSymptomIcon(symptom),
-                            size: 16,
-                            color: getSymptomColor(symptom),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            symptom,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: getSymptomColor(symptom),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ))
-                .toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecommendationsSection(List<dynamic> recommendations) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.teal.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.lightbulb_rounded,
-                  color: Colors.teal,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Rekomendasi Penanganan',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ...recommendations.asMap().entries.map((entry) {
-            final index = entry.key;
-            final rec = entry.value;
-            return Container(
-              margin: EdgeInsets.only(
-                  bottom: index == recommendations.length - 1 ? 0 : 12),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.teal.withOpacity(0.03),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.teal.withOpacity(0.1),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: getSymptomColor(rec.symptomName).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      getSymptomIcon(rec.symptomName),
-                      size: 20,
-                      color: getSymptomColor(rec.symptomName),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          rec.symptomName,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          rec.recommendationText,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[700],
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+          if (provider.error != null) {
+            return _ErrorView(
+              error: provider.error!,
+              onRetry: _loadData,
             );
-          }).toList(),
-        ],
-      ),
-    );
-  }
+          }
 
-  Widget _buildNotesSection(String notes) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+          if (provider.detail == null) {
+            return _ErrorView(
+              error: 'Data tidak tersedia',
+              onRetry: _loadData,
+            );
+          }
+
+          return _ContentDetailView(detail: provider.detail!);
+        },
       ),
+    );
+  }
+}
+
+class _ContentDetailView extends StatelessWidget {
+  final SymptomDetail detail;
+
+  const _ContentDetailView({required this.detail});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.note_rounded,
-                  color: Colors.orange,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Catatan Pengguna',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.03),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.orange.withOpacity(0.1),
-                width: 1,
-              ),
-            ),
-            child: Text(
-              notes,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[700],
-                height: 1.4,
-              ),
-            ),
-          ),
+          _DateCard(logDate: detail.logDate),
+          const SizedBox(height: 20),
+          _SymptomsList(symptoms: detail.loggedSymptoms),
+          const SizedBox(height: 20),
+          _RecommendationsList(recommendations: detail.recommendations),
+          if (detail.notes?.isNotEmpty ?? false) ...[
+            const SizedBox(height: 20),
+            _NotesSection(notes: detail.notes!),
+          ],
         ],
       ),
     );
   }
+}
+
+class _DateCard extends StatelessWidget {
+  final String logDate;
+
+  const _DateCard({required this.logDate});
 
   String _formatDate(String dateString) {
     try {
       final date = DateTime.parse(dateString);
       final months = [
-        '',
         'Januari',
         'Februari',
         'Maret',
@@ -493,10 +111,297 @@ class _SymptomDetailScreenState extends State<SymptomDetailScreen> {
         'November',
         'Desember'
       ];
-
-      return '${date.day} ${months[date.month]} ${date.year}';
+      return '${date.day} ${months[date.month - 1]} ${date.year}';
     } catch (e) {
       return dateString;
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Colors.pink,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            const Icon(Icons.calendar_today, color: Colors.white),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Tanggal Pencatatan',
+                  style: TextStyle(color: Colors.white),
+                ),
+                Text(
+                  _formatDate(logDate),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SymptomsList extends StatelessWidget {
+  final List<String> symptoms;
+
+  const _SymptomsList({required this.symptoms});
+
+  IconData _getSymptomIcon(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('dismenorea')) return Icons.healing;
+    if (lower.contains('mood')) return Icons.mood;
+    if (lower.contains('5l')) return Icons.water_drop;
+    if (lower.contains('kram')) return Icons.sick;
+    return Icons.medical_services;
+  }
+
+  Color _getSymptomColor(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('dismenorea')) return Colors.pink;
+    if (lower.contains('mood')) return Colors.purple;
+    if (lower.contains('5l')) return Colors.blue;
+    if (lower.contains('kram')) return Colors.orange;
+    return Colors.pink;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+            const Text(
+              'Gejala yang Dialami',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: symptoms
+                  .map((symptom) => Chip(
+                        backgroundColor:
+                            _getSymptomColor(symptom).withOpacity(0.1),
+                        label: Text(symptom),
+                        labelStyle: TextStyle(
+                          color: _getSymptomColor(symptom),
+                          fontWeight: FontWeight.w600,
+                        ),
+                        avatar: Icon(
+                          _getSymptomIcon(symptom),
+                          color: _getSymptomColor(symptom),
+                        ),
+                      ))
+                  .toList(),
+            ),
+          ],
+        ),
+      ),
+    ));
+  }
+}
+
+class _RecommendationsList extends StatelessWidget {
+  final List<Recommendation> recommendations;
+
+  const _RecommendationsList({required this.recommendations});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Rekomendasi Penanganan',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...recommendations
+                .map((rec) => _RecommendationItem(recommendation: rec)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RecommendationItem extends StatelessWidget {
+  final Recommendation recommendation;
+
+  const _RecommendationItem({required this.recommendation});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.teal.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.teal.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            recommendation.symptomName,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(recommendation.recommendationText),
+          if (recommendation.recommendationUrls.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Text(
+              'Video Rekomendasi:',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            ...recommendation.recommendationUrls
+                .map((url) => _YouTubeVideoButton(url: url)),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _YouTubeVideoButton extends StatelessWidget {
+  final RecommendationUrl url;
+
+  const _YouTubeVideoButton({required this.url});
+
+  Future<void> _launchYouTube(BuildContext context) async {
+    try {
+      if (await canLaunchUrl(Uri.parse(url.videoUrl))) {
+        await launchUrl(
+          Uri.parse(url.videoUrl),
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tidak dapat membuka YouTube')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => _launchYouTube(context),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.red[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.red[100]!),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.play_circle_outline, color: Colors.red),
+            const SizedBox(width: 12),
+            Expanded(child: Text(url.action)),
+            const Icon(Icons.arrow_forward_ios, size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NotesSection extends StatelessWidget {
+  final String notes;
+
+  const _NotesSection({required this.notes});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Catatan Pengguna',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(notes),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  final String error;
+  final VoidCallback onRetry;
+
+  const _ErrorView({required this.error, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.error_outline, size: 48, color: Colors.pink),
+          const SizedBox(height: 16),
+          Text(
+            error,
+            style: const TextStyle(fontSize: 16),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: onRetry,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.pink,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Coba Lagi'),
+          ),
+        ],
+      ),
+    );
   }
 }

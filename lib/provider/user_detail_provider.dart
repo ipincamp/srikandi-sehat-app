@@ -24,10 +24,8 @@ class UserDetailProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? '';
       final baseUrl = dotenv.env['API_URL'] ?? '';
-      final url = '$baseUrl/users/01980d1c-a17d-734f-98e1-5ae5a74e0b64';
-      // final url = '$baseUrl/users/$userId';
-
-      print('Fetching user detail from: $userId');
+      final url = '$baseUrl/users/$userId';
+      print(url); 
 
       final response = await http.get(
         Uri.parse(url),
@@ -39,7 +37,6 @@ class UserDetailProvider with ChangeNotifier {
 
       if (response.statusCode == 200) {
         final jsonBody = json.decode(response.body);
-        print(jsonBody);
         _userDetail = UserDetail.fromJson(jsonBody['data']);
       } else {
         _errorMessage =

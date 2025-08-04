@@ -52,13 +52,10 @@ class UserDataProvider with ChangeNotifier {
         _allUsers = userList.map((json) => UserModel.fromJson(json)).toList();
         _currentPage = jsonData['meta']['current_page'];
         _lastPage = jsonData['meta']['last_page'];
-        _totalUsers = jsonData['meta']['total'];
 
-        // Update counts from API stats if available
-        if (jsonData['meta']['stats'] != null) {
-          _urbanCount = jsonData['meta']['stats']['urban_user'] ?? 0;
-          _ruralCount = jsonData['meta']['stats']['rural_user'] ?? 0;
-        }
+        _totalUsers = jsonData['meta']['stats']['all_user'] ?? 0;
+        _urbanCount = jsonData['meta']['stats']['urban_users'] ?? 0;
+        _ruralCount = jsonData['meta']['stats']['rural_users'] ?? 0;
 
         _isLoading = false;
         notifyListeners();

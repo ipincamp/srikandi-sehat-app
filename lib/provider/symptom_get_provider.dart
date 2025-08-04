@@ -35,6 +35,7 @@ class SymptomProvider with ChangeNotifier {
 
       if (response.statusCode == 200) {
         final jsonBody = json.decode(response.body);
+        print(jsonBody);
         final List<dynamic> data = jsonBody['data'] ?? [];
         _symptoms = data.map((e) => Symptom.fromJson(e)).toList();
       } else {

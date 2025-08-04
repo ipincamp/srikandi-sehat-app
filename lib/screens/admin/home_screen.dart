@@ -1,15 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:srikandi_sehat_app/provider/user_data_stats_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
-
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<UserDataStatsProvider>(context, listen: false)
+          .fetchUserStats();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final userDataStatsProvider = Provider.of<UserDataStatsProvider>(context);
+    final totalUsers = userDataStatsProvider.totalUsers;
+    final activeUsers = userDataStatsProvider.activeUsers;
+    final urbanCount = userDataStatsProvider.urbanCount;
+    final ruralCount = userDataStatsProvider.ruralCount;
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -31,11 +47,14 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 24),
 
             // Stats Overview Cards
-            _buildStatsOverview(),
+            _buildStatsOverview(
+                totalUsers: totalUsers,
+                activeUsers: activeUsers,
+                urbanCount: urbanCount,
+                ruralCount: ruralCount),
             const SizedBox(height: 24),
 
             // Recent Activity
-            _buildRecentActivity(),
           ],
         ),
       ),
@@ -73,7 +92,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildStatsOverview() {
+  Widget _buildStatsOverview({
+    required int totalUsers,
+    required int activeUsers,
+    required int urbanCount,
+    required int ruralCount,
+  }) {
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -84,25 +108,25 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         _buildStatCard(
           title: 'Total Pengguna',
-          value: '1,245',
+          value: '$totalUsers',
           icon: Icons.people,
           color: Colors.blue,
         ),
         _buildStatCard(
           title: 'Pengguna Aktif',
-          value: '892',
+          value: '$activeUsers',
           icon: Icons.people_alt,
           color: Colors.green,
         ),
         _buildStatCard(
           title: 'Perkotaan',
-          value: '763',
+          value: '$urbanCount',
           icon: Icons.location_city,
           color: Colors.orange,
         ),
         _buildStatCard(
           title: 'Pedesaan',
-          value: '482',
+          value: '$ruralCount',
           icon: Icons.nature_people,
           color: Colors.purple,
         ),
@@ -146,62 +170,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildRecentActivity() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Aktivitas Terkini',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                spreadRadius: 1,
-                blurRadius: 3,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              _buildActivityItem(
-                icon: Icons.person_add,
-                title: 'Pengguna Baru',
-                description: 'Diana mendaftar sebagai pengguna baru',
-                time: '10 menit lalu',
-                color: Colors.green,
-              ),
-              _buildActivityItem(
-                icon: Icons.article,
-                title: 'Laporan Dibuat',
-                description: 'Laporan bulanan telah di-generate',
-                time: '1 jam lalu',
-                color: Colors.blue,
-              ),
-              _buildActivityItem(
-                icon: Icons.warning,
-                title: 'Peringatan',
-                description: '5 pengguna belum melengkapi profil',
-                time: '2 jam lalu',
-                color: Colors.orange,
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 

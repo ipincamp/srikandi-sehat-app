@@ -24,7 +24,7 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   // Controllers
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -59,7 +59,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void _loadInitialData() {
     final userProfileProvider = context.read<UserProfileProvider>();
     final profileChangeProvider = context.read<ProfileChangeProvider>();
-    
+
     _nameController.text = userProfileProvider.name ?? '';
     _emailController.text = userProfileProvider.email ?? '';
     _phoneController.text = profileChangeProvider.phone ?? '';
@@ -75,11 +75,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _jobParentController.text = profileChangeProvider.jobParent ?? '';
 
     if (profileChangeProvider.districtCode != null) {
-      context.read<VillageProvider>().fetchVillages(profileChangeProvider.districtCode!);
+      context
+          .read<VillageProvider>()
+          .fetchVillages(profileChangeProvider.districtCode!);
     }
 
     if (_dobController.text.isNotEmpty) _onDOBChanged();
-    if (_heightController.text.isNotEmpty && _weightController.text.isNotEmpty) {
+    if (_heightController.text.isNotEmpty &&
+        _weightController.text.isNotEmpty) {
       _onHeightWeightChanged();
     }
   }
@@ -123,7 +126,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     // Update profile change provider
     context.read<ProfileChangeProvider>().setDistrictCode(districtCode);
-    context.read<ProfileChangeProvider>().setDistrictName(selectedDistrict.name);
+    context
+        .read<ProfileChangeProvider>()
+        .setDistrictName(selectedDistrict.name);
   }
 
   void _onVillageChanged(String? villageCode) {
@@ -136,7 +141,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
 
     _villageController.text = selectedVillage.name;
-    _villageClassificationController.text = selectedVillage.classification.capitalizeWords();
+    _villageClassificationController.text =
+        selectedVillage.classification.capitalizeWords();
 
     // Update profile change provider
     context.read<ProfileChangeProvider>().setVillageCode(villageCode);
@@ -146,11 +152,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void _onHeightWeightChanged() {
     final height = double.tryParse(_heightController.text);
     final weight = double.tryParse(_weightController.text);
-    
+
     if (height != null && weight != null && height > 0) {
-      final imtValue = calculateIMT(height, weight);
+      final imtValue = calculateBMI(height, weight);
       if (imtValue == null) return;
-      final category = getIMTCategory(imtValue);
+      final category = classifyBMI(imtValue);
       _imtController.text = '${imtValue.toStringAsFixed(1)} ($category)';
     } else {
       _imtController.text = '-';
@@ -200,11 +206,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _isLoading = false);
 
     // Check if there's an error message to determine success
-    if (profileChangeProvider.errorMessage == null || profileChangeProvider.errorMessage!.isEmpty) {
+    if (profileChangeProvider.errorMessage == null ||
+        profileChangeProvider.errorMessage!.isEmpty) {
       await context.read<UserProfileProvider>().getProfile();
       if (mounted) {
         CustomAlert.show(
-          context, 
+          context,
           'Profil berhasil diperbarui',
           type: AlertType.success,
         );
@@ -213,7 +220,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } else {
       if (mounted) {
         CustomAlert.show(
-          context, 
+          context,
           'Gagal memperbarui profil: ${profileChangeProvider.errorMessage}',
           type: AlertType.error,
         );
@@ -223,25 +230,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<bool> _showCancelConfirmation() async {
     return await CustomConfirmationPopup.show(
-      context,
-      title: 'Konfirmasi Batal',
-      message: 'Apakah Anda yakin ingin membatalkan pengeditan?',
-      confirmText: 'Ya',
-      cancelText: 'Tidak',
-      icon: Icons.warning,
-      confirmColor: Colors.pink,
-    ) ?? false;
+          context,
+          title: 'Konfirmasi Batal',
+          message: 'Apakah Anda yakin ingin membatalkan pengeditan?',
+          confirmText: 'Ya',
+          cancelText: 'Tidak',
+          icon: Icons.warning,
+          confirmColor: Colors.pink,
+        ) ??
+        false;
   }
 
   @override
   Widget build(BuildContext context) {
     final districtProvider = context.watch<DistrictProvider>();
     final districtItems = districtProvider.districts
-        .map((e) => DropdownItem(value: e.code, label: e.name.capitalizeWords()))
+        .map(
+            (e) => DropdownItem(value: e.code, label: e.name.capitalizeWords()))
         .toList();
 
-    final villageItems = context.watch<VillageProvider>().villages
-        .map((v) => DropdownItem(value: v.code, label: v.name.capitalizeWords()))
+    final villageItems = context
+        .watch<VillageProvider>()
+        .villages
+        .map(
+            (v) => DropdownItem(value: v.code, label: v.name.capitalizeWords()))
         .toList();
 
     const educationList = [
@@ -524,7 +536,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     _isLoading
                         ? const Center(
                             child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.pink),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.pink),
                             ),
                           )
                         : Row(
@@ -535,8 +548,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   backgroundColor: Colors.grey[300]!,
                                   textColor: Colors.black,
                                   onPressed: () async {
-                                    final shouldCancel = await _showCancelConfirmation();
-                                    if (shouldCancel && mounted) Navigator.pop(context);
+                                    final shouldCancel =
+                                        await _showCancelConfirmation();
+                                    if (shouldCancel && mounted)
+                                      Navigator.pop(context);
                                   },
                                 ),
                               ),

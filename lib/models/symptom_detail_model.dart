@@ -29,16 +29,42 @@ class SymptomDetail {
 class Recommendation {
   final String symptomName;
   final String recommendationText;
+  final List<RecommendationUrl> recommendationUrls;
 
   Recommendation({
     required this.symptomName,
     required this.recommendationText,
+    required this.recommendationUrls,
   });
 
   factory Recommendation.fromJson(Map<String, dynamic> json) {
     return Recommendation(
       symptomName: json['symptom_name'],
-      recommendationText: json['recommendation_text'],
+      recommendationText: json['recommendation_txt'],
+      recommendationUrls: (json['recommendation_url'] as List?)
+              ?.map((e) => RecommendationUrl.fromJson(e))
+              .toList() ??
+          [],
+    );
+  }
+}
+
+class RecommendationUrl {
+  final int id;
+  final String action;
+  final String videoUrl;
+
+  RecommendationUrl({
+    required this.id,
+    required this.action,
+    required this.videoUrl,
+  });
+
+  factory RecommendationUrl.fromJson(Map<String, dynamic> json) {
+    return RecommendationUrl(
+      id: json['id'],
+      action: json['action'],
+      videoUrl: json['video_url'],
     );
   }
 }

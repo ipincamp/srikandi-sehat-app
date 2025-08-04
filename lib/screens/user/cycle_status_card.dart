@@ -6,11 +6,17 @@ import 'package:srikandi_sehat_app/provider/cycle_provider.dart';
 class CycleStatusCard extends StatelessWidget {
   const CycleStatusCard({super.key});
 
-  String _getPhaseText(bool isMenstruating, String? periodStatus) {
-    if (isMenstruating) return 'Fase Menstruasi';
-    if (periodStatus == 'follicular') return 'Fase Folikular';
-    if (periodStatus == 'ovulation') return 'Fase Ovulasi';
-    if (periodStatus == 'luteal') return 'Fase Luteal';
+  String _getPhaseText(String? cycleStatus, String? periodStatus) {
+    if (periodStatus?.toLowerCase() == 'pendek' ||
+        periodStatus?.toLowerCase() == 'panjang' ||
+        periodStatus?.toLowerCase() == 'menstruating') {
+      return 'Fase Menstruasi';
+    }
+    if (cycleStatus?.toLowerCase() == 'polimenorea') return 'Fase Polimenorea';
+    if (cycleStatus?.toLowerCase() == 'oligomenorea') {
+      return 'Fase Oligomenorea';
+    }
+    if (cycleStatus?.toLowerCase() == 'amenorea') return 'Fase Amenorea';
     return 'Fase Normal'; // Default
   }
 
@@ -31,10 +37,13 @@ class CycleStatusCard extends StatelessWidget {
   double _getProgressValue(bool isMenstruating, int? day, int? totalDays) {
     if (isMenstruating) {
       if (day == null || totalDays == null || totalDays == 0) return 0.2;
-      return day / totalDays;
+      return (day / totalDays).clamp(0.0, 1.0); // Ensure value is between 0-1
     }
-    // For non-menstruating, we'll use a fixed value as in the original
-    return 0.75;
+    // For non-menstruating, show progress based on cycle duration
+    if (day != null && totalDays != null && totalDays > 0) {
+      return (day / totalDays).clamp(0.0, 1.0);
+    }
+    return 0.75; // Default value if no cycle data
   }
 
   String _getProgressText(bool isMenstruating, int? day, int? totalDays) {
@@ -42,7 +51,11 @@ class CycleStatusCard extends StatelessWidget {
       if (day == null || totalDays == null || totalDays == 0) return '20%';
       return '${((day / totalDays) * 100).round()}%';
     }
-    return '75%'; // Fixed value as in original
+    // For non-menstruating
+    if (day != null && totalDays != null && totalDays > 0) {
+      return '${((day / totalDays) * 100).round()}%';
+    }
+    return '75%'; // Default value
   }
 
   @override
@@ -51,7 +64,8 @@ class CycleStatusCard extends StatelessWidget {
     final isMenstruating = cycleProvider.isMenstruating;
     final cycleStatus = cycleProvider.cycleStatus;
 
-    final phaseText = _getPhaseText(isMenstruating, cycleStatus?.periodStatus);
+    final phaseText =
+        _getPhaseText(cycleStatus?.cycleStatus, cycleStatus?.periodStatus);
     final statusText = _getStatusText(
       isMenstruating,
       isMenstruating
@@ -66,13 +80,17 @@ class CycleStatusCard extends StatelessWidget {
     );
     final progressValue = _getProgressValue(
       isMenstruating,
-      isMenstruating ? cycleStatus?.periodLengthDays : null,
-      isMenstruating ? 7 : null, // Assuming 7 days for menstruation
+      isMenstruating
+          ? cycleStatus?.periodLengthDays
+          : cycleStatus?.cycleDurationDays,
+      isMenstruating ? 7 : 28, // 7 days for menstruation, 28 for full cycle
     );
     final progressText = _getProgressText(
       isMenstruating,
-      isMenstruating ? cycleStatus?.periodLengthDays : null,
-      isMenstruating ? 7 : null, // Assuming 7 days for menstruation
+      isMenstruating
+          ? cycleStatus?.periodLengthDays
+          : cycleStatus?.cycleDurationDays,
+      isMenstruating ? 7 : 28, // 7 days for menstruation, 28 for full cycle
     );
 
     return Container(
@@ -94,7 +112,7 @@ class CycleStatusCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Perkiraan Hari Ini:',
+            'Status Siklus Menstruasi:',
             style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
@@ -106,6 +124,17 @@ class CycleStatusCard extends StatelessWidget {
               color: Colors.pink,
             ),
           ),
+          if (cycleStatus?.cycleStatus != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              '(${cycleStatus?.cycleStatus})',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.pink[700],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
           const SizedBox(height: 15),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

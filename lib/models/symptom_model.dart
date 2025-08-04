@@ -2,13 +2,13 @@ class Symptom {
   final int id;
   final String name;
   final String category;
-  final String recommendation;
+  final String? recommendation;
 
   Symptom({
     required this.id,
     required this.name,
     required this.category,
-    required this.recommendation,
+    this.recommendation,
   });
 
   factory Symptom.fromJson(Map<String, dynamic> json) {

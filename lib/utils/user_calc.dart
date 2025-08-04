@@ -1,12 +1,4 @@
-// lib/utils/user_utils.dart
-
-/// Menghitung IMT (Indeks Massa Tubuh) dari tinggi (cm) dan berat (kg)
-double? calculateIMT(double heightCm, double weightKg) {
-  if (heightCm <= 0 || weightKg <= 0) return null;
-  final heightMeter = heightCm / 100;
-  final imt = weightKg / (heightMeter * heightMeter);
-  return double.parse(imt.toStringAsFixed(1));
-}
+import 'package:flutter/material.dart';
 
 /// Mengembalikan usia berdasarkan tanggal lahir dengan format 'YYYY-MM-DD'
 int? calculateAgeFromString(String dobStr) {
@@ -33,10 +25,29 @@ int? calculateAgeFromString(String dobStr) {
   }
 }
 
-/// Kategori IMT berdasarkan nilai
-String getIMTCategory(double imt) {
-  if (imt < 18.5) return 'Kurus';
-  if (imt < 25) return 'Normal';
-  if (imt < 30) return 'Gemuk';
+/// Utility functions for BMI (IMT) calculations and classifications
+
+/// Calculates BMI from height (cm) and weight (kg)
+double? calculateBMI(double heightCm, double weightKg) {
+  if (heightCm <= 0 || weightKg <= 0) return null;
+  final heightMeter = heightCm / 100;
+  return weightKg / (heightMeter * heightMeter);
+}
+
+/// Classifies BMI into categories (Asian standard)
+String classifyBMI(double bmi) {
+  if (bmi < 18.5) return 'Kurus';
+  if (bmi < 22.9) return 'Normal';
+  if (bmi < 24.9) return 'Berlebih';
+  if (bmi < 29.9) return 'Gemuk';
   return 'Obesitas';
+}
+
+/// Gets color representation for BMI category
+Color getBMIColor(double bmi) {
+  if (bmi < 18.5) return Colors.blue;
+  if (bmi < 22.9) return Colors.green;
+  if (bmi < 24.9) return Colors.orange;
+  if (bmi < 29.9) return Colors.deepOrange;
+  return Colors.red;
 }
