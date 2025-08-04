@@ -13,19 +13,20 @@ class UserDataScreen extends StatefulWidget {
 }
 
 class _UserDataScreenState extends State<UserDataScreen> {
-  int? selectedScope; // 1 for urban, 2 for rural
+  int? selectedScope;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      fetchInitialUsers();
+      _loadInitialData();
     });
   }
 
-  Future<void> fetchInitialUsers() async {
+  Future<void> _loadInitialData() async {
     final provider = Provider.of<UserDataProvider>(context, listen: false);
-    await provider.fetchUsers();
+    await provider.fetchUsers(context);
   }
 
   @override
@@ -42,141 +43,159 @@ class _UserDataScreenState extends State<UserDataScreen> {
         title: const Text('Dashboard',
             style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => userProvider.refreshData(context),
+          ),
+        ],
       ),
       body: userProvider.isLoading && allUsers.isEmpty
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  CustomChart(
+          : RefreshIndicator(
+              onRefresh: () => userProvider.refreshData(context),
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    CustomChart(
                       urbanCount: urbanCount,
                       ruralCount: ruralCount,
                       onDownloadPressed: () {
                         final provider = Provider.of<CsvDownloadProvider>(
                             context,
                             listen: false);
-                        provider.downloadUserCsv();
-                      }),
-                  const SizedBox(height: 20),
-                  // Filter Buttons (with improved styling)
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(10),
+                        provider.downloadUserCsv(context);
+                      },
                     ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() => selectedScope = 1);
-                              userProvider.fetchUsers(scope: 1);
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: selectedScope == 1
-                                    ? Colors.white
-                                    : Colors.transparent,
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(10),
-                                  bottomLeft: Radius.circular(10),
-                                ),
-                                boxShadow: selectedScope == 1
-                                    ? [
-                                        BoxShadow(
-                                          color: Colors.grey.withOpacity(0.2),
-                                          spreadRadius: 1,
-                                          blurRadius: 3,
-                                          offset: const Offset(0, 1),
-                                        ),
-                                      ]
-                                    : null,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  'Perkotaan',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: selectedScope == 1
-                                        ? Colors.blue
-                                        : Colors.grey[600],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() => selectedScope = 2);
-                              userProvider.fetchUsers(scope: 2);
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: selectedScope == 2
-                                    ? Colors.white
-                                    : Colors.transparent,
-                                borderRadius: const BorderRadius.only(
-                                  topRight: Radius.circular(10),
-                                  bottomRight: Radius.circular(10),
-                                ),
-                                boxShadow: selectedScope == 2
-                                    ? [
-                                        BoxShadow(
-                                          color: Colors.grey.withOpacity(0.2),
-                                          spreadRadius: 1,
-                                          blurRadius: 3,
-                                          offset: const Offset(0, 1),
-                                        ),
-                                      ]
-                                    : null,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  'Pedesaan',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: selectedScope == 2
-                                        ? Colors.green
-                                        : Colors.grey[600],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 20),
+                    _buildScopeFilter(context, userProvider),
+                    const SizedBox(height: 20),
+                    CustomTable(
+                      users: allUsers
+                          .map((u) => {
+                                'id': u.id,
+                                'name': u.name,
+                                'region': u.scope == 1 ? 'Kota' : 'Desa',
+                              })
+                          .toList(),
+                      currentPage: currentPage - 1,
+                      itemsPerPage: 10,
+                      pageCount: pageCount,
+                      scope: selectedScope,
+                      onPageChanged: (index) {
+                        userProvider.fetchUsers(
+                          context,
+                          page: index + 1,
+                          scope: selectedScope,
+                        );
+                        _scrollController.animateTo(
+                          0,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeOut,
+                        );
+                      },
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  // Table with fixed height for 10 items
-                  CustomTable(
-                    users: allUsers
-                        .map((u) => {
-                              'id': u.id,
-                              'name': u.name,
-                              'region': u.scope == 1 ? 'Kota' : 'Desa',
-                            })
-                        .toList(),
-                    currentPage: currentPage - 1, // Convert to 0-based index
-                    itemsPerPage: 10,
-                    pageCount: pageCount,
-                    scope: selectedScope,
-                    onPageChanged: (index) {
-                      // Convert to 1-based index for API
-                      userProvider.fetchUsers(
-                        page: index + 1,
-                        scope: selectedScope,
-                      );
-                    },
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
     );
+  }
+
+  Widget _buildScopeFilter(BuildContext context, UserDataProvider provider) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: InkWell(
+              onTap: () {
+                setState(() => selectedScope = 1);
+                provider.fetchUsers(context, scope: 1);
+              },
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: selectedScope == 1 ? Colors.white : Colors.transparent,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(10),
+                    bottomLeft: Radius.circular(10),
+                  ),
+                  boxShadow: selectedScope == 1
+                      ? [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 1,
+                            blurRadius: 3,
+                            offset: const Offset(0, 1),
+                          )
+                        ]
+                      : null,
+                ),
+                child: Center(
+                  child: Text(
+                    'Perkotaan',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color:
+                          selectedScope == 1 ? Colors.blue : Colors.grey[600],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: InkWell(
+              onTap: () {
+                setState(() => selectedScope = 2);
+                provider.fetchUsers(context, scope: 2);
+              },
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: selectedScope == 2 ? Colors.white : Colors.transparent,
+                  borderRadius: const BorderRadius.only(
+                    topRight: Radius.circular(10),
+                    bottomRight: Radius.circular(10),
+                  ),
+                  boxShadow: selectedScope == 2
+                      ? [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 1,
+                            blurRadius: 3,
+                            offset: const Offset(0, 1),
+                          )
+                        ]
+                      : null,
+                ),
+                child: Center(
+                  child: Text(
+                    'Pedesaan',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color:
+                          selectedScope == 2 ? Colors.green : Colors.grey[600],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 }

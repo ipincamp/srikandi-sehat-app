@@ -15,7 +15,7 @@ class CsvDownloadProvider with ChangeNotifier {
   String get downloadStatus => _downloadStatus;
   String get errorMessage => _errorMessage;
 
-  Future<void> downloadUserCsv() async {
+  Future<void> downloadUserCsv(BuildContext context) async {
     _isDownloading = true;
     _downloadStatus = 'Mempersiapkan unduhan...';
     notifyListeners();

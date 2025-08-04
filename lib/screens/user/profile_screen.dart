@@ -31,12 +31,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Provider.of<UserProfileProvider>(context, listen: false);
 
     try {
-      final profile = await userProvider.getProfile();
-      if (profile != null && mounted) {
+      await userProvider.loadProfile(context);
+      if (mounted) {
         setState(() {
-          _name = profile['name'];
-          _email = profile['email'];
-          _role = profile['role'];
+          _name = userProvider.name;
+          _email = userProvider.email;
+          _role = userProvider.role;
         });
       }
     } catch (e) {

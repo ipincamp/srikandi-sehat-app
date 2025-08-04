@@ -206,9 +206,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _isLoading = false);
 
     // Check if there's an error message to determine success
-    if (profileChangeProvider.errorMessage == null ||
-        profileChangeProvider.errorMessage!.isEmpty) {
-      await context.read<UserProfileProvider>().getProfile();
+    if (profileChangeProvider.errorMessage.isEmpty) {
+      await context.read<UserProfileProvider>().loadProfile(context, forceRefresh: true);
       if (mounted) {
         CustomAlert.show(
           context,

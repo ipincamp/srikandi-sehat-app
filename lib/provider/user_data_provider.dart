@@ -1,9 +1,8 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import '../models/user_model.dart';
+import 'package:srikandi_sehat_app/core/network/http_client.dart';
+import 'package:srikandi_sehat_app/models/user_model.dart';
 
 class UserDataProvider with ChangeNotifier {
   List<UserModel> _allUsers = [];
@@ -22,50 +21,48 @@ class UserDataProvider with ChangeNotifier {
   int get urbanCount => _urbanCount;
   int get ruralCount => _ruralCount;
 
-  Future<void> fetchUsers({int page = 1, int? scope}) async {
+  Future<void> fetchUsers(BuildContext context,
+      {int page = 1, int? scope}) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token') ?? '';
-      final baseUrl = dotenv.env['API_URL'];
-
-      // Build URL with pagination and scope filter if provided
-      Uri url = Uri.parse('$baseUrl/users?page=$page&per_page=10');
+      // Build URL with pagination and scope filter
+      String endpoint = 'users?page=$page&per_page=10';
       if (scope != null) {
-        url = Uri.parse('$baseUrl/users?page=$page&per_page=10&scope=$scope');
+        endpoint += '&scope=$scope';
       }
 
-      final response = await http.get(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
+      // Gunakan HttpClient yang sudah terintegrasi auth guard
+      final response = await HttpClient.get(context, endpoint, body: {});
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonData = json.decode(response.body);
-        final List<dynamic> userList = jsonData['data'];
+      final jsonData = jsonDecode(response.body);
+      final List<dynamic> userList = jsonData['data'];
 
-        _allUsers = userList.map((json) => UserModel.fromJson(json)).toList();
-        _currentPage = jsonData['meta']['current_page'];
-        _lastPage = jsonData['meta']['last_page'];
+      _allUsers = userList.map((json) => UserModel.fromJson(json)).toList();
+      _currentPage = jsonData['meta']['current_page'];
+      _lastPage = jsonData['meta']['last_page'];
 
-        _totalUsers = jsonData['meta']['stats']['all_user'] ?? 0;
-        _urbanCount = jsonData['meta']['stats']['urban_users'] ?? 0;
-        _ruralCount = jsonData['meta']['stats']['rural_users'] ?? 0;
+      _totalUsers = jsonData['meta']['stats']['all_user'] ?? 0;
+      _urbanCount = jsonData['meta']['stats']['urban_users'] ?? 0;
+      _ruralCount = jsonData['meta']['stats']['rural_users'] ?? 0;
 
-        _isLoading = false;
-        notifyListeners();
-      } else {
-        throw Exception('Failed to fetch users');
-      }
+      _isLoading = false;
+      notifyListeners();
     } catch (e) {
       _isLoading = false;
       notifyListeners();
+
+      // Error sudah dihandle oleh HttpClient, kita hanya perlu clear data jika perlu
+      if (e.toString().contains('Unauthorized')) {
+        _allUsers = [];
+        notifyListeners();
+      }
       rethrow;
     }
+  }
+
+  Future<void> refreshData(BuildContext context) async {
+    await fetchUsers(context, page: 1);
   }
 }

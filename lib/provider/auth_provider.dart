@@ -16,6 +16,8 @@ class AuthProvider with ChangeNotifier {
 
   get token => null;
 
+  get role => null;
+
   Future<bool> login(String email, String password) async {
     _authToken = dotenv.env['AUTH_TOKEN'];
     _isLoading = true;

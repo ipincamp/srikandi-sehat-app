@@ -191,8 +191,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   flex: 2,
                   child: CycleActionButtons(
-                    onStart: !isMenstruating ? _handleStartCycle : () {},
-                    onEnd: isMenstruating ? _handleEndCycle : () {},
+                    onStart:
+                        !isMenstruating ? () => _handleStartCycle() : () {},
+                    onEnd: isMenstruating ? () => _handleEndCycle() : () {},
                     isMenstruating: isMenstruating,
                   ),
                 ),

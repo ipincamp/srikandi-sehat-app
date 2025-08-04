@@ -34,7 +34,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Provider.of<UserProfileProvider>(context, listen: false);
 
     try {
-      await userProvider.getProfile(forceRefresh: forceRefresh);
+      await userProvider.loadProfile(context, forceRefresh: forceRefresh);
     } catch (e) {
       if (mounted) {
         CustomAlert.show(context, 'Gagal memuat profil', type: AlertType.error);

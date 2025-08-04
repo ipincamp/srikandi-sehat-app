@@ -38,68 +38,92 @@ import 'package:srikandi_sehat_app/screens/admin/main_screen.dart' as admin;
 import 'package:srikandi_sehat_app/screens/admin/profile_screen.dart' as admin;
 import 'package:srikandi_sehat_app/screens/admin/user_data_screen.dart'
     as admin;
+import 'package:srikandi_sehat_app/core/auth/auth_guard.dart';
+import 'package:srikandi_sehat_app/core/auth/route_observer.dart';
+import 'package:srikandi_sehat_app/core/auth/auth_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
 
-  final prefs = await SharedPreferences.getInstance();
-  final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-  final role = prefs.getString('role');
-
   runApp(
     DevicePreview(
       enabled: true,
-      tools: const [
-        ...DevicePreview.defaultTools,
-      ],
-      builder: (context) => MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => AuthProvider()),
-          ChangeNotifierProvider(create: (_) => UserProfileProvider()),
-          ChangeNotifierProvider(create: (_) => ProfileChangeProvider()),
-          ChangeNotifierProvider(create: (_) => DistrictProvider()),
-          ChangeNotifierProvider(create: (_) => VillageProvider()),
-          ChangeNotifierProvider(create: (_) => PasswordProvider()),
-          ChangeNotifierProvider(create: (_) => CycleProvider()),
-          ChangeNotifierProvider(create: (_) => CycleHistoryProvider()),
-          ChangeNotifierProvider(create: (_) => SymptomProvider()),
-          ChangeNotifierProvider(create: (_) => SymptomLogProvider()),
-          ChangeNotifierProvider(create: (_) => SymptomHistoryProvider()),
-          ChangeNotifierProvider(create: (_) => SymptomDetailProvider()),
-          ChangeNotifierProvider(create: (_) => UserDataProvider()),
-          ChangeNotifierProvider(create: (_) => UserDetailProvider()),
-          ChangeNotifierProvider(create: (_) => CsvDownloadProvider()),
-          ChangeNotifierProvider(create: (_) => UserDataStatsProvider()),
-        ],
-        child: MyApp(
-          isLoggedIn: isLoggedIn,
-          role: role,
-        ),
-      ),
+      tools: const [...DevicePreview.defaultTools],
+      builder: (context) => const AppProviders(),
     ),
   );
 }
 
-class MyApp extends StatelessWidget {
-  final bool isLoggedIn;
-  final String? role;
-
-  const MyApp({super.key, required this.isLoggedIn, required this.role});
+class AppProviders extends StatelessWidget {
+  const AppProviders({super.key});
 
   @override
   Widget build(BuildContext context) {
-    Widget initialScreen;
-    if (isLoggedIn && role == 'admin') {
-      initialScreen = const admin.MainScreen();
-    } else if (isLoggedIn && role == 'user') {
-      initialScreen = const user.MainScreen();
-    } else {
-      initialScreen = const LoginScreen();
-    }
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => CycleProvider()),
+        ChangeNotifierProvider(create: (_) => CycleHistoryProvider()),
+        ChangeNotifierProvider(create: (_) => UserDataProvider()),
+        ChangeNotifierProvider(create: (_) => UserProfileProvider()),
+        ChangeNotifierProvider(create: (_) => UserDetailProvider()),
+        ChangeNotifierProvider(create: (_) => UserDataStatsProvider()),
+        ChangeNotifierProvider(create: (_) => PasswordProvider()),
+        ChangeNotifierProvider(create: (_) => SymptomProvider()),
+        ChangeNotifierProvider(create: (_) => SymptomLogProvider()),
+        ChangeNotifierProvider(create: (_) => SymptomHistoryProvider()),
+        ChangeNotifierProvider(create: (_) => SymptomDetailProvider()),
+        ChangeNotifierProvider(create: (_) => DistrictProvider()),
+        ChangeNotifierProvider(create: (_) => VillageProvider()),
+        ChangeNotifierProvider(create: (_) => ProfileChangeProvider()),
+        ChangeNotifierProvider(create: (_) => CsvDownloadProvider()),
+      ],
+      child: FutureBuilder(
+        future: _checkInitialAuthState(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return MaterialApp(
+              home: Scaffold(body: Center(child: CircularProgressIndicator())),
+            );
+          }
+          return MyApp(
+            initialAuthState:
+                snapshot.data ?? AuthState(isLoggedIn: false, role: null),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<AuthState> _checkInitialAuthState() async {
+    final prefs = await SharedPreferences.getInstance();
+    return AuthState(
+      isLoggedIn: prefs.getBool('isLoggedIn') ?? false,
+      role: prefs.getString('role'),
+    );
+  }
+}
+
+class AuthState {
+  final bool isLoggedIn;
+  final String? role;
+
+  AuthState({required this.isLoggedIn, required this.role});
+}
+
+class MyApp extends StatelessWidget {
+  final AuthState initialAuthState;
+  final _routeObserver = AuthRouteObserver();
+
+  MyApp({super.key, required this.initialAuthState});
+
+  @override
+  Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Sri Kandi Sehat',
       debugShowCheckedModeBanner: false,
+      navigatorObservers: [_routeObserver],
       theme: ThemeData(
         primarySwatch: Colors.pink,
         fontFamily: 'Poppins',
@@ -117,7 +141,12 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: initialScreen,
+      home: AuthWrapper(
+        initialAuthState: initialAuthState,
+        adminChild: const admin.MainScreen(),
+        userChild: const user.MainScreen(),
+        guestChild: const LoginScreen(),
+      ),
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
