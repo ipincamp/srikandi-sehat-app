@@ -20,7 +20,7 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CycleHistoryProvider>().fetchCycleHistory();
+      context.read<CycleHistoryProvider>().fetchCycleHistory(context);
     });
   }
 
@@ -53,7 +53,7 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
                       style: const TextStyle(color: Colors.pink)),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => provider.fetchCycleHistory(),
+                    onPressed: () => provider.fetchCycleHistory(context),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.pink[400],
                       shape: RoundedRectangleBorder(

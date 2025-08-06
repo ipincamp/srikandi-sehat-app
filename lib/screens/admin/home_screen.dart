@@ -14,7 +14,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<UserDataStatsProvider>(context, listen: false)
-          .fetchUserStats();
+          .fetchUserStats(context);
     });
   }
 

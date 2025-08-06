@@ -1,8 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:srikandi_sehat_app/core/network/http_client.dart';
 
 class UserDataStatsProvider with ChangeNotifier {
   int _totalUsers = 0;
@@ -15,18 +13,13 @@ class UserDataStatsProvider with ChangeNotifier {
   int get urbanCount => _urbanCount;
   int get ruralCount => _ruralCount;
 
-  Future<void> fetchUserStats() async {
+  Future<void> fetchUserStats(BuildContext context) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token') ?? '';
-      final baseUrl = dotenv.env['API_URL'];
-
-      final response = await http.get(
-        Uri.parse('$baseUrl/users/stats'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+      String endpoint = 'users/stats';
+      final response = await HttpClient.get(
+        context,
+        endpoint,
+        body: {},
       );
 
       if (response.statusCode == 200) {

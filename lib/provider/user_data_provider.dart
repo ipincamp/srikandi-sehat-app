@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:srikandi_sehat_app/core/network/http_client.dart';
 import 'package:srikandi_sehat_app/models/user_model.dart';

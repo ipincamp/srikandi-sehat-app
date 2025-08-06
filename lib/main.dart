@@ -38,7 +38,6 @@ import 'package:srikandi_sehat_app/screens/admin/main_screen.dart' as admin;
 import 'package:srikandi_sehat_app/screens/admin/profile_screen.dart' as admin;
 import 'package:srikandi_sehat_app/screens/admin/user_data_screen.dart'
     as admin;
-import 'package:srikandi_sehat_app/core/auth/auth_guard.dart';
 import 'package:srikandi_sehat_app/core/auth/route_observer.dart';
 import 'package:srikandi_sehat_app/core/auth/auth_wrapper.dart';
 
