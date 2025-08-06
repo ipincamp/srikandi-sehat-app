@@ -8,83 +8,90 @@ import 'package:srikandi_sehat_app/models/cycle_status_model.dart';
 class CycleProvider with ChangeNotifier {
   bool _isMenstruating = false;
   CycleStatus? _cycleStatus;
-  DateTime? _lastFetched;
+  Map<String, dynamic> _notificationFlags = {};
+  int? _activeCycleRunningDays;
+  bool _isLoading = false;
 
   bool get isMenstruating => _isMenstruating;
   CycleStatus? get cycleStatus => _cycleStatus;
+  Map<String, dynamic> get notificationFlags => _notificationFlags;
+  int? get activeCycleRunningDays => _activeCycleRunningDays;
+  bool get isLoading => _isLoading;
 
-  static const Duration cacheDuration = Duration(minutes: 5);
+  Future<void> synchronizeState() async {
+    _isLoading = true;
+    notifyListeners();
 
-  Future<void> loadCycleStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final responses = await Future.wait([
+        _fetchDataFromServer(prefs, 'status'),
+        _fetchDataFromServer(prefs, 'summary'),
+      ]);
 
-      _isMenstruating = prefs.getBool('isMenstruating') ?? false;
-      notifyListeners();
+      final statusResponseData = responses[0];
+      final summaryResponseData = responses[1];
 
-      await _fetchCycleStatusFromApi(prefs);
+      if (summaryResponseData != null) {
+        final runningDaysValue =
+            summaryResponseData['active_cycle_running_days'];
+
+        _isMenstruating = (runningDaysValue != null);
+
+        _activeCycleRunningDays =
+            (runningDaysValue is num) ? runningDaysValue.toInt() : null;
+        _notificationFlags = summaryResponseData['notification_flags'] ?? {};
+      } else {
+        _isMenstruating = prefs.getBool('isMenstruating') ?? false;
+      }
+
+      if (statusResponseData != null) {
+        statusResponseData['is_menstruating'] = _isMenstruating;
+        _cycleStatus = CycleStatus.fromJson(statusResponseData);
+      }
+
+      await prefs.setBool('isMenstruating', _isMenstruating);
     } catch (e) {
-      await _handleCycleStatusError();
+      print('Gagal sinkronisasi data: $e');
+      await _handleError(prefs);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
-  Future<void> _fetchCycleStatusFromApi(SharedPreferences prefs) async {
+  Future<Map<String, dynamic>?> _fetchDataFromServer(
+      SharedPreferences prefs, String endpoint) async {
     final token = prefs.getString('token');
     final apiUrl = dotenv.env['API_URL'];
+    if (token == null || apiUrl == null) return null;
 
-    if (token == null || token.isEmpty || apiUrl == null || apiUrl.isEmpty) {
-      return;
-    }
-
-    final response = await http.get(
-      Uri.parse('$apiUrl/cycles/status'),
-      headers: {
+    try {
+      final url = Uri.parse('$apiUrl/cycles/$endpoint');
+      final response = await http.get(url, headers: {
         'Authorization': 'Bearer $token',
         'Accept': 'application/json',
-      },
-    ).timeout(const Duration(seconds: 5));
+      }).timeout(const Duration(seconds: 10));
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      if (data['data'] != null) {
-        _cycleStatus = CycleStatus.fromJson(data['data']);
-        _lastFetched = DateTime.now();
-
-        _isMenstruating = _cycleStatus?.isMenstruating ?? _isMenstruating;
-
-        await _saveCycleData(prefs);
-        notifyListeners();
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        return responseData['data'];
       }
+    } catch (e) {
+      print("Gagal fetch data dari endpoint '$endpoint': $e");
     }
+    return null;
+  }
 
+  Future<String> startCycle() async {
+    _isLoading = true;
     notifyListeners();
-  }
 
-  Future<void> _saveCycleData(SharedPreferences prefs) async {
-    await prefs.setBool('isMenstruating', _cycleStatus?.isMenstruating ?? false);
-    await prefs.setInt('periodLengthDays', _cycleStatus?.periodLengthDays ?? 0);
-    await prefs.setInt('cycleDurationDays', _cycleStatus?.cycleDurationDays ?? 0);
-  }
-
-  Future<void> _handleCycleStatusError() async {
-    final prefs = await SharedPreferences.getInstance();
-    _isMenstruating = prefs.getBool('isMenstruating') ?? false;
-
-    _cycleStatus = CycleStatus(
-      periodLengthDays: prefs.getInt('periodLengthDays') ?? 0,
-      cycleDurationDays: prefs.getInt('cycleDurationDays') ?? 0,
-      isMenstruating: _isMenstruating,
-    );
-
-    notifyListeners();
-  }
-
-  Future<void> startCycle() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
       final apiUrl = dotenv.env['API_URL'];
-
       if (token == null || token.isEmpty || apiUrl == null || apiUrl.isEmpty) {
         throw Exception('Authentication or configuration error');
       }
@@ -97,34 +104,31 @@ class CycleProvider with ChangeNotifier {
         },
       );
 
-      if (response.statusCode == 201) {
-        _isMenstruating = true;
-        notifyListeners();
-
-        await _fetchCycleStatusFromApi(prefs);
+      if (response.statusCode == 201 || response.statusCode == 409) {
+        await synchronizeState();
+        return response.statusCode == 201
+            ? 'Siklus berhasil dimulai!'
+            : 'Melanjutkan siklus yang sudah aktif.';
       } else {
         final responseData = json.decode(response.body);
-        final errorMessage = responseData['message']?.toString() ?? 'Gagal memulai siklus';
-        throw Exception(errorMessage);
+        throw Exception(
+            responseData['message']?.toString() ?? 'Gagal memulai siklus.');
       }
     } catch (e) {
-      print('Error starting cycle: $e');
+      _isLoading = false;
+      notifyListeners();
+      print('Error saat memulai siklus: $e');
       rethrow;
     }
   }
 
-  Future<void> _handleSuccessfulCycleStart(SharedPreferences prefs) async {
-    _isMenstruating = true;
-    await prefs.setBool('isMenstruating', true);
-    await loadCycleStatus();
-  }
-
   Future<void> endCycle() async {
+    _isLoading = true;
+    notifyListeners();
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
       final apiUrl = dotenv.env['API_URL'];
-
       if (token == null || token.isEmpty || apiUrl == null || apiUrl.isEmpty) {
         throw Exception('Authentication or configuration error');
       }
@@ -138,35 +142,20 @@ class CycleProvider with ChangeNotifier {
       );
 
       if (response.statusCode == 200) {
-        _isMenstruating = false;
-        notifyListeners();
-
-        await prefs.setInt('current_cycle_number', 0);
-        await _fetchCycleStatusFromApi(prefs);
+        await synchronizeState();
       } else {
-        throw Exception('Failed to end cycle');
+        throw Exception('Gagal mengakhiri siklus');
       }
     } catch (e) {
-      print('Error ending cycle: $e');
+      _isLoading = false;
+      notifyListeners();
+      print('Error saat mengakhiri siklus: $e');
       rethrow;
     }
   }
 
-  Future<void> _handleSuccessfulCycleEnd(SharedPreferences prefs) async {
-    _isMenstruating = false;
-    await prefs.setBool('isMenstruating', false);
-    await loadCycleStatus();
-  }
-
-  Future<void> clearCycleData() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('isMenstruating');
-    await prefs.remove('periodLengthDays');
-    await prefs.remove('cycleDurationDays');
-
-    _cycleStatus = null;
-    _isMenstruating = false;
-    _lastFetched = null;
-    notifyListeners();
+  Future<void> _handleError(SharedPreferences prefs) async {
+    _isMenstruating = prefs.getBool('isMenstruating') ?? false;
+    _cycleStatus = CycleStatus(isMenstruating: _isMenstruating);
   }
 }

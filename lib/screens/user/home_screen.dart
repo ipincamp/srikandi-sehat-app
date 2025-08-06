@@ -24,16 +24,15 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeData();
-    _checkProfileStatus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeData();
+      _checkProfileStatus();
+    });
   }
 
   Future<void> _initializeData() async {
     try {
-      // Load cycle status first
-      await context.read<CycleProvider>().loadCycleStatus();
-
-      // Then load symptoms
+      await context.read<CycleProvider>().synchronizeState();
       await Provider.of<SymptomProvider>(context, listen: false)
           .fetchSymptoms();
     } catch (e) {
@@ -64,10 +63,11 @@ class _HomeScreenState extends State<HomeScreen> {
     if (confirmed != true) return;
 
     try {
-      await context.read<CycleProvider>().startCycle();
+      final String successMessage =
+          await context.read<CycleProvider>().startCycle();
+
       if (mounted) {
-        CustomAlert.show(context, 'Siklus menstruasi dimulai!',
-            type: AlertType.success);
+        CustomAlert.show(context, successMessage, type: AlertType.success);
       }
     } catch (e) {
       if (mounted) {
@@ -154,6 +154,56 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildAnomalyNotifications() {
+    final cycleProvider = context.watch<CycleProvider>();
+    final flags = cycleProvider.notificationFlags;
+
+    if (cycleProvider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (flags.isEmpty) {
+      return const SizedBox
+          .shrink(); // Jangan tampilkan apa-apa jika tidak ada data
+    }
+
+    final List<Widget> notifications = [];
+
+    if (flags['period_is_prolonged'] == true) {
+      notifications.add(const ReminderTile(
+          message:
+              'Peringatan: Durasi menstruasi Anda lebih lama dari biasanya.'));
+    }
+    if (flags['period_is_short'] == true) {
+      notifications.add(const ReminderTile(
+          message: 'Info: Durasi menstruasi Anda lebih pendek dari biasanya.'));
+    }
+    if (flags['cycle_is_late'] == true) {
+      notifications.add(const ReminderTile(
+          message:
+              'Peringatan: Siklus Anda terlambat. Pertimbangkan tes kehamilan.'));
+    }
+    if (flags['cycle_is_short'] == true) {
+      notifications.add(const ReminderTile(
+          message: 'Info: Siklus Anda lebih pendek dari biasanya.'));
+    }
+
+    if (notifications.isEmpty) {
+      return const ReminderTile(
+          message: 'Siklus Anda terpantau normal. Tetap jaga kesehatan!');
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: notifications
+          .map((item) => Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: item,
+              ))
+          .toList(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMenstruating = context.watch<CycleProvider>().isMenstruating;
@@ -225,8 +275,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            const ReminderTile(
-                message: 'Jangan lupa minum air cukup hari ini!'),
+            // Ganti ReminderTile yang lama dengan widget baru kita
+            _buildAnomalyNotifications(),
           ],
         ),
       ),

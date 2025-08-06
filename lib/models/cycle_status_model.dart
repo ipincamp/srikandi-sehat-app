@@ -18,12 +18,12 @@ class CycleStatus {
 
   factory CycleStatus.fromJson(Map<String, dynamic> json) {
     return CycleStatus(
-      cycleId: json['cycle_id'],
-      cycleStatus: json['cycle_status'],
-      cycleDurationDays: json['cycle_duration_days'] ?? 0,
-      periodStatus: json['period_status'],
-      periodLengthDays: json['period_length_days'] ?? 0,
-      isMenstruating: json['period_status'] == 'menstruating',
+      cycleId: json['cycle_id']?.toString(),
+      cycleStatus: json['cycle_status']?.toString(),
+      periodStatus: json['period_status']?.toString(),
+      cycleDurationDays: (json['cycle_duration_days'] as num?)?.toInt() ?? 0,
+      periodLengthDays: (json['period_length_days'] as num?)?.toInt() ?? 0,
+      isMenstruating: json['is_menstruating'] ?? false,
     );
   }
 }
