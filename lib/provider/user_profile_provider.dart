@@ -3,6 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:srikandi_sehat_app/core/network/http_client.dart';
 
+extension StringCasingExtension on String {
+  String toTitleCase() {
+    if (isEmpty) return this;
+    return toLowerCase().split(' ').map((word) {
+      if (word.isEmpty) return word;
+      return word[0].toUpperCase() + word.substring(1);
+    }).join(' ');
+  }
+}
+
 class UserProfileProvider with ChangeNotifier {
   bool _isLoading = false;
   String _errorMessage = '';
@@ -17,6 +27,35 @@ class UserProfileProvider with ChangeNotifier {
   String get email => _userData['email'] ?? '';
   String? get role => _userData['role'];
   int? get currentCycleNumber => _currentCycleNumber;
+
+  String get residentialCategory {
+    final profileData = _userData['profile'];
+    if (profileData == null || profileData['address'] == null) {
+      return 'Belum diisi';
+    }
+    final String address = profileData['address'].toString();
+    final upperCaseAddress = address.toUpperCase();
+
+    if (upperCaseAddress.contains('(DESA)')) {
+      return 'Perdesaan';
+    } else if (upperCaseAddress.contains('(KOTA)')) {
+      return 'Perkotaan';
+    }
+
+    return 'Tidak Terdefinisi';
+  }
+
+  String get formattedAddress {
+    final profileData = _userData['profile'];
+    if (profileData == null || profileData['address'] == null) {
+      return 'Belum diisi';
+    }
+
+    String address = profileData['address'].toString();
+    address = address.replaceAll(RegExp(r'\((.*?)\)\s*'), '');
+
+    return address.toTitleCase();
+  }
 
   static const Duration cacheDuration = Duration(minutes: 5);
 

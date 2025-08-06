@@ -78,7 +78,8 @@ class DetailProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<UserProfileProvider>().userData;
+    final userProfileProvider = context.watch<UserProfileProvider>();
+    final user = userProfileProvider.userData;
     final detail = user['profile'] ?? {};
     Theme.of(context);
 
@@ -152,13 +153,13 @@ class DetailProfileScreen extends StatelessWidget {
               buildProfileCard(
                 icon: Icons.location_on_outlined,
                 title: 'Alamat',
-                value: detail['address'] ?? 'Belum diisi',
+                value: userProfileProvider.formattedAddress,
                 color: Colors.redAccent,
               ),
               buildProfileCard(
                 icon: Icons.category_outlined,
                 title: 'Kategori Tempat Tinggal',
-                value: 'Belum diisi',
+                value: userProfileProvider.residentialCategory,
                 color: Colors.indigo,
               ),
               buildProfileCard(
