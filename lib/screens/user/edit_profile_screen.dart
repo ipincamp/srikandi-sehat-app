@@ -197,17 +197,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       'inet_access': _internetAccessController.text,
       'first_haid': _firstHaidController.text,
       'job_parent': _jobParentController.text,
-      'district': profileChangeProvider.districtCode ?? '',
+      // 'district': profileChangeProvider.districtCode ?? '', >>> NOT USED
     };
 
-    await profileChangeProvider.updateProfile(payload);
+    final bool isSuccess = await profileChangeProvider.updateProfile(payload);
 
     if (!mounted) return;
     setState(() => _isLoading = false);
 
-    // Check if there's an error message to determine success
-    if (profileChangeProvider.errorMessage.isEmpty) {
-      await context.read<UserProfileProvider>().loadProfile(context, forceRefresh: true);
+    if (isSuccess) {
+      await context
+          .read<UserProfileProvider>()
+          .loadProfile(context, forceRefresh: true);
       if (mounted) {
         CustomAlert.show(
           context,

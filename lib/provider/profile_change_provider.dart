@@ -49,7 +49,48 @@ class ProfileChangeProvider with ChangeNotifier {
   get villageName => null;
 
   // FIX: Hapus parameter yang tidak perlu dari signature
-  Future<void> updateProfile([Map<String, dynamic>? payload]) async {
+  // Method untuk memperbarui profil pengguna
+  Future<bool> updateProfile(Map<String, dynamic> profileData) async {
+    _isLoading = true;
+    _errorMessage = '';
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token') ?? '';
+    final baseUrl = dotenv.env['API_URL'];
+    final url = '$baseUrl/me/profile'; // Endpoint untuk update profile
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode(profileData),
+      );
+
+      if (response.statusCode == 200) {
+        await fetchProfile();
+        return true;
+      } else {
+        final data = jsonDecode(response.body);
+        _errorMessage = data['message'] ?? 'Gagal memperbarui profil.';
+        return false;
+      }
+    } catch (e) {
+      _errorMessage = 'Terjadi kesalahan: $e';
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // TAMBAHKAN method baru ini di dalam class ProfileChangeProvider
+  // Method untuk mengambil data profil pengguna
+  Future<void> fetchProfile() async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
@@ -70,7 +111,6 @@ class ProfileChangeProvider with ChangeNotifier {
       if (response.statusCode == 200 && responseData['data'] != null) {
         final user = responseData['data'];
 
-        // FIX: Ambil semua data dari API dan simpan di state
         _name = user['name'];
         _email = user['email'];
         _role = user['role'];
@@ -80,15 +120,14 @@ class ProfileChangeProvider with ChangeNotifier {
         _weight = user['bb_kg'] != null
             ? double.tryParse(user['bb_kg'].toString())
             : null;
-        _districtCode = user['district_code']; // Asumsi API mengembalikan ini
-        _villageCode = user['address']; // address berisi village_code
+        _districtCode = user['district_code'];
+        _villageCode = user['address'];
         _eduNow = user['edu_now'];
         _eduParent = user['edu_parent'];
         _internetAccess = user['inet_access'];
         _firstHaid = user['first_haid'];
         _jobParent = user['job_parent'];
 
-        // Simpan data penting ke SharedPreferences jika perlu
         await prefs.setString('name', _name ?? '');
         await prefs.setString('email', _email ?? '');
       } else {
@@ -96,45 +135,6 @@ class ProfileChangeProvider with ChangeNotifier {
       }
     } catch (e) {
       _errorMessage = 'Terjadi kesalahan: $e';
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  // TAMBAHKAN method baru ini di dalam class ProfileChangeProvider
-  Future<bool> getProfile(Map<String, dynamic> profileData) async {
-    _isLoading = true;
-    _errorMessage = '';
-    notifyListeners();
-
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token') ?? '';
-    final baseUrl = dotenv.env['API_URL'];
-    final url = '$baseUrl/me/profile'; // Endpoint untuk update profile
-
-    try {
-      // Menggunakan http.put untuk update
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode(profileData),
-      );
-
-      if (response.statusCode == 200) {
-        return true;
-      } else {
-        final data = jsonDecode(response.body);
-        _errorMessage = data['message'] ?? 'Gagal memperbarui profil.';
-        return false;
-      }
-    } catch (e) {
-      _errorMessage = 'Terjadi kesalahan: $e';
-      return false;
     } finally {
       _isLoading = false;
       notifyListeners();
