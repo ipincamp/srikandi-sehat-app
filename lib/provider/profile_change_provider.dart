@@ -25,6 +25,7 @@ class ProfileChangeProvider with ChangeNotifier {
       _jobParent;
   int? _height;
   double? _weight;
+  String? _districtName, _villageName;
 
   // --- Getters ---
   bool get isLoading => _isLoading;
@@ -44,9 +45,9 @@ class ProfileChangeProvider with ChangeNotifier {
   String? get firstHaid => _firstHaid;
   String? get jobParent => _jobParent;
 
-  get districtName => null;
-
-  get villageName => null;
+  // Getter yang sudah ada sebelumnya
+  String? get districtName => _districtName;
+  String? get villageName => _villageName;
 
   // FIX: Hapus parameter yang tidak perlu dari signature
   // Method untuk memperbarui profil pengguna
@@ -141,11 +142,23 @@ class ProfileChangeProvider with ChangeNotifier {
     }
   }
 
-  void setDistrictCode(String districtCode) {}
+  void setDistrictCode(String districtCode) {
+    _districtCode = districtCode;
+    notifyListeners();
+  }
 
-  void setDistrictName(String name) {}
+  void setDistrictName(String name) {
+    _districtName = name;
+    notifyListeners();
+  }
 
-  void setVillageCode(String villageCode) {}
+  void setVillageCode(String villageCode) {
+    _villageCode = villageCode;
+    notifyListeners();
+  }
 
-  void setVillageName(String name) {}
+  void setVillageName(String name) {
+    _villageName = name;
+    notifyListeners();
+  }
 }
