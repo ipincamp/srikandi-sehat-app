@@ -103,7 +103,9 @@ class CycleProvider with ChangeNotifier {
 
         await _fetchCycleStatusFromApi(prefs);
       } else {
-        throw Exception('Failed to start cycle');
+        final responseData = json.decode(response.body);
+        final errorMessage = responseData['message']?.toString() ?? 'Gagal memulai siklus';
+        throw Exception(errorMessage);
       }
     } catch (e) {
       print('Error starting cycle: $e');
