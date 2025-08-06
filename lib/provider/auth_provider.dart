@@ -47,6 +47,15 @@ class AuthProvider with ChangeNotifier {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isLoggedIn', true);
 
+        final currentCycleNumber = user['current_cycle_number'];
+        if (currentCycleNumber != null && currentCycleNumber is int) {
+          await prefs.setInt('current_cycle_number', currentCycleNumber);
+          await prefs.setBool('isMenstruating', true);
+        } else {
+          await prefs.setInt('current_cycle_number', 0); 
+          await prefs.setBool('isMenstruating', false);
+        }
+
         await prefs.setString('token', data['token'] ?? '');
         await prefs.setString('role', user['role'] ?? '');
         await prefs.setString('name', user['name'] ?? '');

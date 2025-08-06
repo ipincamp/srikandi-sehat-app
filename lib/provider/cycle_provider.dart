@@ -19,25 +19,17 @@ class CycleProvider with ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      // Check current cycle status from profile first
-      final cycleNumber = prefs.getInt('current_cycle_number');
-      _updateMenstruationStatus(cycleNumber, prefs);
+      final cycleNumber = prefs.getInt('current_cycle_number') ?? 0;
 
-      // If we have cycle number, no need to call cycle status API
-      if (cycleNumber != null) {
-        notifyListeners();
-        return;
-      }
+      _isMenstruating = cycleNumber > 0;
+      prefs.setBool('isMenstruating', _isMenstruating);
+
+      notifyListeners();
 
       await _fetchCycleStatusFromApi(prefs);
     } catch (e) {
       await _handleCycleStatusError();
     }
-  }
-
-  void _updateMenstruationStatus(int? cycleNumber, SharedPreferences prefs) {
-    _isMenstruating = cycleNumber != null;
-    prefs.setBool('isMenstruating', _isMenstruating);
   }
 
   Future<void> _fetchCycleStatusFromApi(SharedPreferences prefs) async {
@@ -109,7 +101,9 @@ class CycleProvider with ChangeNotifier {
       );
 
       if (response.statusCode == 201) {
-        await _handleSuccessfulCycleStart(prefs);
+        _isMenstruating = true;
+        await prefs.setBool('isMenstruating', true);
+        notifyListeners();
       } else {
         throw Exception('Failed to start cycle');
       }
@@ -144,7 +138,10 @@ class CycleProvider with ChangeNotifier {
       );
 
       if (response.statusCode == 200) {
-        await _handleSuccessfulCycleEnd(prefs);
+        _isMenstruating = false;
+        await prefs.setBool('isMenstruating', false);
+        await prefs.setInt('current_cycle_number', 0);
+        notifyListeners();
       } else {
         throw Exception('Failed to end cycle');
       }
