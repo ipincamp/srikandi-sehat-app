@@ -110,13 +110,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 30),
+                // const SizedBox(height: 0),
                 Image.asset(
                   'assets/images/srikandisehat-logo.png',
                   width: 120,
                   height: 120,
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 10),
+                const Text(
+                  'Cerdas Memahami Menstruasi,',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      height: 1.2,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: Colors.pinkAccent),
+                ),
+                const Text(
+                  'Bersama Srikandi',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      height: 1.2,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: Colors.pinkAccent),
+                ),
+                const SizedBox(height: 30),
 
                 // Name Field
                 CustomFormField(
@@ -218,16 +237,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () {
-                        Navigator.pushReplacementNamed(context, '/login');
-                      },
-                      child: const Text(
-                        'Login',
-                        style: TextStyle(
-                          color: Colors.pink,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.pushReplacementNamed(context, '/login');
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.pink,
+                          textStyle: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
+                        child: const Text('Login'),
                       ),
                     ),
                   ],

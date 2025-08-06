@@ -95,6 +95,25 @@ class _LoginScreenState extends State<LoginScreen> {
                 width: 120,
                 height: 120,
               ),
+              const SizedBox(height: 20),
+              const Text(
+                'Cerdas Memahami Menstruasi,',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    height: 1.2,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.pinkAccent),
+              ),
+              const Text(
+                'Bersama Srikandi',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    height: 1.2,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.pinkAccent),
+              ),
               const SizedBox(height: 50),
               CustomFormField(
                 label: 'Email',
@@ -123,11 +142,32 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: _login,
                     ),
               const SizedBox(height: 20),
-              TextButton(
-                onPressed: () {
-                  Navigator.pushReplacementNamed(context, '/register');
-                },
-                child: const Text('Belum punya akun? Daftar'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Belum punya akun? ',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                  GestureDetector(
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.pushReplacementNamed(context, '/register');
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.pink,
+                        textStyle: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      child: const Text('Register'),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
