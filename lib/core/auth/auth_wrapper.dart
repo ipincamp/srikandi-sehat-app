@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/core/auth/auth_guard.dart';
 import 'package:srikandi_sehat_app/provider/auth_provider.dart';
-import 'package:srikandi_sehat_app/screens/auth/login_screen.dart';
-import 'package:srikandi_sehat_app/screens/admin/main_screen.dart' as admin;
-import 'package:srikandi_sehat_app/screens/user/main_screen.dart' as user;
 
 class AuthWrapper extends StatelessWidget {
   final dynamic initialAuthState;
@@ -13,6 +10,7 @@ class AuthWrapper extends StatelessWidget {
   final Widget guestChild;
 
   const AuthWrapper({
+    super.key,
     required this.initialAuthState,
     required this.adminChild,
     required this.userChild,
@@ -25,7 +23,8 @@ class AuthWrapper extends StatelessWidget {
       future: AuthGuard.isValidSession(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+              body: Center(child: CircularProgressIndicator()));
         }
 
         final isValidSession = snapshot.data ?? false;

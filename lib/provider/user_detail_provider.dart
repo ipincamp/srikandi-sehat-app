@@ -1,4 +1,3 @@
-// provider/user_detail_provider.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -25,7 +24,7 @@ class UserDetailProvider with ChangeNotifier {
       final token = prefs.getString('token') ?? '';
       final baseUrl = dotenv.env['API_URL'] ?? '';
       final url = '$baseUrl/users/$userId';
-      print(url); 
+      print(url);
 
       final response = await http.get(
         Uri.parse(url),
@@ -37,6 +36,7 @@ class UserDetailProvider with ChangeNotifier {
 
       if (response.statusCode == 200) {
         final jsonBody = json.decode(response.body);
+        print(jsonBody);
         _userDetail = UserDetail.fromJson(jsonBody['data']);
       } else {
         _errorMessage =

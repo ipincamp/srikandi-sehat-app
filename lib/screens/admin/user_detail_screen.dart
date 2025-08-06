@@ -194,8 +194,8 @@ class UserDetailScreen extends StatelessWidget {
         children: [
           _buildInfoItem(context, 'Tanggal Mulai', cycle.startDate),
           _buildInfoItem(context, 'Tanggal Selesai', cycle.finishDate),
-          _buildInfoItem(
-              context, 'Durasi Haid', '${cycle.periodLengthDays.abs()} hari'),
+          _buildInfoItem(context, 'Durasi Haid',
+              '${cycle.periodLengthDays.abs().toStringAsFixed(1)} hari'),
           if (cycle.cycleLengthDays != null)
             _buildInfoItem(context, 'Panjang Siklus',
                 '${cycle.cycleLengthDays!.abs().toStringAsFixed(1)} hari'),

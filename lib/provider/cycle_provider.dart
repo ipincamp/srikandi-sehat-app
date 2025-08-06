@@ -3,7 +3,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-
 import 'package:srikandi_sehat_app/models/cycle_status_model.dart';
 
 class CycleProvider with ChangeNotifier {
