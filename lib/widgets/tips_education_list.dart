@@ -13,6 +13,14 @@ class TipsEducationList extends StatefulWidget {
 class _TipsEducationListState extends State<TipsEducationList> {
   late List<EducationItem> _randomTips;
 
+  final List<Map<String, Color>> _colorPalette = [
+    {'bg': Colors.teal.shade50, 'icon': Colors.teal.shade600},
+    {'bg': Colors.blue.shade50, 'icon': Colors.blue.shade600},
+    {'bg': Colors.orange.shade50, 'icon': Colors.orange.shade600},
+    {'bg': Colors.pink.shade50, 'icon': Colors.pink.shade600},
+    {'bg': Colors.purple.shade50, 'icon': Colors.purple.shade600},
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -37,6 +45,10 @@ class _TipsEducationListState extends State<TipsEducationList> {
         itemBuilder: (context, index) {
           final tip = _randomTips[index];
 
+          final colorSet = _colorPalette[index % _colorPalette.length];
+          final bgColor = colorSet['bg']!;
+          final iconColor = colorSet['icon']!;
+
           return Padding(
             padding: EdgeInsets.only(
                 right: index == _randomTips.length - 1 ? 0 : 10),
@@ -45,9 +57,8 @@ class _TipsEducationListState extends State<TipsEducationList> {
               tip.title,
               tip.content,
               tip.icon,
-              // You can use a random color generator or predefined colors
-              Colors.teal.shade50,
-              Colors.teal,
+              bgColor,
+              iconColor,
             ),
           );
         },
