@@ -1,51 +1,56 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
+import 'package:srikandi_sehat_app/data/education_data.dart';
+import 'package:srikandi_sehat_app/models/education_model.dart';
 
-class TipsEducationList extends StatelessWidget {
+class TipsEducationList extends StatefulWidget {
   const TipsEducationList({super.key});
+
+  @override
+  State<TipsEducationList> createState() => _TipsEducationListState();
+}
+
+class _TipsEducationListState extends State<TipsEducationList> {
+  late List<EducationItem> _randomTips;
+
+  @override
+  void initState() {
+    super.initState();
+    _randomTips = _getRandomTips(3);
+  }
+
+  List<EducationItem> _getRandomTips(int count) {
+    final allItems = EducationData.allEducationItems;
+    final random = Random();
+    final shuffledList = List<EducationItem>.from(allItems)..shuffle(random);
+
+    return shuffledList.take(count).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 152,
-      child: ListView(
+      child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        children: [
-          _buildTipCard(
-            context,
-            'Minum Air Cukup',
-            'Hidrasi penting untuk kesehatanmu.',
-            Icons.water_drop,
-            Colors.blue.shade100,
-            Colors.blue,
-          ),
-          const SizedBox(width: 10),
-          _buildTipCard(
-            context,
-            'Peregangan Ringan',
-            'Meredakan kram menstruasi.',
-            Icons.self_improvement,
-            Colors.green.shade100,
-            Colors.green,
-          ),
-          const SizedBox(width: 10),
-          _buildTipCard(
-            context,
-            'Peregangan Ringan',
-            'Meredakan kram menstruasi.',
-            Icons.self_improvement,
-            Colors.green.shade100,
-            Colors.green,
-          ),
-          const SizedBox(width: 10),
-          // _buildTipCard(
-          //   context,
-          //   'Edukasi Baru!',
-          //   'Mitos dan Fakta Seputar Menstruasi.',
-          //   Icons.book,
-          //   Colors.purple.shade100,
-          //   Colors.purple,
-          // ),
-        ],
+        itemCount: _randomTips.length,
+        itemBuilder: (context, index) {
+          final tip = _randomTips[index];
+
+          return Padding(
+            padding: EdgeInsets.only(
+                right: index == _randomTips.length - 1 ? 0 : 10),
+            child: _buildTipCard(
+              context,
+              tip.title,
+              tip.content,
+              tip.icon,
+              // You can use a random color generator or predefined colors
+              Colors.teal.shade50,
+              Colors.teal,
+            ),
+          );
+        },
       ),
     );
   }
