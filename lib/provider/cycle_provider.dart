@@ -19,11 +19,7 @@ class CycleProvider with ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      final cycleNumber = prefs.getInt('current_cycle_number') ?? 0;
-
-      _isMenstruating = cycleNumber > 0;
-      prefs.setBool('isMenstruating', _isMenstruating);
-
+      _isMenstruating = prefs.getBool('isMenstruating') ?? false;
       notifyListeners();
 
       await _fetchCycleStatusFromApi(prefs);
@@ -54,7 +50,10 @@ class CycleProvider with ChangeNotifier {
         _cycleStatus = CycleStatus.fromJson(data['data']);
         _lastFetched = DateTime.now();
 
+        _isMenstruating = _cycleStatus?.isMenstruating ?? _isMenstruating;
+
         await _saveCycleData(prefs);
+        notifyListeners();
       }
     }
 
@@ -62,11 +61,9 @@ class CycleProvider with ChangeNotifier {
   }
 
   Future<void> _saveCycleData(SharedPreferences prefs) async {
-    await prefs.setBool(
-        'isMenstruating', _cycleStatus?.isMenstruating ?? false);
+    await prefs.setBool('isMenstruating', _cycleStatus?.isMenstruating ?? false);
     await prefs.setInt('periodLengthDays', _cycleStatus?.periodLengthDays ?? 0);
-    await prefs.setInt(
-        'cycleDurationDays', _cycleStatus?.cycleDurationDays ?? 0);
+    await prefs.setInt('cycleDurationDays', _cycleStatus?.cycleDurationDays ?? 0);
   }
 
   Future<void> _handleCycleStatusError() async {
@@ -102,8 +99,9 @@ class CycleProvider with ChangeNotifier {
 
       if (response.statusCode == 201) {
         _isMenstruating = true;
-        await prefs.setBool('isMenstruating', true);
         notifyListeners();
+
+        await _fetchCycleStatusFromApi(prefs);
       } else {
         throw Exception('Failed to start cycle');
       }
@@ -139,9 +137,10 @@ class CycleProvider with ChangeNotifier {
 
       if (response.statusCode == 200) {
         _isMenstruating = false;
-        await prefs.setBool('isMenstruating', false);
-        await prefs.setInt('current_cycle_number', 0);
         notifyListeners();
+
+        await prefs.setInt('current_cycle_number', 0);
+        await _fetchCycleStatusFromApi(prefs);
       } else {
         throw Exception('Failed to end cycle');
       }
