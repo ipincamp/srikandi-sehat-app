@@ -82,7 +82,7 @@ class AppProviders extends StatelessWidget {
         future: _checkInitialAuthState(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return MaterialApp(
+            return const MaterialApp(
               home: Scaffold(body: Center(child: CircularProgressIndicator())),
             );
           }
