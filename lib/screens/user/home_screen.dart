@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:srikandi_sehat_app/provider/cycle_provider.dart';
 import 'package:srikandi_sehat_app/provider/symptom_get_provider.dart';
 import 'package:srikandi_sehat_app/screens/user/cycle_status_card.dart';
+import 'package:srikandi_sehat_app/widgets/anomaly_recommendation_card.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/custom_popup.dart';
 import 'package:srikandi_sehat_app/widgets/cycle_action_button.dart';
@@ -226,6 +227,8 @@ class _HomeScreenState extends State<HomeScreen> {
             if (_showProfileCard) _buildProfileCompletionCard(),
             const SizedBox(height: 4),
             const CycleStatusCard(),
+            const SizedBox(height: 10),
+            const AnomalyRecommendationCard(),
             const SizedBox(height: 20),
             Text(
               'Aksi Cepat',
