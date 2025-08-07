@@ -97,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 20),
               const Text(
-                'Cerdas Memahami Menstruasi,',
+                'Menjadi remaja sehat dan cerdas,',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     height: 1.2,
@@ -106,7 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: Colors.pinkAccent),
               ),
               const Text(
-                'Bersama Srikandi',
+                'dalam memahami menstruasi',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     height: 1.2,

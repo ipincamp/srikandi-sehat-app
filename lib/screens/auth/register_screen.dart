@@ -118,7 +118,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 10),
                 const Text(
-                  'Cerdas Memahami Menstruasi,',
+                  'Menjadi remaja sehat dan cerdas,',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       height: 1.2,
@@ -127,7 +127,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       color: Colors.pinkAccent),
                 ),
                 const Text(
-                  'Bersama Srikandi',
+                  'dalam memahami menstruasi',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       height: 1.2,

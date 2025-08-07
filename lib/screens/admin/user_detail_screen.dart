@@ -10,6 +10,23 @@ class UserDetailScreen extends StatelessWidget {
 
   const UserDetailScreen({super.key, required this.userId});
 
+  String formatNumber(num value, {String suffix = ''}) {
+    if (value % 1 == 0) {
+      return '${value.toInt()}$suffix';
+    } else {
+      return '${value.toStringAsFixed(1)}$suffix';
+    }
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final dateTime = DateTime.parse(dateString);
+      return DateFormat('dd MMMM yyyy HH:mm', 'id_ID').format(dateTime);
+    } catch (e) {
+      return dateString;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -125,9 +142,11 @@ class UserDetailScreen extends StatelessWidget {
             const Divider(height: 24),
             _buildInfoItem(context, 'No. Telepon', profile.phone),
             _buildInfoItem(context, 'Tanggal Lahir', profile.birthdate),
-            _buildInfoItem(context, 'Tinggi Badan', '${profile.heightCm} cm'),
-            _buildInfoItem(context, 'Berat Badan', '${profile.weightKg} kg'),
-            _buildInfoItem(context, 'IMT', profile.bmi.toStringAsFixed(2)),
+            _buildInfoItem(context, 'Tinggi Badan',
+                '${formatNumber(profile.heightCm)} cm'),
+            _buildInfoItem(
+                context, 'Berat Badan', '${formatNumber(profile.weightKg)} kg'),
+            _buildInfoItem(context, 'IMT', formatNumber(profile.bmi)),
             _buildInfoItem(context, 'Kategori IMT', classifyBMI(profile.bmi)),
             _buildInfoItem(
                 context, 'Pendidikan Terakhir', profile.lastEducation),
@@ -195,10 +214,10 @@ class UserDetailScreen extends StatelessWidget {
           _buildInfoItem(context, 'Tanggal Mulai', cycle.startDate),
           _buildInfoItem(context, 'Tanggal Selesai', cycle.finishDate),
           _buildInfoItem(context, 'Durasi Haid',
-              '${cycle.periodLengthDays.abs().toStringAsFixed(1)} hari'),
+              formatNumber(cycle.periodLengthDays.abs())),
           if (cycle.cycleLengthDays != null)
             _buildInfoItem(context, 'Panjang Siklus',
-                '${cycle.cycleLengthDays!.abs().toStringAsFixed(1)} hari'),
+                formatNumber(cycle.cycleLengthDays!.abs())),
         ],
       ),
     );
@@ -234,14 +253,5 @@ class UserDetailScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _formatDate(String dateString) {
-    try {
-      final dateTime = DateTime.parse(dateString);
-      return DateFormat('dd MMMM yyyy HH:mm', 'id_ID').format(dateTime);
-    } catch (e) {
-      return dateString;
-    }
   }
 }

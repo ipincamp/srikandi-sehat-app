@@ -313,6 +313,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         child: Column(
                           children: [
                             CustomFormField(
+                              label: 'Email',
+                              controller: _emailController,
+                              placeholder: 'Masukkan email',
+                              isEmail: true,
+                              enabled: false,
+                              prefixIcon: Icons.email,
+                            ),
+                            const SizedBox(height: 16),
+                            CustomFormField(
                               label: 'Nama',
                               controller: _nameController,
                               placeholder: '',

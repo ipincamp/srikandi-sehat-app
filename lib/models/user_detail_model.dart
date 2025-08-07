@@ -42,7 +42,7 @@ class UserProfile {
   final String phone;
   final String birthdate;
   final int heightCm;
-  final String weightKg;
+  final double weightKg;
   final double bmi;
   final String lastEducation;
   final String lastParentEducation;
@@ -72,7 +72,8 @@ class UserProfile {
       phone: json['phone'],
       birthdate: json['birthdate'],
       heightCm: json['height_cm'],
-      weightKg: json['weight_kg'],
+      // weightKg: json['weight_kg'],
+      weightKg: double.tryParse(json['weight_kg'].toString()) ?? 0.0,
       bmi: json['bmi'].toDouble(),
       lastEducation: json['last_education'],
       lastParentEducation: json['last_parent_education'],
@@ -89,7 +90,7 @@ class CycleHistory {
   final int id;
   final String startDate;
   final String finishDate;
-  final int periodLengthDays;
+  final double periodLengthDays;
   final double? cycleLengthDays;
 
   CycleHistory({
@@ -105,7 +106,7 @@ class CycleHistory {
       id: json['id'],
       startDate: json['start_date'],
       finishDate: json['finish_date'],
-      periodLengthDays: json['period_length_days'],
+      periodLengthDays: json['period_length_days']?.toDouble(),
       cycleLengthDays: json['cycle_length_days']?.toDouble(),
     );
   }
