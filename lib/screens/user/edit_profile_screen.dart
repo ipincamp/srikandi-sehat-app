@@ -316,7 +316,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               label: 'Nama',
                               controller: _nameController,
                               placeholder: '',
-                              enabled: false,
+                              enabled: true,
                               prefixIcon: Icons.person,
                             ),
                             const SizedBox(height: 16),
