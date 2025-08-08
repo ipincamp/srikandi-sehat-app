@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:srikandi_sehat_app/core/auth/notification_service.dart';
 import 'package:srikandi_sehat_app/provider/auth_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/custom_button.dart';
@@ -22,7 +23,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
 
   Future<void> _register() async {
-    // Validate form first
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -30,44 +30,60 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      // 1. Get FCM Token
+      final notificationService = NotificationService();
+      final fcmToken = await notificationService.getFCMToken();
 
+      if (fcmToken == null) {
+        if (!mounted) return;
+        CustomAlert.show(
+          context,
+          'Tidak bisa mendapatkan token notifikasi. Registrasi dibatalkan.',
+          type: AlertType.error,
+        );
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final name = _nameController.text.trim();
       final email = _emailController.text.trim();
       final password = _passwordController.text;
       final confirmPassword = _confirmPasswordController.text;
 
-      // Additional validation for password confirmation
-      if (password != confirmPassword) {
-        CustomAlert.show(
-          context,
-          'Password tidak cocok',
-          type: AlertType.warning,
-        );
-        return;
-      }
+      // 2. Pass FCM Token to the register method
+      final success = await authProvider.register(
+        name,
+        email,
+        password,
+        confirmPassword,
+        fcmToken,
+      );
 
-      final success =
-          await authProvider.register(name, email, password, confirmPassword);
-
+      // --- SIMPLIFIED LOGIC ---
       if (success) {
+        // Only show a "processing" message.
+        // The notification service will handle the final result and navigation.
         if (!mounted) return;
         CustomAlert.show(
           context,
-          'Akun Berhasil dibuat!',
-          type: AlertType.success,
+          'Pendaftaran sedang diproses, Anda akan menerima notifikasi jika sudah selesai.',
+          type: AlertType.info,
+          duration: const Duration(seconds: 4),
         );
-        await Future.delayed(const Duration(milliseconds: 750));
-        Navigator.pushReplacementNamed(context, '/login');
+        // DO NOT NAVIGATE HERE ANYMORE
       } else {
+        // Show error from API if the request itself failed (e.g., email already exists)
+        if (!mounted) return;
         CustomAlert.show(
           context,
           authProvider.errorMessage,
           type: AlertType.error,
-          duration: const Duration(milliseconds: 1500),
+          duration: const Duration(milliseconds: 2000),
         );
       }
     } catch (e) {
+      if (!mounted) return;
       CustomAlert.show(
         context,
         'Terjadi kesalahan: ${e.toString()}',
@@ -121,19 +137,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   'Menjadi remaja sehat dan cerdas,',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                      height: 1.2,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: Colors.pinkAccent),
+                    height: 1.2,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.pinkAccent,
+                  ),
                 ),
                 const Text(
                   'dalam memahami menstruasi',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                      height: 1.2,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: Colors.pinkAccent),
+                    height: 1.2,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.pinkAccent,
+                  ),
                 ),
                 const SizedBox(height: 30),
 
@@ -210,8 +228,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         height: 50,
                         child: Center(
                           child: CircularProgressIndicator(
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.pink),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.pink,
+                            ),
                           ),
                         ),
                       )
@@ -231,10 +250,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   children: [
                     Text(
                       'Sudah punya akun? ',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
                     ),
                     GestureDetector(
                       child: TextButton(

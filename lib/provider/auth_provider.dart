@@ -52,7 +52,7 @@ class AuthProvider with ChangeNotifier {
           await prefs.setInt('current_cycle_number', currentCycleNumber);
           await prefs.setBool('isMenstruating', true);
         } else {
-          await prefs.setInt('current_cycle_number', 0); 
+          await prefs.setInt('current_cycle_number', 0);
           await prefs.setBool('isMenstruating', false);
         }
 
@@ -80,13 +80,18 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> register(String name, String email, String password,
-      String confirmPassword) async {
+  Future<bool> register(
+    String name,
+    String email,
+    String password,
+    String confirmPassword,
+    String fcmToken,
+  ) async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
 
-    final baseUrl = dotenv.env['API_URL']; // Menggunakan API_URL dari .env
+    final baseUrl = dotenv.env['API_URL'];
     final url = '$baseUrl/auth/register';
 
     try {
@@ -98,13 +103,15 @@ class AuthProvider with ChangeNotifier {
           'email': email,
           'password': password,
           'password_confirmation': confirmPassword,
+          'fcm_token': fcmToken,
         }),
       );
 
       final responseData = jsonDecode(response.body) as Map<String, dynamic>;
 
-      if (response.statusCode == 201) {
-        _errorMessage = 'Pendaftaran berhasil. Silakan login.';
+      if (response.statusCode == 202) {
+        _errorMessage =
+            'Pendaftaran sedang diproses. Anda akan menerima notifikasi.';
         notifyListeners();
         return true;
       } else {
@@ -158,8 +165,9 @@ class AuthProvider with ChangeNotifier {
       } else if (response.statusCode == 401) {
         notifyListeners();
         if (context.mounted) {
-          Navigator.of(context)
-              .pushNamedAndRemoveUntil('/login', (route) => false);
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil('/login', (route) => false);
         }
         return false;
       } else {

@@ -1,8 +1,11 @@
 import 'package:device_preview/device_preview.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:srikandi_sehat_app/core/auth/notification_service.dart';
+import 'package:srikandi_sehat_app/firebase_options.dart';
 import 'package:srikandi_sehat_app/provider/auth_provider.dart';
 import 'package:srikandi_sehat_app/provider/csv_download_provider.dart';
 import 'package:srikandi_sehat_app/provider/cycle_history_provider.dart';
@@ -41,9 +44,15 @@ import 'package:srikandi_sehat_app/screens/admin/user_data_screen.dart'
 import 'package:srikandi_sehat_app/core/auth/route_observer.dart';
 import 'package:srikandi_sehat_app/core/auth/auth_wrapper.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  await NotificationService().initialize(navigatorKey);
 
   runApp(
     DevicePreview(
