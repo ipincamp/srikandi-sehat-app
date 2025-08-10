@@ -17,10 +17,10 @@ import 'package:srikandi_sehat_app/provider/symptom_history_provider.dart';
 import 'package:srikandi_sehat_app/provider/symptom_log_get_detail.dart';
 import 'package:srikandi_sehat_app/provider/symptom_log_post_provider.dart';
 import 'package:srikandi_sehat_app/provider/symptom_get_provider.dart';
+import 'package:srikandi_sehat_app/provider/user_data_provider.dart';
 import 'package:srikandi_sehat_app/provider/user_data_stats_provider.dart';
 import 'package:srikandi_sehat_app/provider/user_detail_provider.dart';
 import 'package:srikandi_sehat_app/provider/user_profile_provider.dart';
-import 'package:srikandi_sehat_app/provider/user_data_provider.dart';
 import 'package:srikandi_sehat_app/provider/village_provider.dart';
 
 import 'package:srikandi_sehat_app/screens/auth/login_screen.dart';
@@ -74,8 +74,8 @@ class AppProviders extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CycleProvider()),
         ChangeNotifierProvider(create: (_) => CycleHistoryProvider()),
-        ChangeNotifierProvider(create: (_) => UserDataProvider()),
         ChangeNotifierProvider(create: (_) => UserProfileProvider()),
+        ChangeNotifierProvider(create: (_) => UserDataProvider()),
         ChangeNotifierProvider(create: (_) => UserDetailProvider()),
         ChangeNotifierProvider(create: (_) => UserDataStatsProvider()),
         ChangeNotifierProvider(create: (_) => PasswordProvider()),

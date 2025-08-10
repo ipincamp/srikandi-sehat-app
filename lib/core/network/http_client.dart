@@ -7,7 +7,10 @@ import 'package:srikandi_sehat_app/core/network/api_exceptions.dart';
 
 class HttpClient {
   static Future<http.Response> get(
-      BuildContext context, String endpoint, {required Map<String, dynamic> body}) async {
+    BuildContext context,
+    String endpoint, {
+    required Map<String, dynamic> body,
+  }) async {
     return _makeRequest(context, 'GET', endpoint);
   }
 
@@ -24,6 +27,8 @@ class HttpClient {
 
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token')!;
+
+    print('Making $method request to $endpoint with token: $token');
 
     try {
       final uri = Uri.parse('${dotenv.env['API_URL']}/$endpoint');

@@ -7,61 +7,64 @@ class UserDataProvider with ChangeNotifier {
   List<UserModel> _allUsers = [];
   bool _isLoading = false;
   int _currentPage = 1;
-  int _lastPage = 1;
-  int _totalUsers = 0;
-  int _urbanCount = 0;
-  int _ruralCount = 0;
+  int _totalPages = 1;
+  int? _selectedClassification; // 1 for urban, 2 for rural
 
   List<UserModel> get allUsers => _allUsers;
   bool get isLoading => _isLoading;
   int get currentPage => _currentPage;
-  int get lastPage => _lastPage;
-  int get totalUsers => _totalUsers;
-  int get urbanCount => _urbanCount;
-  int get ruralCount => _ruralCount;
+  int get totalPages => _totalPages;
+  int? get selectedClassification => _selectedClassification;
 
-  Future<void> fetchUsers(BuildContext context,
-      {int page = 1, int? scope}) async {
+  Future<void> fetchUsers(
+    BuildContext context, {
+    int page = 1,
+    int? classification, // 1 for urban, 2 for rural
+  }) async {
     _isLoading = true;
+    _selectedClassification = classification;
     notifyListeners();
 
     try {
-      // Build URL with pagination and scope filter
-      String endpoint = 'users?page=$page&per_page=10';
-      if (scope != null) {
-        endpoint += '&scope=$scope';
-      }
+      // Build query parameters
+      final queryParams = {
+        'page': page.toString(),
+        'limit': '10',
+        if (classification != null)
+          'classification': classification == 1 ? 'urban' : 'rural',
+      };
 
-      // Gunakan HttpClient yang sudah terintegrasi auth guard
+      // Build URL with query parameters
+      final queryString = Uri(queryParameters: queryParams).query;
+      final endpoint = 'admin/users?$queryString';
+
+      // Use HttpClient
       final response = await HttpClient.get(context, endpoint, body: {});
 
       final jsonData = jsonDecode(response.body);
-      final List<dynamic> userList = jsonData['data'];
+      final List<dynamic> userList = jsonData['data']['data'];
 
       _allUsers = userList.map((json) => UserModel.fromJson(json)).toList();
-      _currentPage = jsonData['meta']['current_page'];
-      _lastPage = jsonData['meta']['last_page'];
-
-      _totalUsers = jsonData['meta']['stats']['all_user'] ?? 0;
-      _urbanCount = jsonData['meta']['stats']['urban_users'] ?? 0;
-      _ruralCount = jsonData['meta']['stats']['rural_users'] ?? 0;
+      _currentPage = jsonData['data']['meta']['current_page'];
+      _totalPages = jsonData['data']['meta']['total_pages'];
 
       _isLoading = false;
       notifyListeners();
     } catch (e) {
       _isLoading = false;
       notifyListeners();
-
-      // Error sudah dihandle oleh HttpClient, kita hanya perlu clear data jika perlu
-      if (e.toString().contains('Unauthorized')) {
-        _allUsers = [];
-        notifyListeners();
-      }
       rethrow;
     }
   }
 
   Future<void> refreshData(BuildContext context) async {
-    await fetchUsers(context, page: 1);
+    await fetchUsers(context, page: 1, classification: _selectedClassification);
+  }
+
+  Future<void> setClassificationFilter(
+    BuildContext context,
+    int? classification,
+  ) async {
+    await fetchUsers(context, page: 1, classification: classification);
   }
 }

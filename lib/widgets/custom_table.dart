@@ -8,7 +8,7 @@ class CustomTable extends StatelessWidget {
   final int itemsPerPage;
   final int pageCount;
   final Function(int) onPageChanged;
-  final int? scope; // 1 for urban (blue), 2 for rural (green)
+  final int? classification; // 1 for urban, 2 for rural
 
   const CustomTable({
     super.key,
@@ -17,15 +17,17 @@ class CustomTable extends StatelessWidget {
     required this.itemsPerPage,
     required this.pageCount,
     required this.onPageChanged,
-    this.scope = 1, // Default to urban (blue)
+    this.classification,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Determine colors based on scope
-    final primaryColor = scope == 2 ? Colors.green : Colors.blue;
-    final lightColor = scope == 2 ? Colors.green[50] : Colors.blue[50];
-    final darkColor = scope == 2 ? Colors.green[800] : Colors.blue[800];
+    // Determine colors based on classification
+    final primaryColor = classification == 2 ? Colors.green : Colors.blue;
+    final lightColor = classification == 2 ? Colors.green[50] : Colors.blue[50];
+    final darkColor = classification == 2
+        ? Colors.green[800]
+        : Colors.blue[800];
 
     return Column(
       children: [
@@ -74,6 +76,17 @@ class CustomTable extends StatelessWidget {
               Expanded(
                 flex: 2,
                 child: Text(
+                  'Wilayah',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: darkColor,
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Text(
                   'Aksi',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
@@ -111,15 +124,14 @@ class CustomTable extends StatelessWidget {
               final userId = user['id'] ?? '';
 
               return Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 4,
+                  horizontal: 12,
+                ),
                 decoration: BoxDecoration(
                   color: index % 2 == 0 ? Colors.white : Colors.grey[50],
                   border: const Border(
-                    bottom: BorderSide(
-                      color: Colors.grey,
-                      width: 0.3,
-                    ),
+                    bottom: BorderSide(color: Colors.grey, width: 0.3),
                   ),
                 ),
                 child: Row(
@@ -144,19 +156,27 @@ class CustomTable extends StatelessWidget {
                     ),
                     Expanded(
                       flex: 2,
+                      child: Text(
+                        user['region']!,
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
                       child: CustomButton(
                         backgroundColor: primaryColor,
                         label: 'Detail',
                         textSize: 12,
                         padding: const EdgeInsets.symmetric(
-                            vertical: 2, horizontal: 4),
+                          vertical: 2,
+                          horizontal: 4,
+                        ),
                         onPressed: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => UserDetailScreen(
-                                userId: userId,
-                              ),
+                              builder: (context) =>
+                                  UserDetailScreen(userId: userId),
                             ),
                           );
                         },
@@ -178,7 +198,10 @@ class CustomTable extends StatelessWidget {
   }
 
   Widget _buildPaginationControls(
-      Color primaryColor, Color? lightColor, Color darkColor) {
+    Color primaryColor,
+    Color? lightColor,
+    Color darkColor,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
@@ -205,8 +228,9 @@ class CustomTable extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
             ),
             child: IconButton(
-              onPressed:
-                  currentPage > 0 ? () => onPageChanged(currentPage - 1) : null,
+              onPressed: currentPage > 0
+                  ? () => onPageChanged(currentPage - 1)
+                  : null,
               icon: Icon(
                 Icons.chevron_left,
                 size: 20,
@@ -233,10 +257,7 @@ class CustomTable extends StatelessWidget {
                   onPressed: () => onPageChanged(currentPage - 1),
                   child: Text(
                     '${currentPage}',
-                    style: const TextStyle(
-                      color: Colors.black87,
-                      fontSize: 12,
-                    ),
+                    style: const TextStyle(color: Colors.black87, fontSize: 12),
                   ),
                 ),
               ),
@@ -281,10 +302,7 @@ class CustomTable extends StatelessWidget {
                   onPressed: () => onPageChanged(currentPage + 1),
                   child: Text(
                     '${currentPage + 2}',
-                    style: const TextStyle(
-                      color: Colors.black87,
-                      fontSize: 12,
-                    ),
+                    style: const TextStyle(color: Colors.black87, fontSize: 12),
                   ),
                 ),
               ),
@@ -297,8 +315,9 @@ class CustomTable extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color:
-                  currentPage < pageCount - 1 ? lightColor : Colors.grey[200],
+              color: currentPage < pageCount - 1
+                  ? lightColor
+                  : Colors.grey[200],
               borderRadius: BorderRadius.circular(6),
             ),
             child: IconButton(
