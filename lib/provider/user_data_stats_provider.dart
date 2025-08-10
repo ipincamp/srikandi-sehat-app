@@ -15,21 +15,17 @@ class UserDataStatsProvider with ChangeNotifier {
 
   Future<void> fetchUserStats(BuildContext context) async {
     try {
-      String endpoint = 'users/stats';
-      final response = await HttpClient.get(
-        context,
-        endpoint,
-        body: {},
-      );
+      String endpoint = 'admin/users/statistics';
+      final response = await HttpClient.get(context, endpoint, body: {});
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
         final stats = jsonData['data'];
 
-        _totalUsers = stats['total_user'] ?? 0;
-        _activeUsers = stats['active_user'] ?? 0;
-        _urbanCount = stats['urban_user'] ?? 0;
-        _ruralCount = stats['rural_user'] ?? 0;
+        _totalUsers = stats['total_users'] ?? 0;
+        _activeUsers = stats['total_active_users'] ?? 0;
+        _urbanCount = stats['total_urban_users'] ?? 0;
+        _ruralCount = stats['total_rural_users'] ?? 0;
 
         notifyListeners();
       } else {

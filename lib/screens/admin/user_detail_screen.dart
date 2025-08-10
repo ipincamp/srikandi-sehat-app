@@ -10,20 +10,45 @@ class UserDetailScreen extends StatelessWidget {
 
   const UserDetailScreen({super.key, required this.userId});
 
-  String formatNumber(num value, {String suffix = ''}) {
-    if (value % 1 == 0) {
-      return '${value.toInt()}$suffix';
-    } else {
-      return '${value.toStringAsFixed(1)}$suffix';
-    }
+  String formatNumber(num? value, {String suffix = ''}) {
+    if (value == null) return '-$suffix';
+    if (value % 1 == 0) return '${value.toInt()}$suffix';
+    return '${value.toStringAsFixed(1)}$suffix';
   }
 
-  String _formatDate(String dateString) {
+  String _formatDate(String? dateString) {
+    if (dateString == null) return '-';
     try {
-      final dateTime = DateTime.parse(dateString);
+      final dateTime = DateTime.parse(dateString).toLocal();
       return DateFormat('dd MMMM yyyy HH:mm', 'id_ID').format(dateTime);
     } catch (e) {
       return dateString;
+    }
+  }
+
+  String _formatShortDate(String? dateString) {
+    if (dateString == null) return '-';
+    try {
+      final dateTime = DateTime.parse(dateString).toLocal();
+      return DateFormat('dd MMM yyyy', 'id_ID').format(dateTime);
+    } catch (e) {
+      return dateString;
+    }
+  }
+
+  String _getOrdinalNumber(int number) {
+    if (number % 100 >= 11 && number % 100 <= 13) {
+      return 'ke-$number';
+    }
+    switch (number % 10) {
+      case 1:
+        return 'ke-$number';
+      case 2:
+        return 'ke-$number';
+      case 3:
+        return 'ke-$number';
+      default:
+        return 'ke-$number';
     }
   }
 
@@ -33,45 +58,49 @@ class UserDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           'Detail Pengguna',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Colors.pink,
+        backgroundColor: Colors.pink[600],
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: ChangeNotifierProvider(
-        create: (_) => UserDetailProvider()..fetchUserDetail(userId),
+        create: (_) => UserDetailProvider()..fetchUserDetail(userId, context),
         child: Consumer<UserDetailProvider>(
           builder: (context, provider, _) {
-            if (provider.isLoading && provider.userDetail == null) {
-              return const Center(child: CircularProgressIndicator());
+            if (provider.isLoading) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.pink),
+                ),
+              );
             }
-
             if (provider.errorMessage.isNotEmpty) {
               return Center(
-                child: Text(
-                  provider.errorMessage,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
-                    fontSize: 16,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    provider.errorMessage,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                      fontSize: 16,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
               );
             }
-
-            final user = provider.userDetail;
-            if (user == null) {
+            if (provider.userDetail == null) {
               return const Center(
                 child: Text(
-                  'Data pengguna tidak ditemukan',
+                  'Data tidak ditemukan',
                   style: TextStyle(fontSize: 16),
                 ),
               );
             }
 
+            final user = provider.userDetail!;
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -92,30 +121,52 @@ class UserDetailScreen extends StatelessWidget {
 
   Widget _buildUserInfoCard(BuildContext context, UserDetail user) {
     return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Informasi Pengguna',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            Row(
+              children: [
+                Icon(Icons.person, color: Colors.pink[600]),
+                const SizedBox(width: 8),
+                Text(
+                  'Informasi Pengguna',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
+                    color: Colors.pink[600],
                   ),
+                ),
+                if (user.profileComplete)
+                  const Padding(
+                    padding: EdgeInsets.only(left: 8),
+                    child: Icon(Icons.verified, color: Colors.green, size: 20),
+                  ),
+              ],
             ),
             const Divider(height: 24),
             _buildInfoItem(context, 'Nama', user.name),
             _buildInfoItem(context, 'Email', user.email),
-            _buildInfoItem(context, 'Role', user.role),
             _buildInfoItem(
-                context, 'Bergabung pada', _formatDate(user.createdAt)),
+              context,
+              'Role',
+              user.role == 'user' ? 'Pengguna' : 'Admin',
+              valueColor: user.role == 'user' ? Colors.blue : Colors.pink,
+            ),
+            _buildInfoItem(
+              context,
+              'Bergabung pada',
+              _formatDate(user.createdAt),
+            ),
             if (user.currentCycleNumber != null)
               _buildInfoItem(
-                  context, 'Siklus Saat Ini', '${user.currentCycleNumber}'),
+                context,
+                'Siklus Saat Ini',
+                'Siklus ${_getOrdinalNumber(user.currentCycleNumber!)}',
+                valueColor: Colors.pink[600],
+              ),
           ],
         ),
       ),
@@ -123,43 +174,85 @@ class UserDetailScreen extends StatelessWidget {
   }
 
   Widget _buildProfileInfoCard(BuildContext context, UserProfile profile) {
+    final bmiCategory = classifyBMI(profile.bmi);
+    Color bmiColor = Colors.grey;
+    if (bmiCategory.contains("Kurang")) bmiColor = Colors.blue;
+    if (bmiCategory.contains("Normal")) bmiColor = Colors.green;
+    if (bmiCategory.contains("Lebih")) bmiColor = Colors.orange;
+    if (bmiCategory.contains("Obesitas")) bmiColor = Colors.red;
+
     return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Profil Pengguna',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            Row(
+              children: [
+                Icon(Icons.medical_information, color: Colors.pink[600]),
+                const SizedBox(width: 8),
+                Text(
+                  'Profil Kesehatan',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
+                    color: Colors.pink[600],
                   ),
+                ),
+              ],
             ),
             const Divider(height: 24),
-            _buildInfoItem(context, 'No. Telepon', profile.phone),
-            _buildInfoItem(context, 'Tanggal Lahir', profile.birthdate),
-            _buildInfoItem(context, 'Tinggi Badan',
-                '${formatNumber(profile.heightCm)} cm'),
+            _buildInfoItem(context, 'No. Telepon', profile.phone ?? '-'),
             _buildInfoItem(
-                context, 'Berat Badan', '${formatNumber(profile.weightKg)} kg'),
+              context,
+              'Tanggal Lahir',
+              _formatShortDate(profile.birthdate),
+            ),
+            _buildInfoItem(
+              context,
+              'Tinggi Badan',
+              '${formatNumber(profile.heightCm)} cm',
+            ),
+            _buildInfoItem(
+              context,
+              'Berat Badan',
+              '${formatNumber(profile.weightKg)} kg',
+            ),
             _buildInfoItem(context, 'IMT', formatNumber(profile.bmi)),
-            _buildInfoItem(context, 'Kategori IMT', classifyBMI(profile.bmi)),
             _buildInfoItem(
-                context, 'Pendidikan Terakhir', profile.lastEducation),
+              context,
+              'Kategori IMT',
+              bmiCategory,
+              valueColor: bmiColor,
+            ),
+            _buildInfoItem(context, 'Pendidikan', profile.lastEducation ?? '-'),
             _buildInfoItem(
-                context, 'Pendidikan Orang Tua', profile.lastParentEducation),
+              context,
+              'Pendidikan Ortu',
+              profile.lastParentEducation ?? '-',
+            ),
             _buildInfoItem(
-                context, 'Pekerjaan Orang Tua', profile.lastParentJob),
-            _buildInfoItem(context, 'Akses Internet', profile.internetAccess),
+              context,
+              'Pekerjaan Ortu',
+              profile.lastParentJob ?? '-',
+            ),
             _buildInfoItem(
-                context, 'Menarche', '${profile.firstMenstruation} tahun'),
-            _buildInfoItem(context, 'Alamat', profile.address),
+              context,
+              'Akses Internet',
+              profile.internetAccess ?? '-',
+            ),
             _buildInfoItem(
-                context, 'Terakhir Diupdate', _formatDate(profile.updatedAt)),
+              context,
+              'Menarche',
+              '${formatNumber(profile.firstMenstruation)} tahun',
+            ),
+            _buildInfoItem(context, 'Alamat', profile.address ?? '-'),
+            _buildInfoItem(
+              context,
+              'Diperbarui',
+              _formatDate(profile.updatedAt),
+            ),
           ],
         ),
       ),
@@ -167,22 +260,37 @@ class UserDetailScreen extends StatelessWidget {
   }
 
   Widget _buildCycleHistoryCard(
-      BuildContext context, List<CycleHistory> cycles) {
+    BuildContext context,
+    List<CycleHistory> cycles,
+  ) {
     return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Riwayat Siklus',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            Row(
+              children: [
+                Icon(Icons.calendar_today, color: Colors.pink[600]),
+                const SizedBox(width: 8),
+                Text(
+                  'Riwayat Siklus',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
+                    color: Colors.pink[600],
                   ),
+                ),
+                const SizedBox(width: 8),
+                Chip(
+                  label: Text(
+                    '${cycles.length} siklus',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  backgroundColor: Colors.pink[600],
+                ),
+              ],
             ),
             const Divider(height: 24),
             if (cycles.isEmpty)
@@ -194,38 +302,67 @@ class UserDetailScreen extends StatelessWidget {
                 ),
               )
             else
-              ...cycles.map((cycle) => _buildCycleItem(context, cycle)),
+              ...cycles.asMap().entries.map((entry) {
+                final index = entry.key;
+                final cycle = entry.value;
+                return _buildCycleItem(context, cycle, index + 1);
+              }),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildCycleItem(BuildContext context, CycleHistory cycle) {
+  Widget _buildCycleItem(
+    BuildContext context,
+    CycleHistory cycle,
+    int cycleNumber,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        color: Colors.pink[50],
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.pink[100]!),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildInfoItem(context, 'Tanggal Mulai', cycle.startDate),
-          _buildInfoItem(context, 'Tanggal Selesai', cycle.finishDate),
-          _buildInfoItem(context, 'Durasi Haid',
-              formatNumber(cycle.periodLengthDays.abs())),
+          Text(
+            'Siklus ${_getOrdinalNumber(cycleNumber)}',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.pink[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildInfoItem(context, 'Mulai', _formatShortDate(cycle.startDate)),
+          _buildInfoItem(
+            context,
+            'Selesai',
+            _formatShortDate(cycle.finishDate),
+          ),
+          _buildInfoItem(context, 'Durasi', '${cycle.periodLengthDays} hari'),
           if (cycle.cycleLengthDays != null)
-            _buildInfoItem(context, 'Panjang Siklus',
-                formatNumber(cycle.cycleLengthDays!.abs())),
+            _buildInfoItem(
+              context,
+              'Panjang Siklus',
+              '${cycle.cycleLengthDays} hari',
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoItem(BuildContext context, String label, String value) {
+  Widget _buildInfoItem(
+    BuildContext context,
+    String label,
+    String value, {
+    Color? valueColor,
+  }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -233,12 +370,9 @@ class UserDetailScreen extends StatelessWidget {
             width: 120,
             child: Text(
               label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.7),
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
             ),
           ),
           const SizedBox(width: 8),
@@ -246,8 +380,9 @@ class UserDetailScreen extends StatelessWidget {
             child: Text(
               value,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
+                fontWeight: FontWeight.w500,
+                color: valueColor ?? Colors.grey[800],
+              ),
             ),
           ),
         ],

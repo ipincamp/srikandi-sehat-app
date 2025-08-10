@@ -1,70 +1,84 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:path/path.dart' as path;
+import 'package:srikandi_sehat_app/core/network/http_client.dart';
 
 class CsvDownloadProvider with ChangeNotifier {
   bool _isDownloading = false;
   String _downloadStatus = '';
   String _errorMessage = '';
+  double _downloadProgress = 0;
 
   bool get isDownloading => _isDownloading;
   String get downloadStatus => _downloadStatus;
   String get errorMessage => _errorMessage;
+  double get downloadProgress => _downloadProgress;
 
   Future<void> downloadUserCsv(BuildContext context) async {
     _isDownloading = true;
+    _downloadProgress = 0;
     _downloadStatus = 'Mempersiapkan unduhan...';
+    _errorMessage = '';
     notifyListeners();
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token') ?? '';
-      final baseUrl = dotenv.env['API_URL'] ?? '';
-      final url = '$baseUrl/users/export/csv';
-
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
+      String endpoint = 'admin/reports/csv';
+      final response = await HttpClient.get(context, endpoint, body: {});
 
       if (response.statusCode == 200) {
-        _downloadStatus = 'Mengunduh file...';
+        // Verify content type
+        final contentType = response.headers['content-type'];
+        if (contentType == null || !contentType.contains('csv')) {
+          throw Exception('Respons bukan file CSV yang valid');
+        }
+
+        _downloadStatus = 'Menyimpan file...';
         notifyListeners();
 
-        // Get directory untuk menyimpan file
+        // Get directory
         final directory = await getDownloadsDirectory();
         if (directory == null) {
           throw Exception('Tidak dapat mengakses folder download');
         }
 
-        // Buat nama file dengan timestamp
-        final timestamp = DateTime.now().millisecondsSinceEpoch;
-        final fileName = 'semua_pengguna_$timestamp.csv';
-        final file = File('${directory.path}/$fileName');
+        // Create filename with timestamp
+        final timestamp = DateTime.now().toIso8601String().replaceAll(
+          RegExp(r'[^0-9]'),
+          '',
+        );
+        final fileName = 'laporan_pengguna_$timestamp.csv';
+        final filePath = path.join(directory.path, fileName);
 
-        // Tulis data CSV ke file
+        // Save file
+        final file = File(filePath);
         await file.writeAsBytes(response.bodyBytes);
 
+        // Verify file was saved
+        if (!await file.exists()) {
+          throw Exception('Gagal menyimpan file');
+        }
+
         _downloadStatus = 'File berhasil diunduh!';
+        _downloadProgress = 1.0;
         notifyListeners();
 
-        // Buka file setelah diunduh
-        await OpenFile.open(file.path);
+        // Open file
+        final openResult = await OpenFile.open(filePath);
+        if (openResult.type != ResultType.done) {
+          _downloadStatus = 'File tidak dapat dibuka';
+          notifyListeners();
+        }
       } else {
-        _errorMessage =
-            'Gagal mengunduh CSV. Status code: ${response.statusCode}';
-        notifyListeners();
+        throw Exception('Gagal mengunduh. Status: ${response.statusCode}');
       }
-    } catch (e) {
-      _errorMessage = 'Error saat mengunduh CSV: $e';
-      notifyListeners();
+    } on SocketException {
+      _errorMessage = 'Tidak ada koneksi internet';
+    } on HttpException {
+      _errorMessage = 'Gagal mengunduh dari server';
+    } on Exception catch (e) {
+      _errorMessage = 'Error: ${e.toString()}';
     } finally {
       _isDownloading = false;
       notifyListeners();
@@ -74,6 +88,7 @@ class CsvDownloadProvider with ChangeNotifier {
   void resetStatus() {
     _downloadStatus = '';
     _errorMessage = '';
+    _downloadProgress = 0;
     notifyListeners();
   }
 }

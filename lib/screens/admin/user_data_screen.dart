@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:srikandi_sehat_app/provider/csv_download_provider.dart';
 import 'package:srikandi_sehat_app/provider/user_data_provider.dart';
+import 'package:srikandi_sehat_app/provider/user_data_stats_provider.dart';
+import 'package:srikandi_sehat_app/widgets/custom_chart.dart';
 import 'package:srikandi_sehat_app/widgets/custom_table.dart';
 
 class UserDataScreen extends StatefulWidget {
@@ -34,6 +37,10 @@ class _UserDataScreenState extends State<UserDataScreen> {
     final totalPages = userProvider.totalPages;
     final selectedClassification = userProvider.selectedClassification;
 
+    final statsProvider = Provider.of<UserDataStatsProvider>(context);
+    final urbanCount = statsProvider.urbanCount;
+    final ruralCount = statsProvider.ruralCount;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -57,6 +64,17 @@ class _UserDataScreenState extends State<UserDataScreen> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
+                    CustomChart(
+                      urbanCount: urbanCount,
+                      ruralCount: ruralCount,
+                      onDownloadPressed: () {
+                        final provider = Provider.of<CsvDownloadProvider>(
+                          context,
+                          listen: false,
+                        );
+                        provider.downloadUserCsv(context);
+                      },
+                    ),
                     const SizedBox(height: 20),
                     _buildClassificationFilter(context, userProvider),
                     const SizedBox(height: 20),
