@@ -26,6 +26,8 @@ dependencies:
   url_launcher_windows: ^3.0.0
   firebase_core: ^4.0.0
   firebase_messaging: ^16.0.0
+  cloud_firestore: ^6.0.0
+  
 
 dev_dependencies:
   flutter_test:

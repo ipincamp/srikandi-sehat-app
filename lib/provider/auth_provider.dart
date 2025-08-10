@@ -6,25 +6,33 @@ import 'dart:convert';
 
 class AuthProvider with ChangeNotifier {
   String? _authToken;
+  String? _userId;
+  String? _name;
+  String? _email;
+  String? _role;
+  bool _profileComplete = false;
+  String? _createdAt;
 
   String? get authToken => _authToken;
+  String? get userId => _userId;
+  String? get name => _name;
+  String? get email => _email;
+  String? get role => _role;
+  bool get profileComplete => _profileComplete;
+  String? get createdAt => _createdAt;
+
   bool _isLoading = false;
   String _errorMessage = '';
 
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
 
-  get token => null;
-
-  get role => null;
-
   Future<bool> login(String email, String password) async {
-    _authToken = dotenv.env['AUTH_TOKEN'];
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
 
-    final baseUrl = dotenv.env['API_URL']; // Menggunakan API_URL dari .env
+    final baseUrl = dotenv.env['API_URL'];
     final url = '$baseUrl/auth/login';
 
     try {
@@ -37,41 +45,63 @@ class AuthProvider with ChangeNotifier {
         }),
       );
 
-      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+      final responseData = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        final data = responseData['data'] as Map<String, dynamic>;
-        final user = data['user'] as Map<String, dynamic>;
-        final profile = user['profile'] as Map<String, dynamic>?;
-
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isLoggedIn', true);
-
-        final currentCycleNumber = user['current_cycle_number'];
-        if (currentCycleNumber != null && currentCycleNumber is int) {
-          await prefs.setInt('current_cycle_number', currentCycleNumber);
-          await prefs.setBool('isMenstruating', true);
-        } else {
-          await prefs.setInt('current_cycle_number', 0);
-          await prefs.setBool('isMenstruating', false);
+        // First check if the response has the expected structure
+        if (responseData == null || responseData['data'] == null) {
+          _errorMessage = 'Invalid server response';
+          notifyListeners();
+          return false;
         }
 
-        await prefs.setString('token', data['token'] ?? '');
-        await prefs.setString('role', user['role'] ?? '');
-        await prefs.setString('name', user['name'] ?? '');
+        // Handle case where 'data' might not be a Map
+        final data = responseData['data'];
+        if (data is! Map<String, dynamic>) {
+          _errorMessage = 'Invalid user data format';
+          notifyListeners();
+          return false;
+        }
 
-        // Hanya simpan status apakah profile ada atau tidak
-        await prefs.setBool('hasProfile', profile != null);
+        // Update provider state with null checks
+        _authToken = data['token']?.toString();
+        _userId = data['id']?.toString();
+        _name = data['name']?.toString();
+        _email = data['email']?.toString();
+        _role = data['role']?.toString();
+        _profileComplete = data['profile_complete'] ?? false;
+        _createdAt = data['created_at']?.toString();
+
+        if (_authToken == null || _userId == null) {
+          _errorMessage = 'Missing required user data';
+          notifyListeners();
+          return false;
+        }
+
+        // Save to shared preferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isLoggedIn', true);
+        await prefs.setString('token', _authToken!);
+        await prefs.setString('userId', _userId!);
+        await prefs.setString('name', _name ?? '');
+        await prefs.setString('email', _email ?? '');
+        await prefs.setString('role', _role ?? '');
+        await prefs.setBool('profile_complete', _profileComplete);
+        await prefs.setString('created_at', _createdAt ?? '');
 
         notifyListeners();
         return true;
       } else {
-        _errorMessage = responseData['message'] ?? 'Login gagal';
+        // Handle error response
+        _errorMessage =
+            responseData['message']?.toString() ??
+            responseData['error']?.toString() ??
+            'Login failed with status ${response.statusCode}';
         notifyListeners();
         return false;
       }
     } catch (error) {
-      _errorMessage = 'Terjadi kesalahan: $error';
+      _errorMessage = 'An error occurred: ${error.toString()}';
       notifyListeners();
       return false;
     } finally {
@@ -111,7 +141,7 @@ class AuthProvider with ChangeNotifier {
 
       if (response.statusCode == 202) {
         _errorMessage =
-            'Pendaftaran sedang diproses. Anda akan menerima notifikasi.';
+            'Registration is being processed. You will receive a notification.';
         notifyListeners();
         return true;
       } else {
@@ -123,13 +153,13 @@ class AuthProvider with ChangeNotifier {
               .map((e) => e.join(', '))
               .join('\n');
         } else {
-          _errorMessage = 'Pendaftaran gagal.';
+          _errorMessage = 'Registration failed.';
         }
         notifyListeners();
         return false;
       }
     } catch (error) {
-      _errorMessage = 'Terjadi kesalahan: $error';
+      _errorMessage = 'An error occurred: $error';
       notifyListeners();
       return false;
     } finally {
@@ -142,7 +172,7 @@ class AuthProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token') ?? '';
 
-    final baseUrl = dotenv.env['API_URL']; // Menggunakan API_URL dari .env
+    final baseUrl = dotenv.env['API_URL'];
     final url = '$baseUrl/auth/logout';
 
     try {
@@ -153,13 +183,20 @@ class AuthProvider with ChangeNotifier {
           'Authorization': 'Bearer $token',
         },
       );
+
+      // Clear provider state
+      _authToken = null;
+      _userId = null;
+      _name = null;
+      _email = null;
+      _role = null;
+      _profileComplete = false;
+      _createdAt = null;
+
+      // Clear shared preferences
       await prefs.clear();
 
       if (response.statusCode == 200) {
-        await prefs.setBool('isLoggedIn', false);
-        await prefs.remove('token');
-        await prefs.remove('role');
-        await prefs.remove('name');
         notifyListeners();
         return true;
       } else if (response.statusCode == 401) {
@@ -171,19 +208,29 @@ class AuthProvider with ChangeNotifier {
         }
         return false;
       } else {
-        throw Exception('Logout gagal');
+        throw Exception('Logout failed');
       }
     } catch (error) {
-      _errorMessage = 'Terjadi kesalahan: $error';
+      _errorMessage = 'An error occurred: $error';
       notifyListeners();
       return false;
     }
   }
 
-  Future<void> loadToken() async {
+  Future<void> loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
-    _authToken = dotenv.env['AUTH_TOKEN'];
     _authToken = prefs.getString('token');
+    _userId = prefs.getString('userId');
+    _name = prefs.getString('name');
+    _email = prefs.getString('email');
+    _role = prefs.getString('role');
+    _profileComplete = prefs.getBool('profile_complete') ?? false;
+    _createdAt = prefs.getString('created_at');
     notifyListeners();
+  }
+
+  Future<bool> isLoggedIn() async {
+    await loadUserData();
+    return _authToken != null;
   }
 }

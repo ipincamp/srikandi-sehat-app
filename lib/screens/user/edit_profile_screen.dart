@@ -75,9 +75,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _jobParentController.text = profileChangeProvider.jobParent ?? '';
 
     if (profileChangeProvider.districtCode != null) {
-      context
-          .read<VillageProvider>()
-          .fetchVillages(profileChangeProvider.districtCode!);
+      context.read<VillageProvider>().fetchVillages(
+        profileChangeProvider.districtCode!,
+      );
     }
 
     if (_dobController.text.isNotEmpty) _onDOBChanged();
@@ -126,9 +126,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     // Update profile change provider
     context.read<ProfileChangeProvider>().setDistrictCode(districtCode);
-    context
-        .read<ProfileChangeProvider>()
-        .setDistrictName(selectedDistrict.name);
+    context.read<ProfileChangeProvider>().setDistrictName(
+      selectedDistrict.name,
+    );
   }
 
   void _onVillageChanged(String? villageCode) {
@@ -137,12 +137,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final villageProvider = context.read<VillageProvider>();
     final selectedVillage = villageProvider.villages.firstWhere(
       (v) => v.code == villageCode,
-      orElse: () => Village(code: '', name: '', classification: ''),
+      orElse: () => Village(code: '', name: '', type: ''),
     );
 
     _villageController.text = selectedVillage.name;
-    _villageClassificationController.text =
-        selectedVillage.classification.capitalizeWords();
+    _villageClassificationController.text = selectedVillage.type
+        .capitalizeWords();
 
     // Update profile change provider
     context.read<ProfileChangeProvider>().setVillageCode(villageCode);
@@ -206,9 +206,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _isLoading = false);
 
     if (isSuccess) {
-      await context
-          .read<UserProfileProvider>()
-          .loadProfile(context, forceRefresh: true);
+      await context.read<UserProfileProvider>().loadProfile(
+        context,
+        forceRefresh: true,
+      );
       if (mounted) {
         CustomAlert.show(
           context,
@@ -246,14 +247,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final districtProvider = context.watch<DistrictProvider>();
     final districtItems = districtProvider.districts
         .map(
-            (e) => DropdownItem(value: e.code, label: e.name.capitalizeWords()))
+          (e) => DropdownItem(value: e.code, label: e.name.capitalizeWords()),
+        )
         .toList();
 
     final villageItems = context
         .watch<VillageProvider>()
         .villages
         .map(
-            (v) => DropdownItem(value: v.code, label: v.name.capitalizeWords()))
+          (v) => DropdownItem(value: v.code, label: v.name.capitalizeWords()),
+        )
         .toList();
 
     const educationList = [
@@ -262,7 +265,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       'SMP/MTs',
       'SMA/MA',
       'D1/D2/D3',
-      'S1/S2/S3'
+      'S1/S2/S3',
     ];
 
     return WillPopScope(
@@ -275,10 +278,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         appBar: AppBar(
           title: const Text(
             'Edit Profile',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
           ),
           backgroundColor: Colors.pink,
           leading: IconButton(
@@ -291,9 +291,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           elevation: 0,
         ),
         body: Container(
-          decoration: const BoxDecoration(
-            color: Colors.transparent,
-          ),
+          decoration: const BoxDecoration(color: Colors.transparent),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Form(
@@ -380,12 +378,41 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           children: [
-                            SearchableDropdownField(
-                              label: 'Kecamatan',
-                              placeholder: 'Pilih kecamatan',
-                              controller: _districtController,
-                              items: districtItems,
-                              onChanged: _onDistrictChanged,
+                            // In your build method where you use the districts:
+                            Builder(
+                              builder: (context) {
+                                final districtProvider = context
+                                    .watch<DistrictProvider>();
+
+                                if (districtProvider.isLoading) {
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                }
+
+                                if (districtProvider.errorMessage.isNotEmpty) {
+                                  return Text(
+                                    'Error: ${districtProvider.errorMessage}',
+                                  );
+                                }
+
+                                final districtItems = districtProvider.districts
+                                    .map(
+                                      (e) => DropdownItem(
+                                        value: e.code,
+                                        label: e.name,
+                                      ),
+                                    )
+                                    .toList();
+
+                                return SearchableDropdownField(
+                                  label: 'Kecamatan',
+                                  placeholder: 'Pilih kecamatan',
+                                  controller: _districtController,
+                                  items: districtItems,
+                                  onChanged: _onDistrictChanged,
+                                );
+                              },
                             ),
                             const SizedBox(height: 16),
                             SearchableDropdownField(
@@ -545,8 +572,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     _isLoading
                         ? const Center(
                             child: CircularProgressIndicator(
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.pink),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.pink,
+                              ),
                             ),
                           )
                         : Row(
