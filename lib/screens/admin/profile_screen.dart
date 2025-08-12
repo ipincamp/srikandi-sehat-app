@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:srikandi_sehat_app/provider/auth_provider.dart';
 import 'package:srikandi_sehat_app/provider/user_profile_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/logout_tile.dart';
@@ -23,18 +24,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(
-      _loadProfile,
-    );
+    Future.microtask(_loadProfile);
   }
 
   Future<void> _loadProfile({bool forceRefresh = false}) async {
     setState(() => _isLoading = true);
-    final userProvider =
-        Provider.of<UserProfileProvider>(context, listen: false);
+    final userProvider = Provider.of<AuthProvider>(context, listen: false);
 
     try {
-      await userProvider.loadProfile(context, forceRefresh: forceRefresh);
+      await userProvider.loadUserData();
+      if (mounted) {
+        setState(() {
+          _name = userProvider.name;
+          _email = userProvider.email;
+        });
+      }
     } catch (e) {
       if (mounted) {
         CustomAlert.show(context, 'Gagal memuat profil', type: AlertType.error);
@@ -68,30 +72,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Profile',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Profile',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
         automaticallyImplyLeading: false,
       ),
       body: Column(
         children: [
           const SizedBox(height: 16),
           ProfileTile(
-            name: userProvider.name,
-            email: userProvider.email,
+            name: _name,
+            email: _email,
+            role: userProvider.role,
             onIconTap: () {
               // arahkan ke EditProfile atau lainnya
             },
           ),
 
           const Divider(),
-          // buildListTile(
 
+          // buildListTile(
           const Spacer(),
           const LogoutTile(),
           const Padding(
             padding: EdgeInsets.only(bottom: 16),
             child: Text('App ver 1.0', style: TextStyle(color: Colors.grey)),
-          )
+          ),
         ],
       ),
     );

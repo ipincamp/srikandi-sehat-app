@@ -34,8 +34,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _initializeData() async {
     try {
       await context.read<CycleProvider>().synchronizeState();
-      await Provider.of<SymptomProvider>(context, listen: false)
-          .fetchSymptoms();
+      await Provider.of<SymptomProvider>(
+        context,
+        listen: false,
+      ).fetchSymptoms();
     } catch (e) {
       if (mounted) {
         CustomAlert.show(context, 'Gagal memuat data: ${e.toString()}');
@@ -64,16 +66,20 @@ class _HomeScreenState extends State<HomeScreen> {
     if (confirmed != true) return;
 
     try {
-      final String successMessage =
-          await context.read<CycleProvider>().startCycle();
+      final String successMessage = await context
+          .read<CycleProvider>()
+          .startCycle();
 
       if (mounted) {
         CustomAlert.show(context, successMessage, type: AlertType.success);
       }
     } catch (e) {
       if (mounted) {
-        CustomAlert.show(context, 'Gagal memulai siklus.',
-            type: AlertType.error);
+        CustomAlert.show(
+          context,
+          'Gagal memulai siklus.',
+          type: AlertType.error,
+        );
       }
     }
   }
@@ -94,13 +100,19 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       await context.read<CycleProvider>().endCycle();
       if (mounted) {
-        CustomAlert.show(context, 'Siklus menstruasi diakhiri!',
-            type: AlertType.success);
+        CustomAlert.show(
+          context,
+          'Siklus menstruasi diakhiri!',
+          type: AlertType.success,
+        );
       }
     } catch (e) {
       if (mounted) {
-        CustomAlert.show(context, 'Gagal mengakhiri siklus.',
-            type: AlertType.error);
+        CustomAlert.show(
+          context,
+          'Gagal mengakhiri siklus.',
+          type: AlertType.error,
+        );
       }
     }
   }
@@ -108,9 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildProfileCompletionCard() {
     return GestureDetector(
       onTap: () {
-        Navigator.pushNamed(context, '/edit-profile').then((_) async {
-          await _checkProfileStatus();
-        });
+        Navigator.pushNamed(context, '/edit-profile');
       },
       child: Container(
         width: double.infinity,
@@ -164,43 +174,57 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (flags.isEmpty) {
-      return const SizedBox
-          .shrink(); // Jangan tampilkan apa-apa jika tidak ada data
+      return const SizedBox.shrink(); // Jangan tampilkan apa-apa jika tidak ada data
     }
 
     final List<Widget> notifications = [];
 
     if (flags['period_is_prolonged'] == true) {
-      notifications.add(const ReminderTile(
+      notifications.add(
+        const ReminderTile(
           message:
-              'Peringatan: Durasi menstruasi Anda lebih lama dari biasanya.'));
+              'Peringatan: Durasi menstruasi Anda lebih lama dari biasanya.',
+        ),
+      );
     }
     if (flags['period_is_short'] == true) {
-      notifications.add(const ReminderTile(
-          message: 'Info: Durasi menstruasi Anda lebih pendek dari biasanya.'));
+      notifications.add(
+        const ReminderTile(
+          message: 'Info: Durasi menstruasi Anda lebih pendek dari biasanya.',
+        ),
+      );
     }
     if (flags['cycle_is_late'] == true) {
-      notifications.add(const ReminderTile(
+      notifications.add(
+        const ReminderTile(
           message:
-              'Peringatan: Siklus Anda terlambat. Pertimbangkan tes kehamilan.'));
+              'Peringatan: Siklus Anda terlambat. Pertimbangkan tes kehamilan.',
+        ),
+      );
     }
     if (flags['cycle_is_short'] == true) {
-      notifications.add(const ReminderTile(
-          message: 'Info: Siklus Anda lebih pendek dari biasanya.'));
+      notifications.add(
+        const ReminderTile(
+          message: 'Info: Siklus Anda lebih pendek dari biasanya.',
+        ),
+      );
     }
 
     if (notifications.isEmpty) {
       return const ReminderTile(
-          message: 'Siklus Anda terpantau normal. Tetap jaga kesehatan!');
+        message: 'Siklus Anda terpantau normal. Tetap jaga kesehatan!',
+      );
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: notifications
-          .map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: item,
-              ))
+          .map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: item,
+            ),
+          )
           .toList(),
     );
   }
@@ -244,17 +268,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   flex: 2,
                   child: CycleActionButtons(
-                    onStart:
-                        !isMenstruating ? () => _handleStartCycle() : () {},
+                    onStart: !isMenstruating
+                        ? () => _handleStartCycle()
+                        : () {},
                     onEnd: isMenstruating ? () => _handleEndCycle() : () {},
                     isMenstruating: isMenstruating,
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Expanded(
-                  flex: 1,
-                  child: LogSymptomButton(),
-                ),
+                const Expanded(flex: 1, child: LogSymptomButton()),
               ],
             ),
             const SizedBox(height: 20),

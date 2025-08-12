@@ -6,10 +6,13 @@ import 'package:srikandi_sehat_app/core/network/http_client.dart';
 extension StringCasingExtension on String {
   String toTitleCase() {
     if (isEmpty) return this;
-    return toLowerCase().split(' ').map((word) {
-      if (word.isEmpty) return word;
-      return word[0].toUpperCase() + word.substring(1);
-    }).join(' ');
+    return toLowerCase()
+        .split(' ')
+        .map((word) {
+          if (word.isEmpty) return word;
+          return word[0].toUpperCase() + word.substring(1);
+        })
+        .join(' ');
   }
 }
 
@@ -59,8 +62,10 @@ class UserProfileProvider with ChangeNotifier {
 
   static const Duration cacheDuration = Duration(minutes: 5);
 
-  Future<void> loadProfile(BuildContext context,
-      {bool forceRefresh = false}) async {
+  Future<void> loadProfile(
+    BuildContext context, {
+    bool forceRefresh = false,
+  }) async {
     if (!forceRefresh && _shouldUseCache()) {
       return;
     }
@@ -91,8 +96,6 @@ class UserProfileProvider with ChangeNotifier {
       } else {
         _errorMessage = responseData['message'] ?? 'Gagal mengambil profil.';
 
-        // Jika token tidak valid, HttpClient sudah otomatis handle redirect ke login
-        // Kita hanya perlu clear data lokal
         if (response.statusCode == 401) {
           await clearProfileData();
         }
@@ -127,13 +130,18 @@ class UserProfileProvider with ChangeNotifier {
   }
 
   Future<void> updateProfile(
-      BuildContext context, Map<String, dynamic> data) async {
+    BuildContext context,
+    Map<String, dynamic> data,
+  ) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final response =
-          await HttpClient.get(context, 'profile/update', body: data);
+      final response = await HttpClient.get(
+        context,
+        'profile/update',
+        body: data,
+      );
 
       final responseData = jsonDecode(response.body);
 

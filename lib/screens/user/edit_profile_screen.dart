@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/models/district_model.dart';
 import 'package:srikandi_sehat_app/models/village_model.dart';
+import 'package:srikandi_sehat_app/provider/auth_provider.dart';
 import 'package:srikandi_sehat_app/provider/profile_change_provider.dart';
 import 'package:srikandi_sehat_app/provider/district_provider.dart';
 import 'package:srikandi_sehat_app/provider/user_profile_provider.dart';
@@ -27,7 +28,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   // Controllers
   final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _districtController = TextEditingController();
   final _villageController = TextEditingController();
@@ -57,11 +57,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _loadInitialData() {
-    final userProfileProvider = context.read<UserProfileProvider>();
+    final userProvider = context.read<AuthProvider>();
     final profileChangeProvider = context.read<ProfileChangeProvider>();
 
-    _nameController.text = userProfileProvider.name ?? '';
-    _emailController.text = userProfileProvider.email ?? '';
+    _nameController.text = userProvider.name ?? '';
     _phoneController.text = profileChangeProvider.phone ?? '';
     _dobController.text = profileChangeProvider.dob ?? '';
     _heightController.text = profileChangeProvider.height?.toString() ?? '';
@@ -90,7 +89,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _emailController.dispose();
     _phoneController.dispose();
     _districtController.dispose();
     _villageController.dispose();
@@ -183,24 +181,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     setState(() => _isLoading = true);
 
-    final profileChangeProvider = context.read<ProfileChangeProvider>();
-    final Map<String, dynamic> payload = {
+    final profileProvider = Provider.of<ProfileChangeProvider>(
+      context,
+      listen: false,
+    );
+    await profileProvider.init();
+    final payload = {
       'name': _nameController.text,
-      'email': _emailController.text,
       'phone': _phoneController.text,
-      'address': profileChangeProvider.villageCode ?? '',
+      'address_code': profileProvider.villageCode,
       'birthdate': _formatDateForAPI(_dobController.text),
-      'tb_cm': int.tryParse(_heightController.text) ?? 0,
-      'bb_kg': double.tryParse(_weightController.text) ?? 0,
+      'tb_cm': _heightController.text.isNotEmpty
+          ? int.parse(_heightController.text)
+          : null,
+      'bb_kg': _weightController.text.isNotEmpty
+          ? double.parse(_weightController.text)
+          : null,
       'edu_now': _eduNowController.text,
       'edu_parent': _eduParentController.text,
       'inet_access': _internetAccessController.text,
-      'first_haid': _firstHaidController.text,
+      'first_haid': _firstHaidController.text.isNotEmpty
+          ? int.parse(_firstHaidController.text)
+          : null,
       'job_parent': _jobParentController.text,
-      // 'district': profileChangeProvider.districtCode ?? '', >>> NOT USED
     };
 
-    final bool isSuccess = await profileChangeProvider.updateProfile(payload);
+    final bool isSuccess = await profileProvider.updateProfile(payload);
 
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -216,13 +222,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           'Profil berhasil diperbarui',
           type: AlertType.success,
         );
-        Navigator.pushReplacementNamed(context, '/detail-profile');
+        Navigator.pop(context);
       }
     } else {
       if (mounted) {
         CustomAlert.show(
           context,
-          'Gagal memperbarui profil: ${profileChangeProvider.errorMessage}',
+          'Gagal memperbarui profil: ${profileProvider.errorMessage}',
           type: AlertType.error,
         );
       }
@@ -261,11 +267,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     const educationList = [
       'Tidak Sekolah',
-      'SD/MI',
-      'SMP/MTs',
-      'SMA/MA',
-      'D1/D2/D3',
-      'S1/S2/S3',
+      'SD',
+      'SMP',
+      'SMA',
+      'Diploma',
+      'S1',
+      'S2',
+      'S3',
     ];
 
     return WillPopScope(
@@ -310,14 +318,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           children: [
-                            CustomFormField(
-                              label: 'Email',
-                              controller: _emailController,
-                              placeholder: 'Masukkan email',
-                              isEmail: true,
-                              enabled: false,
-                              prefixIcon: Icons.email,
-                            ),
                             const SizedBox(height: 16),
                             CustomFormField(
                               label: 'Nama',
@@ -325,15 +325,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               placeholder: '',
                               enabled: true,
                               prefixIcon: Icons.person,
-                            ),
-                            const SizedBox(height: 16),
-                            CustomFormField(
-                              label: 'Email',
-                              controller: _emailController,
-                              placeholder: 'Masukkan email',
-                              isEmail: true,
-                              enabled: false,
-                              prefixIcon: Icons.email,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Nama tidak boleh kosong';
+                                }
+                                return null;
+                              },
                             ),
                             const SizedBox(height: 16),
                             CustomFormField(
@@ -378,40 +375,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           children: [
-                            // In your build method where you use the districts:
-                            Builder(
-                              builder: (context) {
-                                final districtProvider = context
-                                    .watch<DistrictProvider>();
-
-                                if (districtProvider.isLoading) {
-                                  return const Center(
-                                    child: CircularProgressIndicator(),
-                                  );
+                            SearchableDropdownField(
+                              label: 'Kecamatan',
+                              placeholder: 'Pilih kecamatan',
+                              controller: _districtController,
+                              items: districtItems,
+                              onChanged: _onDistrictChanged,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Kecamatan harus dipilih';
                                 }
-
-                                if (districtProvider.errorMessage.isNotEmpty) {
-                                  return Text(
-                                    'Error: ${districtProvider.errorMessage}',
-                                  );
-                                }
-
-                                final districtItems = districtProvider.districts
-                                    .map(
-                                      (e) => DropdownItem(
-                                        value: e.code,
-                                        label: e.name,
-                                      ),
-                                    )
-                                    .toList();
-
-                                return SearchableDropdownField(
-                                  label: 'Kecamatan',
-                                  placeholder: 'Pilih kecamatan',
-                                  controller: _districtController,
-                                  items: districtItems,
-                                  onChanged: _onDistrictChanged,
-                                );
+                                return null;
                               },
                             ),
                             const SizedBox(height: 16),
@@ -422,6 +396,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               items: villageItems,
                               onChanged: _onVillageChanged,
                               enabled: _districtController.text.isNotEmpty,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Desa/Kelurahan harus dipilih';
+                                }
+                                return null;
+                              },
                             ),
                             const SizedBox(height: 16),
                             CustomFormField(
@@ -461,29 +441,61 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               controller: _dobController,
                               onChanged: (_) => _onDOBChanged(),
                               prefixIcon: Icons.calendar_today,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Tanggal lahir tidak boleh kosong';
+                                }
+                                return null;
+                              },
                             ),
                             const SizedBox(height: 16),
                             Row(
                               children: [
                                 Expanded(
                                   child: CustomFormField(
-                                    label: 'Tinggi Badan (cm)',
+                                    label: 'TB (cm)',
                                     placeholder: 'Masukkan tinggi badan',
                                     controller: _heightController,
                                     type: CustomFormFieldType.number,
                                     onChanged: (_) => _onHeightWeightChanged(),
                                     prefixIcon: Icons.height,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Tinggi badan tidak boleh kosong';
+                                      }
+                                      final height = double.tryParse(value);
+                                      if (height == null || height < 100) {
+                                        return 'Tinggi badan minimal 100 cm';
+                                      }
+                                      if (height > 250) {
+                                        return 'Tinggi badan maksimal 250 cm';
+                                      }
+                                      return null;
+                                    },
                                   ),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: CustomFormField(
-                                    label: 'Berat Badan (kg)',
+                                    label: 'BB (kg)',
                                     placeholder: 'Masukkan berat badan',
                                     controller: _weightController,
                                     type: CustomFormFieldType.number,
                                     onChanged: (_) => _onHeightWeightChanged(),
                                     prefixIcon: Icons.monitor_weight,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Berat badan tidak boleh kosong';
+                                      }
+                                      final weight = double.tryParse(value);
+                                      if (weight == null || weight < 30) {
+                                        return 'Berat badan minimal 30 kg';
+                                      }
+                                      if (weight > 200) {
+                                        return 'Berat badan maksimal 200 kg';
+                                      }
+                                      return null;
+                                    },
                                   ),
                                 ),
                               ],
@@ -505,6 +517,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               minValue: 9,
                               maxValue: 30,
                               prefixIcon: Icons.female,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Umur pertama haid tidak boleh kosong';
+                                }
+                                final age = int.tryParse(value);
+                                if (age == null || age < 9 || age > 30) {
+                                  return 'Umur pertama haid harus antara 9-30 tahun';
+                                }
+                                return null;
+                              },
                             ),
                             const SizedBox(height: 16),
                             CustomFormField(
@@ -514,6 +536,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               type: CustomFormFieldType.dropdown,
                               items: educationList,
                               prefixIcon: Icons.school,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Pendidikan harus dipilih';
+                                }
+                                return null;
+                              },
                             ),
                             const SizedBox(height: 16),
                             CustomFormField(
@@ -521,8 +549,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               placeholder: 'Pilih akses internet',
                               controller: _internetAccessController,
                               type: CustomFormFieldType.dropdown,
-                              items: const ['wifi', 'seluler'],
+                              items: const ['WiFi', 'Seluler'],
                               prefixIcon: Icons.wifi,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Akses internet harus dipilih';
+                                }
+                                return null;
+                              },
                             ),
                           ],
                         ),
@@ -554,6 +588,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               type: CustomFormFieldType.dropdown,
                               items: educationList,
                               prefixIcon: Icons.school,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Pendidikan orang tua harus dipilih';
+                                }
+                                return null;
+                              },
                             ),
                             const SizedBox(height: 16),
                             CustomFormField(
@@ -561,6 +601,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               placeholder: 'Pekerjaan Orang Tua',
                               controller: _jobParentController,
                               prefixIcon: Icons.work,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Pekerjaan orang tua tidak boleh kosong';
+                                }
+                                return null;
+                              },
                             ),
                           ],
                         ),

@@ -20,7 +20,7 @@ class SymptomHistoryProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? '';
       final baseUrl = dotenv.env['API_URL'];
-      final url = '$baseUrl/cycles/symptoms/history';
+      final url = '$baseUrl/menstrual/symptoms/history';
 
       final response = await http.get(
         Uri.parse(url),
@@ -38,6 +38,7 @@ class SymptomHistoryProvider with ChangeNotifier {
         _symptomHistory = List<Symptom>.from(
           data['data'].map((json) => Symptom.fromJson(json)),
         );
+        // print('Symptom history fetched successfully: ${_symptomHistory} items');
         notifyListeners();
         return true;
       } else {

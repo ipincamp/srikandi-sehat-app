@@ -8,12 +8,13 @@ importScripts(
 
 // Initialize Firebase
 firebase.initializeApp({
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
+  apiKey: "AIzaSyBs8RCsbQy9dqcwsVKG4k8NPWiR8NHk_mY",
+  appId: "1:413117789548:web:4168999aea2f0bb2c16f49",
+  messagingSenderId: "413117789548",
   projectId: "srikandi-sehat-app",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  authDomain: "srikandi-sehat-app.firebaseapp.com",
+  storageBucket: "srikandi-sehat-app.firebasestorage.app",
+  measurementId: "G-J8TWBH2P10",
 });
 
 const messaging = firebase.messaging();

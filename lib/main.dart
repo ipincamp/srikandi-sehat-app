@@ -33,7 +33,7 @@ import 'package:srikandi_sehat_app/screens/user/edit_profile_screen.dart'
 import 'package:srikandi_sehat_app/screens/user/home_screen.dart' as user;
 import 'package:srikandi_sehat_app/screens/user/main_screen.dart' as user;
 import 'package:srikandi_sehat_app/screens/user/profile_screen.dart' as user;
-import 'package:srikandi_sehat_app/screens/user/detail_profile_screen.dart'
+import 'package:srikandi_sehat_app/screens/user/profile_detail_screen.dart'
     as user;
 import 'package:srikandi_sehat_app/screens/user/symptom_history_screen.dart'
     as user;

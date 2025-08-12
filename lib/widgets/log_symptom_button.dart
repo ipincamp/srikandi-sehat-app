@@ -389,7 +389,7 @@ class _SymptomLogBottomSheetState extends State<_SymptomLogBottomSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Pilih Mood (1–4): *',
+          'Pilih Mood (1–5): *',
           style: Theme.of(
             context,
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
@@ -431,6 +431,11 @@ class _SymptomLogBottomSheetState extends State<_SymptomLogBottomSheet> {
 
   Widget _buildMoodOption(int value, String label, IconData icon, Color color) {
     final isSelected = value == selectedMood;
+    // Daftar emoji untuk setiap mood
+    final emojis = ['😊', '😐', '😔', '😢', '😠'];
+    // final emojis = ['😁', '🙂', '😕', '😭', '👿'];
+    final emoji = emojis[value - 1]; // Karena value dimulai dari 1
+
     return GestureDetector(
       onTap: () => setState(() => selectedMood = value),
       child: Container(
@@ -438,21 +443,25 @@ class _SymptomLogBottomSheetState extends State<_SymptomLogBottomSheet> {
         decoration: BoxDecoration(
           border: isSelected ? Border.all(color: color, width: 2) : null,
           borderRadius: BorderRadius.circular(8),
+          color: isSelected ? color.withOpacity(0.1) : null,
         ),
         child: Column(
           children: [
-            Icon(
-              icon,
-              size: 40,
-              color: isSelected ? color : color.withOpacity(0.4),
-            ),
+            Text(emoji, style: const TextStyle(fontSize: 40)),
             const SizedBox(height: 5),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? color : color.withOpacity(0.4),
+                color: isSelected ? color : color.withOpacity(0.7),
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 fontSize: 12,
+              ),
+            ),
+            Text(
+              '($value)',
+              style: TextStyle(
+                color: isSelected ? color : color.withOpacity(0.7),
+                fontSize: 10,
               ),
             ),
           ],
@@ -463,8 +472,8 @@ class _SymptomLogBottomSheetState extends State<_SymptomLogBottomSheet> {
 
   Widget _buildNotesField() {
     return CustomFormField(
-      placeholder: 'Masukkan keluhan anda (opsional)',
-      label: 'Catatan',
+      placeholder: 'Masukkan keluhan anda',
+      label: 'Catatan (opsional)',
       isMandatory: false,
       type: CustomFormFieldType.text,
       controller: widget.notesController,

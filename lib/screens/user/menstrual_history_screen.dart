@@ -55,7 +55,7 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Riwayat Menstruasi'),
-        backgroundColor: const Color(0xFFED1C24),
+        backgroundColor: Colors.pink,
         foregroundColor: Colors.white,
         centerTitle: true,
         actions: [

@@ -15,9 +15,12 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() =>
-        Provider.of<SymptomHistoryProvider>(context, listen: false)
-            .fetchSymptomHistory());
+    Future.microtask(
+      () => Provider.of<SymptomHistoryProvider>(
+        context,
+        listen: false,
+      ).fetchSymptomHistory(),
+    );
   }
 
   @override
@@ -44,10 +47,7 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Colors.pink,
-                Colors.pinkAccent,
-              ],
+              colors: [Colors.pink, Colors.pinkAccent],
             ),
           ),
         ),
@@ -59,8 +59,8 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
               ),
             )
           : provider.symptomHistory.isEmpty
-              ? _buildEmptyState()
-              : _buildHistoryList(provider),
+          ? _buildEmptyState()
+          : _buildHistoryList(provider),
     );
   }
 
@@ -91,11 +91,7 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
                 color: Colors.pink.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.history,
-                size: 40,
-                color: Colors.pink,
-              ),
+              child: const Icon(Icons.history, size: 40, color: Colors.pink),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -108,13 +104,9 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Belum ada riwayat gejala yang tercatat.\nMulai catat gejala Anda sekarang!',
+              'Tidak ada riwayat gejala yang tercatat.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-                height: 1.5,
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey, height: 1.5),
             ),
           ],
         ),
@@ -149,11 +141,7 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
             ),
             child: Row(
               children: [
-                const Icon(
-                  Icons.timeline,
-                  color: Colors.white,
-                  size: 24,
-                ),
+                const Icon(Icons.timeline, color: Colors.white, size: 24),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -260,8 +248,9 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
                                         padding: const EdgeInsets.all(6),
                                         decoration: BoxDecoration(
                                           color: Colors.pink.withOpacity(0.1),
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                         child: const Icon(
                                           Icons.calendar_today_rounded,
@@ -325,7 +314,8 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
                                       builder: (_) => ChangeNotifierProvider(
                                         create: (_) => SymptomDetailProvider(),
                                         child: SymptomDetailScreen(
-                                            symptomId: int.parse(item.id)),
+                                          symptomId: int.parse(item.id),
+                                        ),
                                       ),
                                     ),
                                   );
@@ -387,7 +377,7 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
         'Sep',
         'Okt',
         'Nov',
-        'Des'
+        'Des',
       ];
 
       return '${date.day} ${months[date.month]} ${date.year}';
@@ -395,5 +385,4 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
       return dateString;
     }
   }
-
 }

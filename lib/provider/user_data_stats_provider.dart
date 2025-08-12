@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import 'package:srikandi_sehat_app/core/network/http_client.dart';
 
 class UserDataStatsProvider with ChangeNotifier {
@@ -28,12 +29,18 @@ class UserDataStatsProvider with ChangeNotifier {
         _ruralCount = stats['total_rural_users'] ?? 0;
 
         notifyListeners();
+      } else if (response.statusCode == 401) {
+        // Don't redirect here - HttpClient already handles it
+        print('Unauthorized access to stats');
       } else {
-        throw Exception('Failed to load stats');
+        print('Failed to load stats: ${response.statusCode}');
       }
     } catch (e) {
       print('Error fetching stats: $e');
-      // You might want to handle errors differently
+      // Show error to user without logging out
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load statistics: ${e.toString()}')),
+      );
     }
   }
 }

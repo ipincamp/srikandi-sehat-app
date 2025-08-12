@@ -14,7 +14,7 @@ class UserDataScreen extends StatefulWidget {
 }
 
 class _UserDataScreenState extends State<UserDataScreen> {
-  final ScrollController _scrollController = ScrollController();
+  // final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -60,7 +60,7 @@ class _UserDataScreenState extends State<UserDataScreen> {
           : RefreshIndicator(
               onRefresh: () => userProvider.refreshData(context),
               child: SingleChildScrollView(
-                controller: _scrollController,
+                // controller: _scrollController,
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
@@ -100,11 +100,11 @@ class _UserDataScreenState extends State<UserDataScreen> {
                           page: index + 1,
                           classification: selectedClassification,
                         );
-                        _scrollController.animateTo(
-                          0,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOut,
-                        );
+                        // _scrollController.animateTo(
+                        //   0,
+                        //   duration: const Duration(milliseconds: 300),
+                        //   curve: Curves.easeOut,
+                        // );
                       },
                     ),
                   ],
@@ -208,9 +208,9 @@ class _UserDataScreenState extends State<UserDataScreen> {
     );
   }
 
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
+  // @override
+  // void dispose() {
+  //   _scrollController.dispose();
+  //   super.dispose();
+  // }
 }

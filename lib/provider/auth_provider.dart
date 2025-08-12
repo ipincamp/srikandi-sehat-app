@@ -233,4 +233,31 @@ class AuthProvider with ChangeNotifier {
     await loadUserData();
     return _authToken != null;
   }
+
+  Future<bool> refreshToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final refreshToken = prefs.getString('refresh_token');
+
+      if (refreshToken == null) return false;
+
+      final response = await http.post(
+        Uri.parse('${dotenv.env['API_URL']}/auth/refresh'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'refresh_token': refreshToken}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        await prefs.setString('token', data['access_token']);
+        await prefs.setString('refresh_token', data['refresh_token']);
+        await prefs.setString('token_expiry', data['expires_at']); // Jika ada
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Error refreshing token: $e');
+      return false;
+    }
+  }
 }

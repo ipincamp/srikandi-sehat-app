@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/provider/auth_provider.dart';
-import 'package:srikandi_sehat_app/provider/user_profile_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/logout_tile.dart';
 import 'package:srikandi_sehat_app/widgets/profile_tile.dart';
@@ -100,9 +99,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           buildListTile(
-            icon: Icons.history,
+            icon: Icons.book,
             label: 'Riwayat Gejala',
-            color: Colors.pinkAccent,
+            color: Colors.red,
             onTap: () => {Navigator.pushNamed(context, '/symptom-history')},
           ),
           buildListTile(
