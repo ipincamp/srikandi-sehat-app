@@ -23,7 +23,7 @@ class SymptomProvider with ChangeNotifier {
 
       final token = prefs.getString('token') ?? '';
       final baseUrl = dotenv.env['API_URL'];
-      final url = '$baseUrl/cycles/symptoms';
+      final url = '$baseUrl/menstrual/symptoms/master';
 
       final response = await http.get(
         Uri.parse(url),

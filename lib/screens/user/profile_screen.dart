@@ -106,6 +106,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onTap: () => {Navigator.pushNamed(context, '/symptom-history')},
           ),
           buildListTile(
+            icon: Icons.history,
+            label: 'Riwayat Menstruasi',
+            color: Colors.pinkAccent,
+            onTap: () => {Navigator.pushNamed(context, '/menstrual-history')},
+          ),
+          buildListTile(
             icon: Icons.person,
             label: 'Ubah Profil',
             color: Colors.orange,

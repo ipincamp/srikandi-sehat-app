@@ -19,8 +19,10 @@ class LogSymptomButton extends StatelessWidget {
     required int? selectedMood,
     required String notes,
   }) async {
-    final symptomLogProvider =
-        Provider.of<SymptomLogProvider>(context, listen: false);
+    final symptomLogProvider = Provider.of<SymptomLogProvider>(
+      context,
+      listen: false,
+    );
 
     // Client-side validation
     if (selectedSymptoms.isEmpty) {
@@ -44,10 +46,11 @@ class LogSymptomButton extends StatelessWidget {
     try {
       final result = await symptomLogProvider.logSymptoms(
         symptoms: selectedSymptoms,
-        moodScore:
-            selectedSymptoms.contains('Mood Swing') ? selectedMood : null,
-        notes: notes.trim().isNotEmpty ? notes.trim() : null,
-        logDate: DateTime.now().toIso8601String().split('T').first,
+        moodScore: selectedSymptoms.contains('Mood Swing')
+            ? selectedMood
+            : null,
+        note: notes.trim().isNotEmpty ? notes.trim() : null,
+        loggedAt: DateTime.now().toIso8601String().split('T').first,
       );
 
       if (!context.mounted) return;
@@ -74,7 +77,8 @@ class LogSymptomButton extends StatelessWidget {
               builder: (_) => ChangeNotifierProvider(
                 create: (_) {
                   debugPrint(
-                      'Creating new SymptomDetailProvider with ID: ${result.id}');
+                    'Creating new SymptomDetailProvider with ID: ${result.id}',
+                  );
                   return SymptomDetailProvider();
                 },
                 child: SymptomDetailScreen(symptomId: result.id!),
@@ -86,11 +90,7 @@ class LogSymptomButton extends StatelessWidget {
           Navigator.pushNamed(context, '/symptom-history');
         }
       } else if (result.error != null) {
-        CustomAlert.show(
-          context,
-          result.error!,
-          type: AlertType.error,
-        );
+        CustomAlert.show(context, result.error!, type: AlertType.error);
       }
     } catch (e) {
       if (context.mounted) {
@@ -163,10 +163,14 @@ class LogSymptomButton extends StatelessWidget {
   }
 
   Future<void> _showLogSymptomsBottomSheet(BuildContext context) async {
-    final symptomProvider =
-        Provider.of<SymptomProvider>(context, listen: false);
-    final symptomLogProvider =
-        Provider.of<SymptomLogProvider>(context, listen: false);
+    final symptomProvider = Provider.of<SymptomProvider>(
+      context,
+      listen: false,
+    );
+    final symptomLogProvider = Provider.of<SymptomLogProvider>(
+      context,
+      listen: false,
+    );
 
     // Clear any previous errors
     symptomLogProvider.clearError();
@@ -206,7 +210,8 @@ class _SymptomLogBottomSheet extends StatefulWidget {
     required List<String> selectedSymptoms,
     required int? selectedMood,
     required String notes,
-  }) onSubmit;
+  })
+  onSubmit;
   final IconData Function(String) getSymptomIcon;
   final Color Function(String) getSymptomColor;
 
@@ -279,9 +284,9 @@ class _SymptomLogBottomSheetState extends State<_SymptomLogBottomSheet> {
       children: [
         Text(
           'Catat Gejala Hari Ini',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         IconButton(
           onPressed: () => Navigator.pop(context),
@@ -297,9 +302,9 @@ class _SymptomLogBottomSheetState extends State<_SymptomLogBottomSheet> {
       children: [
         Text(
           'Pilih Gejala:',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 10),
         if (widget.symptoms.isEmpty)
@@ -317,9 +322,7 @@ class _SymptomLogBottomSheetState extends State<_SymptomLogBottomSheet> {
         color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Center(
-        child: Text('Tidak ada data gejala'),
-      ),
+      child: const Center(child: Text('Tidak ada data gejala')),
     );
   }
 
@@ -387,21 +390,39 @@ class _SymptomLogBottomSheetState extends State<_SymptomLogBottomSheet> {
       children: [
         Text(
           'Pilih Mood (1–4): *',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 10),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _buildMoodOption(
-                1, 'Marah', Icons.sentiment_very_dissatisfied, Colors.red),
+              1,
+              'Senang',
+              Icons.sentiment_very_satisfied,
+              Colors.orange,
+            ),
             _buildMoodOption(
-                2, 'Sedih', Icons.sentiment_dissatisfied, Colors.blueGrey),
-            _buildMoodOption(3, 'Biasa', Icons.sentiment_neutral, Colors.grey),
+              2,
+              'Biasa',
+              Icons.sentiment_neutral,
+              Colors.blueGrey,
+            ),
+            _buildMoodOption(3, 'Galau', Icons.sentiment_neutral, Colors.green),
             _buildMoodOption(
-                4, 'Senang', Icons.sentiment_satisfied_alt, Colors.green),
+              4,
+              'Sedih',
+              Icons.sentiment_very_dissatisfied_outlined,
+              Colors.blue,
+            ),
+            _buildMoodOption(
+              5,
+              'Marah',
+              Icons.sentiment_very_dissatisfied_outlined,
+              Colors.red,
+            ),
           ],
         ),
       ],
@@ -456,11 +477,11 @@ class _SymptomLogBottomSheetState extends State<_SymptomLogBottomSheet> {
       child: ElevatedButton(
         onPressed: (canSubmit && !provider.isLoading)
             ? () => widget.onSubmit(
-                  context: context,
-                  selectedSymptoms: selectedSymptoms,
-                  selectedMood: selectedMood,
-                  notes: widget.notesController.text,
-                )
+                context: context,
+                selectedSymptoms: selectedSymptoms,
+                selectedMood: selectedMood,
+                notes: widget.notesController.text,
+              )
             : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: canSubmit ? Colors.pink : Colors.grey,

@@ -26,10 +26,7 @@ class SymptomLogResponse {
     );
   }
   factory SymptomLogResponse.error(String error) {
-    return SymptomLogResponse(
-      success: false,
-      error: error,
-    );
+    return SymptomLogResponse(success: false, error: error);
   }
 }
 
@@ -60,8 +57,8 @@ class SymptomLogProvider with ChangeNotifier {
   Future<SymptomLogResponse> logSymptoms({
     required List<String> symptoms,
     int? moodScore,
-    String? notes,
-    required String logDate,
+    String? note,
+    required String loggedAt,
   }) async {
     _setLoading(true);
     _setError(null);
@@ -74,11 +71,12 @@ class SymptomLogProvider with ChangeNotifier {
 
       if (symptoms.contains('Mood Swing') && moodScore == null) {
         throw ArgumentError(
-            'Mood score is required when Mood Swing is selected');
+          'Mood score is required when Mood Swing is selected',
+        );
       }
 
-      if (moodScore != null && (moodScore < 1 || moodScore > 4)) {
-        throw ArgumentError('Mood score must be between 1 and 4');
+      if (moodScore != null && (moodScore < 1 || moodScore > 5)) {
+        throw ArgumentError('Mood score must be between 1 and 5');
       }
 
       final prefs = await SharedPreferences.getInstance();
@@ -93,19 +91,19 @@ class SymptomLogProvider with ChangeNotifier {
         throw Exception('API URL not configured');
       }
 
-      final url = '$baseUrl/cycles/symptoms';
+      final url = '$baseUrl/menstrual/symptoms/log';
 
       final body = <String, dynamic>{
         "symptoms": symptoms,
-        "log_date": logDate,
+        "log_date": loggedAt,
       };
 
       // Only add optional fields if they have values
       if (moodScore != null) {
         body["mood_score"] = moodScore;
       }
-      if (notes != null && notes.trim().isNotEmpty) {
-        body["notes"] = notes.trim();
+      if (note != null && note.trim().isNotEmpty) {
+        body["note"] = note.trim();
       }
 
       final response = await http
@@ -166,7 +164,8 @@ class SymptomLogProvider with ChangeNotifier {
       // You would need to store the last request parameters to retry
       // This is a placeholder for the retry functionality
       throw UnimplementedError(
-          'Retry functionality needs last request parameters');
+        'Retry functionality needs last request parameters',
+      );
     }
     throw StateError('No failed request to retry');
   }

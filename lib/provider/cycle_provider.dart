@@ -39,8 +39,9 @@ class CycleProvider with ChangeNotifier {
 
         _isMenstruating = (runningDaysValue != null);
 
-        _activeCycleRunningDays =
-            (runningDaysValue is num) ? runningDaysValue.toInt() : null;
+        _activeCycleRunningDays = (runningDaysValue is num)
+            ? runningDaysValue.toInt()
+            : null;
         _notificationFlags = summaryResponseData['notification_flags'] ?? {};
       } else {
         _isMenstruating = prefs.getBool('isMenstruating') ?? false;
@@ -62,17 +63,24 @@ class CycleProvider with ChangeNotifier {
   }
 
   Future<Map<String, dynamic>?> _fetchDataFromServer(
-      SharedPreferences prefs, String endpoint) async {
+    SharedPreferences prefs,
+    String endpoint,
+  ) async {
     final token = prefs.getString('token');
     final apiUrl = dotenv.env['API_URL'];
     if (token == null || apiUrl == null) return null;
 
     try {
       final url = Uri.parse('$apiUrl/cycles/$endpoint');
-      final response = await http.get(url, headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/json',
-      }).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            url,
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Accept': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
@@ -97,7 +105,7 @@ class CycleProvider with ChangeNotifier {
       }
 
       final response = await http.post(
-        Uri.parse('$apiUrl/cycles/start'),
+        Uri.parse('$apiUrl/menstrual/cycles'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -112,7 +120,8 @@ class CycleProvider with ChangeNotifier {
       } else {
         final responseData = json.decode(response.body);
         throw Exception(
-            responseData['message']?.toString() ?? 'Gagal memulai siklus.');
+          responseData['message']?.toString() ?? 'Gagal memulai siklus.',
+        );
       }
     } catch (e) {
       _isLoading = false;
@@ -134,7 +143,7 @@ class CycleProvider with ChangeNotifier {
       }
 
       final response = await http.post(
-        Uri.parse('$apiUrl/cycles/finish'),
+        Uri.parse('$apiUrl/menstrual/cycles'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
