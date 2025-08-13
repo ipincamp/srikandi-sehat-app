@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:srikandi_sehat_app/provider/cycle_provider.dart';
@@ -21,6 +22,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool _showProfileCard = false;
+  bool _useCustomStartDate = false;
+  bool _useCustomEndDate = false;
 
   @override
   void initState() {
@@ -53,14 +56,48 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleStartCycle() async {
+    DateTime selectedDate = DateTime.now();
+
+    if (_useCustomStartDate) {
+      final pickedDate = await showDatePicker(
+        context: context,
+        initialDate: DateTime.now(),
+        firstDate: DateTime.now().subtract(const Duration(days: 30)),
+        lastDate: DateTime.now(),
+        helpText: 'Pilih tanggal mulai menstruasi',
+        cancelText: 'Batal',
+        confirmText: 'Pilih',
+      );
+
+      if (pickedDate == null) return;
+      selectedDate = pickedDate;
+    }
+
     final confirmed = await CustomConfirmationPopup.show(
       context,
       title: 'Mulai Siklus Menstruasi',
-      message: 'Apakah Anda yakin ingin memulai siklus menstruasi?',
+      message:
+          'Apakah Anda yakin ingin memulai siklus menstruasi${_useCustomStartDate ? ' pada ${DateFormat('dd MMMM yyyy').format(selectedDate)}' : ' sekarang'}?',
       confirmText: 'Mulai',
       cancelText: 'Batal',
       confirmColor: Colors.pink,
       icon: Icons.play_circle_fill,
+      additionalWidget: CheckboxListTile(
+        title: const Text(
+          'Apakah Awal Menstruasi Sudah Terlewat? Pilih tanggal',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        ),
+        value: _useCustomStartDate,
+        onChanged: (value) {
+          setState(() {
+            _useCustomStartDate = value ?? false;
+          });
+          Navigator.of(context).pop(); // Close the dialog
+          _handleStartCycle(); // Restart the process
+        },
+        controlAffinity: ListTileControlAffinity.leading,
+        contentPadding: EdgeInsets.zero,
+      ),
     );
 
     if (confirmed != true) return;
@@ -68,7 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final String successMessage = await context
           .read<CycleProvider>()
-          .startCycle();
+          .startCycle(selectedDate);
 
       if (mounted) {
         CustomAlert.show(context, successMessage, type: AlertType.success);
@@ -85,20 +122,54 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleEndCycle() async {
+    DateTime selectedDate = DateTime.now();
+
+    if (_useCustomEndDate) {
+      final pickedDate = await showDatePicker(
+        context: context,
+        initialDate: DateTime.now(),
+        firstDate: DateTime.now().subtract(const Duration(days: 30)),
+        lastDate: DateTime.now(),
+        helpText: 'Pilih tanggal selesai menstruasi',
+        cancelText: 'Batal',
+        confirmText: 'Pilih',
+      );
+
+      if (pickedDate == null) return;
+      selectedDate = pickedDate;
+    }
+
     final confirmed = await CustomConfirmationPopup.show(
       context,
       title: 'Akhiri Siklus Menstruasi',
-      message: 'Apakah Anda yakin ingin mengakhiri siklus menstruasi?',
+      message:
+          'Apakah Anda yakin ingin mengakhiri siklus menstruasi${_useCustomEndDate ? ' pada ${DateFormat('dd MMMM yyyy').format(selectedDate)}' : ' sekarang'}?',
       confirmText: 'Akhiri',
       cancelText: 'Batal',
       confirmColor: Colors.pink,
       icon: Icons.stop_circle,
+      additionalWidget: CheckboxListTile(
+        title: const Text(
+          'Apakah Akhir Menstruasi Sudah Terlewat? Pilih tanggal',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        ),
+        value: _useCustomEndDate,
+        onChanged: (value) {
+          setState(() {
+            _useCustomEndDate = value ?? false;
+          });
+          Navigator.of(context).pop(); // Close the dialog
+          _handleEndCycle(); // Restart the process
+        },
+        controlAffinity: ListTileControlAffinity.leading,
+        contentPadding: EdgeInsets.zero,
+      ),
     );
 
     if (confirmed != true) return;
 
     try {
-      await context.read<CycleProvider>().endCycle();
+      await context.read<CycleProvider>().endCycle(selectedDate);
       if (mounted) {
         CustomAlert.show(
           context,
@@ -276,7 +347,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Expanded(flex: 1, child: LogSymptomButton()),
+                const Expanded(flex: 1, child: SymptomLogButton()),
               ],
             ),
             const SizedBox(height: 20),

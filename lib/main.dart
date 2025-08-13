@@ -11,7 +11,7 @@ import 'package:srikandi_sehat_app/provider/csv_download_provider.dart';
 import 'package:srikandi_sehat_app/provider/cycle_history_provider.dart';
 import 'package:srikandi_sehat_app/provider/cycle_provider.dart';
 import 'package:srikandi_sehat_app/provider/district_provider.dart';
-import 'package:srikandi_sehat_app/provider/menstrual_cycle_provider.dart';
+import 'package:srikandi_sehat_app/provider/menstrual_history_provider.dart';
 import 'package:srikandi_sehat_app/provider/password_provider.dart';
 import 'package:srikandi_sehat_app/provider/profile_change_provider.dart';
 import 'package:srikandi_sehat_app/provider/symptom_history_provider.dart';
@@ -86,7 +86,7 @@ class AppProviders extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SymptomLogProvider()),
         ChangeNotifierProvider(create: (_) => SymptomHistoryProvider()),
         ChangeNotifierProvider(create: (_) => SymptomDetailProvider()),
-        ChangeNotifierProvider(create: (_) => MenstrualCycleProvider()),
+        ChangeNotifierProvider(create: (_) => MenstrualHistoryProvider()),
         ChangeNotifierProvider(create: (_) => DistrictProvider()),
         ChangeNotifierProvider(create: (_) => VillageProvider()),
         ChangeNotifierProvider(create: (_) => ProfileChangeProvider()),

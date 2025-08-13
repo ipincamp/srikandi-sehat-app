@@ -1,153 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/provider/symptom_log_post_provider.dart';
+import 'package:srikandi_sehat_app/models/symptom_model.dart';
 import 'package:srikandi_sehat_app/provider/symptom_get_provider.dart';
-import 'package:srikandi_sehat_app/provider/symptom_log_get_detail.dart';
-import 'package:srikandi_sehat_app/screens/user/symptom_detail_screen.dart';
+import 'package:srikandi_sehat_app/provider/symptom_log_post_provider.dart';
 import 'package:srikandi_sehat_app/widgets/action_button.dart';
-import 'package:srikandi_sehat_app/widgets/custom_form.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 
-import '../models/symptom_model.dart';
+class SymptomLogButton extends StatelessWidget {
+  const SymptomLogButton({super.key});
 
-class LogSymptomButton extends StatelessWidget {
-  const LogSymptomButton({super.key});
-
-  Future<void> _submitLogSymptom({
-    required BuildContext context,
-    required List<String> selectedSymptoms,
-    required int? selectedMood,
-    required String notes,
-  }) async {
-    final symptomLogProvider = Provider.of<SymptomLogProvider>(
-      context,
-      listen: false,
-    );
-
-    // Client-side validation
-    if (selectedSymptoms.isEmpty) {
-      CustomAlert.show(
-        context,
-        'Silakan pilih minimal satu gejala.',
-        type: AlertType.warning,
-      );
-      return;
-    }
-
-    if (selectedSymptoms.contains('Mood Swing') && selectedMood == null) {
-      CustomAlert.show(
-        context,
-        'Silakan pilih mood untuk gejala Mood Swing.',
-        type: AlertType.warning,
-      );
-      return;
-    }
-
-    try {
-      final result = await symptomLogProvider.logSymptoms(
-        symptoms: selectedSymptoms,
-        moodScore: selectedSymptoms.contains('Mood Swing')
-            ? selectedMood
-            : null,
-        note: notes.trim().isNotEmpty ? notes.trim() : null,
-        loggedAt: DateTime.now().toIso8601String().split('T').first,
-      );
-
-      if (!context.mounted) return;
-
-      // Close the bottom sheet
-      Navigator.pop(context);
-
-      if (result.success) {
-        // Show success message
-        CustomAlert.show(
-          context,
-          result.message ?? 'Gejala berhasil dicatat!',
-          type: AlertType.success,
-        );
-
-        if (!context.mounted) return;
-
-        // If we have an ID, navigate to detail screen
-        if (result.id != null && result.id! > 0) {
-          // Navigate to detail screen with a new provider instance
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ChangeNotifierProvider(
-                create: (_) {
-                  debugPrint(
-                    'Creating new SymptomDetailProvider with ID: ${result.id}',
-                  );
-                  return SymptomDetailProvider();
-                },
-                child: SymptomDetailScreen(symptomId: result.id!),
-              ),
-            ),
-          );
-        } else {
-          // Fallback to symptom history if no ID is returned
-          Navigator.pushNamed(context, '/symptom-history');
-        }
-      } else if (result.error != null) {
-        CustomAlert.show(context, result.error!, type: AlertType.error);
-      }
-    } catch (e) {
-      if (context.mounted) {
-        Navigator.pop(context);
-        CustomAlert.show(
-          context,
-          'Terjadi kesalahan tidak terduga. Silakan coba lagi.',
-          type: AlertType.error,
-        );
-      }
-    }
-  }
-
-  IconData _getSymptomIcon(String symptomName) {
-    final lower = symptomName.toLowerCase();
-    if (lower.contains('dismenorea')) return Icons.healing;
-    if (lower.contains('mood')) return Icons.mood;
-    if (lower.contains('5l')) return Icons.water_drop;
-    if (lower.contains('kram')) return Icons.sick;
-    if (lower.contains('mual')) return Icons.sick_outlined;
-    if (lower.contains('pusing')) return Icons.blur_on;
-    return Icons.medical_services;
-  }
-
-  Color _getSymptomColor(String symptomName) {
-    final lower = symptomName.toLowerCase();
-    if (lower.contains('dismenorea')) return Colors.pink;
-    if (lower.contains('mood')) return Colors.purple;
-    if (lower.contains('5l')) return Colors.blue;
-    if (lower.contains('kram')) return Colors.orange;
-    return Colors.pink;
-  }
-
-  @override
   @override
   Widget build(BuildContext context) {
     return Consumer<SymptomProvider>(
       builder: (context, symptomProvider, _) {
-        // Create a non-nullable callback
-        VoidCallback? onPressed;
-        if (!symptomProvider.isLoading) {
-          onPressed = () async {
-            if (symptomProvider.symptoms.isEmpty) {
-              await context.read<SymptomProvider>().fetchSymptoms();
-            }
-            if (context.mounted) {
-              _showLogSymptomsBottomSheet(context);
-            }
-          };
-        }
-
         return ActionButton(
           icon: Icons.edit_note,
           label: 'Gejala',
           color: Colors.teal,
           isActive: !symptomProvider.isLoading,
-          onPressed: onPressed ?? () {}, // Provide empty callback when null
+          onPressed: () => _showLogSymptomsBottomSheet(context),
           loading: symptomProvider.isLoading,
           loadingWidget: const SizedBox(
             height: 16,
@@ -162,356 +33,211 @@ class LogSymptomButton extends StatelessWidget {
     );
   }
 
-  Future<void> _showLogSymptomsBottomSheet(BuildContext context) async {
-    final symptomProvider = Provider.of<SymptomProvider>(
-      context,
-      listen: false,
-    );
-    final symptomLogProvider = Provider.of<SymptomLogProvider>(
-      context,
-      listen: false,
-    );
-
-    // Clear any previous errors
-    symptomLogProvider.clearError();
-
-    // Fallback: fetch data if empty and not loading
-    if (symptomProvider.symptoms.isEmpty && !symptomProvider.isLoading) {
-      await symptomProvider.fetchSymptoms();
-    }
-
-    final symptoms = symptomProvider.symptoms;
-    final TextEditingController notesController = TextEditingController();
-
+  void _showLogSymptomsBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      isDismissible: true,
-      enableDrag: true,
-      builder: (BuildContext bc) {
-        return _SymptomLogBottomSheet(
-          symptoms: symptoms,
-          notesController: notesController,
-          onSubmit: _submitLogSymptom,
-          getSymptomIcon: _getSymptomIcon,
-          getSymptomColor: _getSymptomColor,
-        );
-      },
+      builder: (context) => const _SymptomLogBottomSheet(),
     );
   }
 }
 
-// Separate widget for the bottom sheet to improve maintainability
 class _SymptomLogBottomSheet extends StatefulWidget {
-  final List symptoms;
-  final TextEditingController notesController;
-  final Function({
-    required BuildContext context,
-    required List<String> selectedSymptoms,
-    required int? selectedMood,
-    required String notes,
-  })
-  onSubmit;
-  final IconData Function(String) getSymptomIcon;
-  final Color Function(String) getSymptomColor;
-
-  const _SymptomLogBottomSheet({
-    required this.symptoms,
-    required this.notesController,
-    required this.onSubmit,
-    required this.getSymptomIcon,
-    required this.getSymptomColor,
-  });
+  const _SymptomLogBottomSheet();
 
   @override
   State<_SymptomLogBottomSheet> createState() => _SymptomLogBottomSheetState();
 }
 
 class _SymptomLogBottomSheetState extends State<_SymptomLogBottomSheet> {
-  List<String> selectedSymptoms = [];
-  int? selectedMood;
-
-  bool get isMoodSwingSelected => selectedSymptoms.contains('Mood Swing');
-  bool get canSubmit =>
-      selectedSymptoms.isNotEmpty &&
-      (!isMoodSwingSelected || selectedMood != null);
+  final TextEditingController _notesController = TextEditingController();
+  final List<Map<String, dynamic>> _selectedSymptoms = [];
+  int? _dismenoreaSeverity;
 
   @override
   void dispose() {
-    widget.notesController.dispose();
+    _notesController.dispose();
     super.dispose();
+  }
+
+  void _toggleSymptom(Symptom symptom, bool selected) {
+    setState(() {
+      if (selected) {
+        _selectedSymptoms.add({
+          'symptom_id': symptom.id,
+          if (symptom.id == 4) 'option_id': 1, // Default severity
+        });
+        if (symptom.id == 4) {
+          _dismenoreaSeverity = 1;
+        }
+      } else {
+        _selectedSymptoms.removeWhere((s) => s['symptom_id'] == symptom.id);
+        if (symptom.id == 4) {
+          _dismenoreaSeverity = null;
+        }
+      }
+    });
+  }
+
+  void _updateDismenoreaSeverity(int severity) {
+    setState(() {
+      _dismenoreaSeverity = severity;
+      final index = _selectedSymptoms.indexWhere((s) => s['symptom_id'] == 4);
+      if (index >= 0) {
+        _selectedSymptoms[index]['option_id'] = severity;
+      }
+    });
+  }
+
+  Future<void> _submitSymptoms(BuildContext context) async {
+    if (_selectedSymptoms.isEmpty) {
+      CustomAlert.show(
+        context,
+        'Pilih minimal satu gejala',
+        type: AlertType.warning,
+      );
+      return;
+    }
+
+    final provider = Provider.of<SymptomLogProvider>(context, listen: false);
+    final symptomProvider = Provider.of<SymptomProvider>(
+      context,
+      listen: false,
+    );
+
+    final result = await provider.logSymptoms(
+      loggedAt: DateTime.now().toIso8601String(),
+      note: _notesController.text.trim().isNotEmpty
+          ? _notesController.text.trim()
+          : null,
+      symptoms: _selectedSymptoms,
+    );
+
+    if (!context.mounted) return;
+
+    if (result.success) {
+      Navigator.pop(context);
+      CustomAlert.show(
+        context,
+        result.message ?? 'Gejala berhasil dicatat!',
+        type: AlertType.success,
+      );
+
+      // Refresh symptom data
+      await symptomProvider.fetchSymptoms();
+    } else if (result.error != null) {
+      CustomAlert.show(context, result.error!, type: AlertType.error);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<SymptomLogProvider>(
-      builder: (context, provider, _) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-            top: 20,
-            left: 20,
-            right: 20,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+    final symptomProvider = Provider.of<SymptomProvider>(context);
+    final symptoms = symptomProvider.symptoms;
+    final isLoading = symptomProvider.isLoading;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        top: 20,
+        left: 20,
+        right: 20,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildHeader(context),
-                const SizedBox(height: 20),
-                _buildSymptomSelection(),
-                if (isMoodSwingSelected) ...[
-                  const SizedBox(height: 20),
-                  _buildMoodSelection(),
-                ],
-                const SizedBox(height: 20),
-                _buildNotesField(),
-                const SizedBox(height: 16),
-                _buildSubmitButton(provider),
-                const SizedBox(height: 20),
+                Text(
+                  'Catat Gejala Hari Ini',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close),
+                ),
               ],
             ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'Catat Gejala Hari Ini',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.close),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSymptomSelection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Pilih Gejala:',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 10),
-        if (widget.symptoms.isEmpty)
-          _buildEmptyState()
-        else
-          _buildSymptomChips(),
-      ],
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: const Center(child: Text('Tidak ada data gejala')),
-    );
-  }
-
-  Widget _buildSymptomChips() {
-    return Wrap(
-      spacing: 8.0,
-      runSpacing: 8.0,
-      children: widget.symptoms.map((symptom) {
-        // Cast the symptom to Symptom model
-        final symptomModel = symptom as Symptom;
-        final isSelected = selectedSymptoms.contains(symptomModel.name);
-        final symptomColor = widget.getSymptomColor(symptomModel.name);
-
-        return FilterChip(
-          selected: isSelected,
-          label: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                widget.getSymptomIcon(symptomModel.name),
-                size: 18,
-                color: isSelected ? Colors.white : symptomColor,
+            const SizedBox(height: 20),
+            Text(
+              'Pilih Gejala:',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 10),
+            if (isLoading)
+              const Center(child: CircularProgressIndicator())
+            else if (symptoms.isEmpty)
+              const Text('Tidak ada gejala tersedia')
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: symptoms.map((symptom) {
+                  final isSelected = _selectedSymptoms.any(
+                    (s) => s['symptom_id'] == symptom.id,
+                  );
+                  return FilterChip(
+                    label: Text(symptom.name),
+                    selected: isSelected,
+                    onSelected: (selected) => _toggleSymptom(symptom, selected),
+                  );
+                }).toList(),
               ),
-              const SizedBox(width: 6),
+            if (_selectedSymptoms.any((s) => s['symptom_id'] == 4)) ...[
+              const SizedBox(height: 20),
               Text(
-                symptomModel.name,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : symptomColor,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                ),
+                'Tingkat Dismenorea (1-5):',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [1, 2, 3, 4, 5].map((severity) {
+                  return ChoiceChip(
+                    label: Text(severity.toString()),
+                    selected: _dismenoreaSeverity == severity,
+                    onSelected: (_) => _updateDismenoreaSeverity(severity),
+                  );
+                }).toList(),
               ),
             ],
-          ),
-          onSelected: (bool selected) {
-            setState(() {
-              if (selected) {
-                selectedSymptoms.add(symptomModel.name);
-              } else {
-                selectedSymptoms.remove(symptomModel.name);
-                // Reset mood if Mood Swing is deselected
-                if (symptomModel.name == 'Mood Swing') {
-                  selectedMood = null;
-                }
-              }
-            });
-          },
-          selectedColor: symptomColor,
-          checkmarkColor: Colors.white,
-          backgroundColor: symptomColor.withOpacity(0.1),
-          side: BorderSide(
-            color: isSelected ? symptomColor : symptomColor.withOpacity(0.3),
-            width: 1.5,
-          ),
-          showCheckmark: true,
-          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          labelPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildMoodSelection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Pilih Mood (1–5): *',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildMoodOption(
-              1,
-              'Senang',
-              Icons.sentiment_very_satisfied,
-              Colors.orange,
+            const SizedBox(height: 20),
+            TextField(
+              controller: _notesController,
+              decoration: const InputDecoration(
+                labelText: 'Catatan (opsional)',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
             ),
-            _buildMoodOption(
-              2,
-              'Biasa',
-              Icons.sentiment_neutral,
-              Colors.blueGrey,
+            const SizedBox(height: 20),
+            Consumer<SymptomLogProvider>(
+              builder: (context, provider, _) {
+                return ElevatedButton(
+                  onPressed: provider.isLoading
+                      ? null
+                      : () => _submitSymptoms(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.pink,
+                    minimumSize: const Size(double.infinity, 50),
+                  ),
+                  child: provider.isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'Simpan',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                );
+              },
             ),
-            _buildMoodOption(3, 'Galau', Icons.sentiment_neutral, Colors.green),
-            _buildMoodOption(
-              4,
-              'Sedih',
-              Icons.sentiment_very_dissatisfied_outlined,
-              Colors.blue,
-            ),
-            _buildMoodOption(
-              5,
-              'Marah',
-              Icons.sentiment_very_dissatisfied_outlined,
-              Colors.red,
-            ),
+            const SizedBox(height: 20),
           ],
         ),
-      ],
-    );
-  }
-
-  Widget _buildMoodOption(int value, String label, IconData icon, Color color) {
-    final isSelected = value == selectedMood;
-    // Daftar emoji untuk setiap mood
-    final emojis = ['😊', '😐', '😔', '😢', '😠'];
-    // final emojis = ['😁', '🙂', '😕', '😭', '👿'];
-    final emoji = emojis[value - 1]; // Karena value dimulai dari 1
-
-    return GestureDetector(
-      onTap: () => setState(() => selectedMood = value),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          border: isSelected ? Border.all(color: color, width: 2) : null,
-          borderRadius: BorderRadius.circular(8),
-          color: isSelected ? color.withOpacity(0.1) : null,
-        ),
-        child: Column(
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 40)),
-            const SizedBox(height: 5),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? color : color.withOpacity(0.7),
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                fontSize: 12,
-              ),
-            ),
-            Text(
-              '($value)',
-              style: TextStyle(
-                color: isSelected ? color : color.withOpacity(0.7),
-                fontSize: 10,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNotesField() {
-    return CustomFormField(
-      placeholder: 'Masukkan keluhan anda',
-      label: 'Catatan (opsional)',
-      isMandatory: false,
-      type: CustomFormFieldType.text,
-      controller: widget.notesController,
-    );
-  }
-
-  Widget _buildSubmitButton(SymptomLogProvider provider) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: (canSubmit && !provider.isLoading)
-            ? () => widget.onSubmit(
-                context: context,
-                selectedSymptoms: selectedSymptoms,
-                selectedMood: selectedMood,
-                notes: widget.notesController.text,
-              )
-            : null,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: canSubmit ? Colors.pink : Colors.grey,
-          padding: const EdgeInsets.symmetric(vertical: 15),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-        child: provider.isLoading
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
-              )
-            : const Text(
-                'Simpan Log',
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
       ),
     );
   }

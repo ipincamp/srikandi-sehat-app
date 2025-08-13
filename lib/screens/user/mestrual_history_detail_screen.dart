@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:srikandi_sehat_app/models/menstural_cycle_model.dart';
+import 'package:srikandi_sehat_app/models/menstural_history_model.dart';
 
 class MenstrualHistoryDetailScreen extends StatelessWidget {
   final MenstrualCycle cycle;
 
-  const MenstrualHistoryDetailScreen({super.key, required this.cycle, required int itemNumber, required int totalItems});
+  const MenstrualHistoryDetailScreen({
+    super.key,
+    required this.cycle,
+    required int itemNumber,
+    required int totalItems,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detail Siklus'),
+        title: const Text('Detail Log Menstruasi'),
         backgroundColor: Colors.pink,
         foregroundColor: Colors.white,
       ),

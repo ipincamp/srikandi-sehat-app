@@ -14,9 +14,6 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  bool _isLoading = false;
-  bool _notificationsEnabled = true;
-
   String? _name;
   String? _email;
   // String? _role;
@@ -28,7 +25,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadProfile({bool forceRefresh = false}) async {
-    setState(() => _isLoading = true);
     final userProvider = Provider.of<AuthProvider>(context, listen: false);
 
     try {
@@ -44,7 +40,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         CustomAlert.show(context, 'Gagal memuat profil', type: AlertType.error);
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() {});
     }
   }
 

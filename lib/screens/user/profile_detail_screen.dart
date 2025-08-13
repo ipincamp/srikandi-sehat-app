@@ -153,7 +153,7 @@ class DetailProfileScreen extends StatelessWidget {
     final user = userProfileProvider.userData;
     final detail = user['profile'] ?? {};
     final isProfileComplete = user['profile_complete'] ?? false;
-    debugPrint(isProfileComplete);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -258,7 +258,7 @@ class DetailProfileScreen extends StatelessWidget {
                 buildProfileCard(
                   icon: Icons.work_outline,
                   title: 'Pekerjaan Orang Tua',
-                  value: detail['job_parent'] ?? 'Belum diisi',
+                  value: detail['last_parent_job'] ?? 'Belum diisi',
                   color: Colors.brown,
                 ),
               ],

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/models/menstural_cycle_model.dart';
-import 'package:srikandi_sehat_app/provider/menstrual_cycle_provider.dart';
+import 'package:srikandi_sehat_app/models/menstural_history_model.dart';
+import 'package:srikandi_sehat_app/provider/menstrual_history_provider.dart';
 import 'package:srikandi_sehat_app/screens/user/mestrual_history_detail_screen.dart';
 
 class MenstrualHistoryScreen extends StatefulWidget {
-  const MenstrualHistoryScreen({super.key});
+  const MenstrualHistoryScreen({Key? key}) : super(key: key);
 
   @override
   State<MenstrualHistoryScreen> createState() => _MenstrualHistoryScreenState();
@@ -13,8 +14,6 @@ class MenstrualHistoryScreen extends StatefulWidget {
 
 class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
   final ScrollController _scrollController = ScrollController();
-  int _currentLimit = 5;
-  final List<int> _limitOptions = [5, 10, 20, 50, 100];
 
   @override
   void initState() {
@@ -32,17 +31,17 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
   }
 
   Future<void> _loadInitialData() async {
-    final provider = Provider.of<MenstrualCycleProvider>(
+    final provider = Provider.of<MenstrualHistoryProvider>(
       context,
       listen: false,
     );
-    await provider.fetchCycles(limit: _currentLimit);
+    await provider.fetchCycles();
   }
 
   void _scrollListener() {
     if (_scrollController.position.pixels ==
         _scrollController.position.maxScrollExtent) {
-      final provider = Provider.of<MenstrualCycleProvider>(
+      final provider = Provider.of<MenstrualHistoryProvider>(
         context,
         listen: false,
       );
@@ -53,23 +52,51 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Riwayat Menstruasi'),
+        title: const Text(
+          'Riwayat Menstruasi',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
         backgroundColor: Colors.pink,
         foregroundColor: Colors.white,
-        centerTitle: true,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.pink, Colors.pinkAccent],
+            ),
+          ),
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: _showLimitDialog,
-            tooltip: 'Filter',
+          Row(
+            children: [
+              _buildLimitSelector(
+                Provider.of<MenstrualHistoryProvider>(context),
+              ),
+              IconButton(
+                icon: const Icon(Icons.filter_list),
+                onPressed: _showFilterDialog,
+                tooltip: 'Filter',
+              ),
+            ],
           ),
         ],
       ),
-      body: Consumer<MenstrualCycleProvider>(
+      body: Consumer<MenstrualHistoryProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading && provider.cycles.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.pink),
+              ),
+            );
           }
 
           if (provider.errorMessage.isNotEmpty) {
@@ -82,24 +109,34 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
 
           return Column(
             children: [
-              _buildDataCountHeader(provider),
               Expanded(
                 child: RefreshIndicator(
-                  onRefresh: () => provider.refreshData(),
-                  color: const Color(0xFFED1C24),
-                  child: ListView.separated(
+                  onRefresh: provider.refreshData,
+                  color: Colors.pink,
+                  child: ListView.builder(
                     controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: provider.cycles.length + 1,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (context, index) {
-                      if (index < provider.cycles.length) {
-                        return _buildCycleItem(
-                          index + 1,
-                          provider.cycles[index],
-                          provider.totalData,
-                        );
+                      if (index == provider.cycles.length) {
+                        return provider.isLoading
+                            ? const Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.pink,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : const SizedBox();
                       }
-                      return _buildPaginationFooter(provider);
+                      return _buildCycleItem(
+                        index + 1,
+                        provider.cycles[index],
+                        provider.cycles.length,
+                      );
                     },
                   ),
                 ),
@@ -112,113 +149,179 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
     );
   }
 
-  Widget _buildDataCountHeader(MenstrualCycleProvider provider) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        border: const Border(bottom: BorderSide(color: Colors.grey)),
+  // Widget _buildFilterControls(MenstrualHistoryProvider provider) {
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+  //     child: Row(children: [const Spacer(), _buildLimitSelector(provider)]),
+  //   );
+  // }
+
+  Widget _buildLimitSelector(MenstrualHistoryProvider provider) {
+    return PopupMenuButton<int>(
+      icon: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.pink[50],
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.pink[100]!),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${provider.limit}',
+              style: TextStyle(
+                color: Colors.pink[800],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const Icon(Icons.arrow_drop_down, color: Colors.pink),
+          ],
+        ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Total Data: ${provider.totalData}',
-            style: const TextStyle(fontWeight: FontWeight.bold),
+      onSelected: (limit) => provider.fetchCycles(limit: limit),
+      itemBuilder: (context) => [5, 10, 20, 50, 100].map((limit) {
+        return PopupMenuItem<int>(
+          value: limit,
+          child: Text(
+            '$limit items',
+            style: TextStyle(
+              color: provider.limit == limit ? Colors.pink : Colors.black87,
+              fontWeight: provider.limit == limit
+                  ? FontWeight.bold
+                  : FontWeight.normal,
+            ),
           ),
-          Text(
-            'Menampilkan: ${provider.cycles.length}',
-            style: const TextStyle(color: Colors.grey),
-          ),
-        ],
-      ),
+        );
+      }).toList(),
     );
   }
 
   Widget _buildCycleItem(int itemNumber, MenstrualCycle cycle, int totalItems) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: () => _navigateToDetail(itemNumber, cycle, totalItems),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              _buildItemNumber(itemNumber),
-              const SizedBox(width: 12),
-              _buildStatusIndicator(cycle),
-              const SizedBox(width: 16),
-              Expanded(child: _buildCycleInfo(cycle)),
-              const Icon(Icons.chevron_right, color: Colors.grey),
-            ],
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Card(
+        elevation: 2,
+        shadowColor: Colors.black.withOpacity(0.08),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => _navigateToDetail(itemNumber, cycle, totalItems),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.white, Colors.white.withOpacity(0.02)],
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Container(
+                    width: 45,
+                    height: 45,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Colors.pink, Colors.pinkAccent],
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.pink.withOpacity(0.3),
+                          spreadRadius: 1,
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$itemNumber',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.pink.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.calendar_today_rounded,
+                                color: Colors.pink,
+                                size: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '${_formatDate(cycle.startDate)} - ${_formatDate(cycle.finishDate)}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 4,
+                              children: [
+                                _buildInfoChip(
+                                  '${cycle.periodLength} hari',
+                                  Icons.calendar_today,
+                                ),
+                                if (cycle.cycleLength != null)
+                                  _buildInfoChip(
+                                    'Siklus ${cycle.cycleLength} hari',
+                                    Icons.repeat,
+                                  ),
+                              ],
+                            ),
+                            Icon(
+                              cycle.isPeriodNormal
+                                  ? Icons.check_circle
+                                  : Icons.warning,
+                              color: cycle.isPeriodNormal
+                                  ? Colors.green
+                                  : Colors.orange,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Icon(Icons.chevron_right, color: Colors.grey),
+                ],
+              ),
+            ),
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildItemNumber(int number) {
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: const BoxDecoration(
-        color: Color(0xFFED1C24),
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: Text(
-          number.toString(),
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusIndicator(MenstrualCycle cycle) {
-    return Container(
-      width: 8,
-      height: 60,
-      decoration: BoxDecoration(
-        color: cycle.isPeriodNormal ? Colors.green : Colors.orange,
-        borderRadius: BorderRadius.circular(4),
-      ),
-    );
-  }
-
-  Widget _buildCycleInfo(MenstrualCycle cycle) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              '${_formatDate(cycle.startDate)} - ${_formatDate(cycle.finishDate)}',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            Icon(
-              cycle.isPeriodNormal ? Icons.check_circle : Icons.warning,
-              color: cycle.isPeriodNormal ? Colors.green : Colors.orange,
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 4,
-          children: [
-            _buildInfoChip('${cycle.periodLength} hari', Icons.calendar_today),
-            if (cycle.cycleLength != null)
-              _buildInfoChip('Siklus ${cycle.cycleLength} hari', Icons.repeat),
-          ],
-        ),
-      ],
     );
   }
 
@@ -232,78 +335,41 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
     );
   }
 
-  Widget _buildPaginationControls(MenstrualCycleProvider provider) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        border: const Border(top: BorderSide(color: Colors.grey)),
-      ),
+  Widget _buildPaginationControls(MenstrualHistoryProvider provider) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios, size: 16),
+            icon: const Icon(Icons.chevron_left),
             onPressed: provider.currentPage > 1
                 ? () => _goToPage(provider.currentPage - 1, provider)
                 : null,
+            color: Colors.pink,
+            disabledColor: Colors.grey[400],
           ),
-          Text(
-            'Halaman ${provider.currentPage}/${provider.totalPages}',
-            style: const TextStyle(fontWeight: FontWeight.bold),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.pink[50],
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              '${provider.currentPage}/${provider.totalPages}',
+              style: TextStyle(
+                color: Colors.pink[800],
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           IconButton(
-            icon: const Icon(Icons.arrow_forward_ios, size: 16),
+            icon: const Icon(Icons.chevron_right),
             onPressed: provider.currentPage < provider.totalPages
                 ? () => _goToPage(provider.currentPage + 1, provider)
                 : null,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPaginationFooter(MenstrualCycleProvider provider) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Column(
-        children: [
-          if (provider.currentPage < provider.totalPages)
-            ElevatedButton(
-              onPressed: provider.loadNextPage,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFED1C24),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              child: const Text('Muat Lebih Banyak'),
-            ),
-          const SizedBox(height: 8),
-          Text(
-            'Menampilkan ${provider.cycles.length} dari ${provider.totalData} data',
-            style: const TextStyle(color: Colors.grey, fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorState(String errorMessage) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(errorMessage, style: const TextStyle(color: Colors.red)),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _loadInitialData,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFED1C24),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Coba Lagi'),
+            color: Colors.pink,
+            disabledColor: Colors.grey[400],
           ),
         ],
       ),
@@ -312,20 +378,149 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
 
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text('Belum ada riwayat menstruasi'),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _loadInitialData,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFED1C24),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Muat Ulang'),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Container(
+          margin: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 1,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.pink.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.history, size: 40, color: Colors.pink),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Belum Ada Riwayat',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Tidak ada riwayat menstruasi yang tercatat.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.grey, height: 1.5),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadInitialData,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.pink,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                ),
+                child: const Text(
+                  'Muat Ulang',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String errorMessage) {
+    return Center(
+      child: SingleChildScrollView(
+        child: Container(
+          margin: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 1,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.pink.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.error_outline,
+                  size: 40,
+                  color: Colors.pink,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Terjadi Kesalahan',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                errorMessage,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadInitialData,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.pink,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                ),
+                child: const Text(
+                  'Coba Lagi',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -343,50 +538,15 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
     );
   }
 
-  void _goToPage(int page, MenstrualCycleProvider provider) {
-    provider.fetchCycles(page: page, limit: _currentLimit);
+  void _goToPage(int page, MenstrualHistoryProvider provider) {
+    provider.fetchCycles(page: page);
   }
 
-  void _showLimitDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Item per Halaman'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _limitOptions.map((limit) {
-                return ElevatedButton(
-                  onPressed: () {
-                    setState(() => _currentLimit = limit);
-                    Provider.of<MenstrualCycleProvider>(
-                      context,
-                      listen: false,
-                    ).fetchCycles(page: 1, limit: limit);
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _currentLimit == limit
-                        ? const Color(0xFFED1C24)
-                        : Colors.grey[200],
-                    foregroundColor: _currentLimit == limit
-                        ? Colors.white
-                        : Colors.black,
-                  ),
-                  child: Text('$limit'),
-                );
-              }).toList(),
-            ),
-          ),
-        );
-      },
-    );
+  void _showFilterDialog() {
+    // Implement filter dialog if needed
   }
 
   String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+    return DateFormat('dd MMM yyyy').format(date);
   }
 }

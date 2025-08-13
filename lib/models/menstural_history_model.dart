@@ -1,4 +1,3 @@
-// models/menstrual_cycle.dart
 class MenstrualCycle {
   final int id;
   final DateTime startDate;

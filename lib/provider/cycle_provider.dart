@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:srikandi_sehat_app/models/cycle_status_model.dart';
@@ -92,7 +93,7 @@ class CycleProvider with ChangeNotifier {
     return null;
   }
 
-  Future<String> startCycle() async {
+  Future<String> startCycle(DateTime startDate) async {
     _isLoading = true;
     notifyListeners();
 
@@ -104,12 +105,17 @@ class CycleProvider with ChangeNotifier {
         throw Exception('Authentication or configuration error');
       }
 
+      final formattedDate =
+          "${DateFormat("yyyy-MM-dd'T'HH:mm:ss").format(startDate)}+07:00";
+      debugPrint('Starting cycle with date: $formattedDate');
       final response = await http.post(
         Uri.parse('$apiUrl/menstrual/cycles'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
+          'Content-Type': 'application/json',
         },
+        body: json.encode({'start_date': formattedDate}),
       );
 
       if (response.statusCode == 201 || response.statusCode == 409) {
@@ -131,7 +137,7 @@ class CycleProvider with ChangeNotifier {
     }
   }
 
-  Future<void> endCycle() async {
+  Future<void> endCycle(DateTime finishDate) async {
     _isLoading = true;
     notifyListeners();
     try {
@@ -142,12 +148,15 @@ class CycleProvider with ChangeNotifier {
         throw Exception('Authentication or configuration error');
       }
 
+      final formattedDate = finishDate.toIso8601String();
       final response = await http.post(
         Uri.parse('$apiUrl/menstrual/cycles'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
+          'Content-Type': 'application/json',
         },
+        body: json.encode({'finish_date': formattedDate}),
       );
 
       if (response.statusCode == 200) {

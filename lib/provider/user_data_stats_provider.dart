@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
 import 'package:srikandi_sehat_app/core/network/http_client.dart';
 
 class UserDataStatsProvider with ChangeNotifier {
