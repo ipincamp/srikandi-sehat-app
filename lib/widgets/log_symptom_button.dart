@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/models/symptom_model.dart';
-import 'package:srikandi_sehat_app/provider/symptom_get_provider.dart';
+import 'package:srikandi_sehat_app/provider/symptom_history_detail_provider.dart';
+import 'package:srikandi_sehat_app/provider/symptom_log_get_provider.dart';
 import 'package:srikandi_sehat_app/provider/symptom_log_post_provider.dart';
+import 'package:srikandi_sehat_app/screens/user/symptom_history_detail_screen.dart';
+import 'package:srikandi_sehat_app/utils/datetime_format.dart';
 import 'package:srikandi_sehat_app/widgets/action_button.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
+import 'package:srikandi_sehat_app/widgets/custom_form.dart';
 
 class SymptomLogButton extends StatelessWidget {
   const SymptomLogButton({super.key});
@@ -37,7 +41,14 @@ class SymptomLogButton extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => const _SymptomLogBottomSheet(),
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: const _SymptomLogBottomSheet(),
+      ),
     );
   }
 }
@@ -65,7 +76,7 @@ class _SymptomLogBottomSheetState extends State<_SymptomLogBottomSheet> {
       if (selected) {
         _selectedSymptoms.add({
           'symptom_id': symptom.id,
-          if (symptom.id == 4) 'option_id': 1, // Default severity
+          if (symptom.id == 4) 'option_id': 1, // Default to mild severity
         });
         if (symptom.id == 4) {
           _dismenoreaSeverity = 1;
@@ -106,7 +117,7 @@ class _SymptomLogBottomSheetState extends State<_SymptomLogBottomSheet> {
     );
 
     final result = await provider.logSymptoms(
-      loggedAt: DateTime.now().toIso8601String(),
+      loggedAt: DateTime.now().toLocalIso8601String(),
       note: _notesController.text.trim().isNotEmpty
           ? _notesController.text.trim()
           : null,
@@ -125,9 +136,118 @@ class _SymptomLogBottomSheetState extends State<_SymptomLogBottomSheet> {
 
       // Refresh symptom data
       await symptomProvider.fetchSymptoms();
+
+      // Navigate to detail screen if we have an ID
+      if (result.id != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ChangeNotifierProvider(
+              create: (_) => SymptomDetailProvider(),
+              child: SymptomDetailScreen(symptomId: result.id!),
+            ),
+          ),
+        );
+      }
     } else if (result.error != null) {
       CustomAlert.show(context, result.error!, type: AlertType.error);
     }
+  }
+
+  // Get icon and color for each symptom
+  IconData _getSymptomIcon(int symptomId) {
+    switch (symptomId) {
+      case 1:
+        return Icons.healing;
+      case 2:
+        return Icons.sick;
+      case 3:
+        return Icons.female;
+      case 4: // Dismenorea
+        return Icons.emoji_emotions;
+      default:
+        return Icons.medical_services;
+    }
+  }
+
+  Color _getSymptomColor(int symptomId) {
+    switch (symptomId) {
+      case 1: // Kram perut
+        return Colors.red;
+      case 2: // Sakit kepala
+        return Colors.green;
+      case 3: // Nyeri payudara
+        return Colors.pinkAccent;
+      case 4: // Dismenorea
+        return Colors.deepPurple;
+      default:
+        return const Color(0xFF90A4AE);
+    }
+  }
+
+  // Helper function to get emoji and mood text based on severity level
+  Widget _getMoodWidget(int severity, bool isSelected) {
+    String emoji;
+    String moodText;
+    Color moodColor;
+
+    switch (severity) {
+      case 1:
+        emoji = '😊';
+        moodText = 'Senang';
+        moodColor = Colors.orange;
+        break;
+      case 2:
+        emoji = '🙂';
+        moodText = 'Biasa';
+        moodColor = Colors.lightGreen;
+        break;
+      case 3:
+        emoji = '😔';
+        moodText = 'Galau';
+        moodColor = Colors.purpleAccent;
+        break;
+      case 4:
+        emoji = '😢';
+        moodText = 'Sedih';
+        moodColor = Colors.blue;
+        break;
+      case 5:
+        emoji = '😠';
+        moodText = 'Marah';
+        moodColor = Colors.red;
+        break;
+      default:
+        emoji = '❓';
+        moodText = 'Tidak Diketahui';
+        moodColor = Colors.grey;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: isSelected ? moodColor.withOpacity(0.2) : Colors.grey[100],
+        borderRadius: BorderRadius.circular(10),
+        border: isSelected
+            ? Border.all(color: moodColor, width: 2)
+            : Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 24)),
+          const SizedBox(height: 4),
+          Text(
+            moodText,
+            style: TextStyle(
+              fontSize: 12,
+              color: isSelected ? moodColor : Colors.grey[800],
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -148,73 +268,219 @@ class _SymptomLogBottomSheetState extends State<_SymptomLogBottomSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header with close button
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   'Catat Gejala Hari Ini',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.pink[800],
+                  ),
                 ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close),
+                  icon: const Icon(Icons.close, color: Colors.grey),
                 ),
               ],
             ),
             const SizedBox(height: 20),
+
+            // Symptoms selection
             Text(
               'Pilih Gejala:',
-              style: Theme.of(context).textTheme.titleMedium,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: Colors.pink[700],
+              ),
             ),
             const SizedBox(height: 10),
             if (isLoading)
-              const Center(child: CircularProgressIndicator())
+              const Center(child: CircularProgressIndicator(color: Colors.pink))
             else if (symptoms.isEmpty)
               const Text('Tidak ada gejala tersedia')
             else
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: symptoms.map((symptom) {
-                  final isSelected = _selectedSymptoms.any(
-                    (s) => s['symptom_id'] == symptom.id,
-                  );
-                  return FilterChip(
-                    label: Text(symptom.name),
-                    selected: isSelected,
-                    onSelected: (selected) => _toggleSymptom(symptom, selected),
-                  );
-                }).toList(),
+              Column(
+                children: [
+                  // First row of symptoms
+                  SizedBox(
+                    height: 50,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: symptoms
+                          .sublist(0, (symptoms.length / 2).ceil())
+                          .map((symptom) {
+                            final isSelected = _selectedSymptoms.any(
+                              (s) => s['symptom_id'] == symptom.id,
+                            );
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: ChoiceChip(
+                                label: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    isSelected
+                                        ? Icon(
+                                            Icons.check,
+                                            size: 18,
+                                            color: Colors.white,
+                                          )
+                                        : const SizedBox.shrink(),
+                                    Icon(
+                                      _getSymptomIcon(symptom.id),
+                                      size: 18,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : _getSymptomColor(symptom.id),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      symptom.name,
+                                      style: TextStyle(
+                                        color: isSelected
+                                            ? Colors.white
+                                            : _getSymptomColor(symptom.id),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                selected: isSelected,
+                                onSelected: (selected) =>
+                                    _toggleSymptom(symptom, selected),
+                                selectedColor: _getSymptomColor(symptom.id),
+                                backgroundColor: _getSymptomColor(
+                                  symptom.id,
+                                ).withOpacity(0.1),
+                                labelPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 0,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                showCheckmark: false,
+                              ),
+                            );
+                          })
+                          .toList(),
+                    ),
+                  ),
+                  // Second row of symptoms
+                  SizedBox(
+                    height: 50,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: symptoms
+                          .sublist((symptoms.length / 2).ceil())
+                          .map((symptom) {
+                            final isSelected = _selectedSymptoms.any(
+                              (s) => s['symptom_id'] == symptom.id,
+                            );
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: ChoiceChip(
+                                label: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    isSelected
+                                        ? Icon(
+                                            Icons.check,
+                                            size: 18,
+                                            color: Colors.white,
+                                          )
+                                        : const SizedBox.shrink(),
+                                    Icon(
+                                      _getSymptomIcon(symptom.id),
+                                      size: 18,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : _getSymptomColor(symptom.id),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      symptom.name,
+                                      style: TextStyle(
+                                        color: isSelected
+                                            ? Colors.white
+                                            : _getSymptomColor(symptom.id),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                selected: isSelected,
+                                onSelected: (selected) =>
+                                    _toggleSymptom(symptom, selected),
+                                selectedColor: _getSymptomColor(symptom.id),
+                                backgroundColor: _getSymptomColor(
+                                  symptom.id,
+                                ).withOpacity(0.1),
+                                labelPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 0,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                showCheckmark: false,
+                              ),
+                            );
+                          })
+                          .toList(),
+                    ),
+                  ),
+                ],
               ),
+
+            // Dismenorea severity selector
             if (_selectedSymptoms.any((s) => s['symptom_id'] == 4)) ...[
               const SizedBox(height: 20),
               Text(
-                'Tingkat Dismenorea (1-5):',
-                style: Theme.of(context).textTheme.titleMedium,
+                'Tingkat Mood:',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.pink[700],
+                ),
               ),
               const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [1, 2, 3, 4, 5].map((severity) {
-                  return ChoiceChip(
-                    label: Text(severity.toString()),
-                    selected: _dismenoreaSeverity == severity,
-                    onSelected: (_) => _updateDismenoreaSeverity(severity),
-                  );
-                }).toList(),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [1, 2, 3, 4, 5].map((severity) {
+                    final isSelected = _dismenoreaSeverity == severity;
+                    return GestureDetector(
+                      onTap: () => _updateDismenoreaSeverity(severity),
+                      child: Container(
+                        width: 70,
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: _getMoodWidget(severity, isSelected),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Keterangan: 1 (Ringan) - 5 (Berat)',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ],
+
+            // Notes field
             const SizedBox(height: 20),
-            TextField(
+            CustomFormField(
+              label: 'Catatan',
+              placeholder: 'Masukkan catatan (opsional)',
               controller: _notesController,
-              decoration: const InputDecoration(
-                labelText: 'Catatan (opsional)',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
+              isMandatory: false,
+              type: CustomFormFieldType.text,
+              prefixIcon: Icons.note,
             ),
+
+            // Submit button
             const SizedBox(height: 20),
             Consumer<SymptomLogProvider>(
               builder: (context, provider, _) {
@@ -225,12 +491,27 @@ class _SymptomLogBottomSheetState extends State<_SymptomLogBottomSheet> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.pink,
                     minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
                   ),
                   child: provider.isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 3,
+                          ),
+                        )
                       : const Text(
-                          'Simpan',
-                          style: TextStyle(color: Colors.white),
+                          'Simpan Gejala',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                 );
               },

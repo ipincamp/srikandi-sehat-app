@@ -77,6 +77,7 @@ class SymptomLogProvider with ChangeNotifier {
 
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
+      print(token);
 
       if (token == null) {
         throw Exception('Token tidak ditemukan');
@@ -86,6 +87,10 @@ class SymptomLogProvider with ChangeNotifier {
       if (baseUrl == null) {
         throw Exception('API URL tidak dikonfigurasi');
       }
+      print('$baseUrl/menstrual/symptoms/log');
+      print(
+        jsonEncode({'logged_at': loggedAt, 'note': note, 'symptoms': symptoms}),
+      );
 
       final response = await http
           .post(
@@ -101,6 +106,8 @@ class SymptomLogProvider with ChangeNotifier {
             }),
           )
           .timeout(const Duration(seconds: 30));
+
+      print('Response status: ${response.statusCode}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);

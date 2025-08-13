@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:srikandi_sehat_app/provider/cycle_provider.dart';
-import 'package:srikandi_sehat_app/provider/symptom_get_provider.dart';
+import 'package:srikandi_sehat_app/provider/symptom_log_get_provider.dart';
 import 'package:srikandi_sehat_app/screens/user/cycle_status_card.dart';
 import 'package:srikandi_sehat_app/widgets/anomaly_recommendation_card.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
