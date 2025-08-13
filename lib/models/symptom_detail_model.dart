@@ -3,11 +3,13 @@ class SymptomDetail {
   final String logDate;
   final String? notes;
   final List<String> loggedSymptoms;
+  final List<String> details;
   final List<Recommendation> recommendations;
 
   SymptomDetail({
     required this.id,
     required this.logDate,
+    required this.details,
     this.notes,
     required this.loggedSymptoms,
     required this.recommendations,
@@ -16,8 +18,11 @@ class SymptomDetail {
   factory SymptomDetail.fromJson(Map<String, dynamic> json) {
     return SymptomDetail(
       id: json['id'],
-      logDate: json['log_date'],
+      logDate: json['logged_at'],
       notes: json['notes'],
+      details: json['details'] != null
+          ? List<String>.from(json['details'])
+          : [],
       loggedSymptoms: List<String>.from(json['logged_symptoms'] ?? []),
       recommendations: (json['recommendations'] as List)
           .map((e) => Recommendation.fromJson(e))
@@ -41,7 +46,8 @@ class Recommendation {
     return Recommendation(
       symptomName: json['symptom_name'],
       recommendationText: json['recommendation_txt'],
-      recommendationUrls: (json['recommendation_url'] as List?)
+      recommendationUrls:
+          (json['recommendation_url'] as List?)
               ?.map((e) => RecommendationUrl.fromJson(e))
               .toList() ??
           [],

@@ -8,12 +8,14 @@ import 'package:srikandi_sehat_app/models/cycle_status_model.dart';
 
 class CycleProvider with ChangeNotifier {
   bool _isMenstruating = false;
+  bool _isOnCycle = false; // New field to track cycle status
   CycleStatus? _cycleStatus;
   Map<String, dynamic> _notificationFlags = {};
   int? _activeCycleRunningDays;
   bool _isLoading = false;
 
   bool get isMenstruating => _isMenstruating;
+  bool get isOnCycle => _isOnCycle; // New getter
   CycleStatus? get cycleStatus => _cycleStatus;
   Map<String, dynamic> get notificationFlags => _notificationFlags;
   int? get activeCycleRunningDays => _activeCycleRunningDays;
@@ -38,7 +40,12 @@ class CycleProvider with ChangeNotifier {
         final runningDaysValue =
             summaryResponseData['active_cycle_running_days'];
 
-        _isMenstruating = (runningDaysValue != null);
+        _isOnCycle =
+            summaryResponseData['is_on_cycle'] ??
+            false; // Set is_on_cycle status
+        _isMenstruating =
+            (runningDaysValue != null) &&
+            _isOnCycle; // Only menstruating if on cycle
 
         _activeCycleRunningDays = (runningDaysValue is num)
             ? runningDaysValue.toInt()
@@ -46,14 +53,18 @@ class CycleProvider with ChangeNotifier {
         _notificationFlags = summaryResponseData['notification_flags'] ?? {};
       } else {
         _isMenstruating = prefs.getBool('isMenstruating') ?? false;
+        _isOnCycle =
+            prefs.getBool('isOnCycle') ?? false; // Fallback to local storage
       }
 
       if (statusResponseData != null) {
         statusResponseData['is_menstruating'] = _isMenstruating;
+        statusResponseData['is_on_cycle'] = _isOnCycle; // Include in status
         _cycleStatus = CycleStatus.fromJson(statusResponseData);
       }
 
       await prefs.setBool('isMenstruating', _isMenstruating);
+      await prefs.setBool('isOnCycle', _isOnCycle); // Save to local storage
     } catch (e) {
       print('Gagal sinkronisasi data: $e');
       await _handleError(prefs);
@@ -94,6 +105,10 @@ class CycleProvider with ChangeNotifier {
   }
 
   Future<String> startCycle(DateTime startDate) async {
+    if (_isOnCycle) {
+      return 'Anda sudah dalam siklus menstruasi. Tidak bisa memulai siklus baru.';
+    }
+
     _isLoading = true;
     notifyListeners();
 
@@ -115,7 +130,10 @@ class CycleProvider with ChangeNotifier {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
-        body: json.encode({'start_date': formattedDate}),
+        body: json.encode({
+          'start_date': formattedDate,
+          'is_on_cycle': true, // Explicitly set cycle status
+        }),
       );
 
       if (response.statusCode == 201 || response.statusCode == 409) {
@@ -137,7 +155,11 @@ class CycleProvider with ChangeNotifier {
     }
   }
 
-  Future<void> endCycle(DateTime finishDate) async {
+  Future<String> endCycle(DateTime finishDate) async {
+    if (!_isOnCycle) {
+      return 'Tidak ada siklus aktif yang bisa diakhiri.';
+    }
+
     _isLoading = true;
     notifyListeners();
     try {
@@ -150,19 +172,26 @@ class CycleProvider with ChangeNotifier {
 
       final formattedDate = finishDate.toIso8601String();
       final response = await http.post(
-        Uri.parse('$apiUrl/menstrual/cycles'),
+        Uri.parse('$apiUrl/menstrual/cycles/end'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
-        body: json.encode({'finish_date': formattedDate}),
+        body: json.encode({
+          'finish_date': formattedDate,
+          'is_on_cycle': false, // Explicitly set cycle status
+        }),
       );
 
       if (response.statusCode == 200) {
         await synchronizeState();
+        return 'Siklus berhasil diakhiri.';
       } else {
-        throw Exception('Gagal mengakhiri siklus');
+        final responseData = json.decode(response.body);
+        throw Exception(
+          responseData['message']?.toString() ?? 'Gagal mengakhiri siklus.',
+        );
       }
     } catch (e) {
       _isLoading = false;
@@ -174,6 +203,10 @@ class CycleProvider with ChangeNotifier {
 
   Future<void> _handleError(SharedPreferences prefs) async {
     _isMenstruating = prefs.getBool('isMenstruating') ?? false;
-    _cycleStatus = CycleStatus(isMenstruating: _isMenstruating);
+    _isOnCycle = prefs.getBool('isOnCycle') ?? false; // Handle error case
+    _cycleStatus = CycleStatus(
+      isMenstruating: _isMenstruating,
+      isOnCycle: _isOnCycle,
+    );
   }
 }

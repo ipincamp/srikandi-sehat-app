@@ -1,4 +1,4 @@
-// models/cycle_status_model.dart
+// Updated CycleStatus model
 class CycleStatus {
   final String? cycleId;
   final String? cycleStatus;
@@ -6,6 +6,7 @@ class CycleStatus {
   final String? periodStatus;
   final int periodLengthDays;
   final bool isMenstruating;
+  final bool isOnCycle; // New field
 
   CycleStatus({
     this.cycleId,
@@ -14,6 +15,7 @@ class CycleStatus {
     this.periodStatus,
     this.periodLengthDays = 0,
     this.isMenstruating = false,
+    this.isOnCycle = false, // Default value
   });
 
   factory CycleStatus.fromJson(Map<String, dynamic> json) {
@@ -24,6 +26,7 @@ class CycleStatus {
       cycleDurationDays: (json['cycle_duration_days'] as num?)?.toInt() ?? 0,
       periodLengthDays: (json['period_length_days'] as num?)?.toInt() ?? 0,
       isMenstruating: json['is_menstruating'] ?? false,
+      isOnCycle: json['is_on_cycle'] ?? false, // Parse from JSON
     );
   }
 }

@@ -14,6 +14,7 @@ class SymptomHistoryScreen extends StatefulWidget {
 
 class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
   final ScrollController _scrollController = ScrollController();
+  DateTime? _selectedDate;
 
   @override
   void initState() {
@@ -51,7 +52,7 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _selectedDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
       builder: (context, child) {
@@ -69,7 +70,10 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
       },
     );
 
-    if (picked != null) {
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
       final provider = Provider.of<SymptomHistoryProvider>(
         context,
         listen: false,
@@ -78,36 +82,26 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
     }
   }
 
-  Widget _buildAppBar(SymptomHistoryProvider provider) {
+  Future<void> _resetDateFilter() async {
+    setState(() {
+      _selectedDate = null;
+    });
+    final provider = Provider.of<SymptomHistoryProvider>(
+      context,
+      listen: false,
+    );
+    await provider.fetchSymptomHistory();
+  }
+
+  Widget _buildAppBar() {
     return AppBar(
-      title: Row(
-        children: [
-          const Text(
-            'Riwayat Gejala',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 8),
-          if (provider.metadata.totalData > 0)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.pink[200],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${provider.metadata.totalData}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-        ],
+      title: const Text(
+        'Riwayat Gejala',
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
       ),
       backgroundColor: Colors.pink,
       foregroundColor: Colors.white,
@@ -123,7 +117,7 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
         ),
       ),
       actions: [
-        if (provider.selectedDate != null)
+        if (_selectedDate != null)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Container(
@@ -135,12 +129,12 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
               child: Row(
                 children: [
                   Text(
-                    DateFormat('dd/MM/yy').format(provider.selectedDate!),
+                    DateFormat('dd/MM/yy').format(_selectedDate!),
                     style: const TextStyle(color: Colors.white, fontSize: 14),
                   ),
                   IconButton(
                     icon: const Icon(Icons.clear, size: 18),
-                    onPressed: provider.clearDateFilter,
+                    onPressed: _resetDateFilter,
                     color: Colors.white,
                     padding: EdgeInsets.zero,
                   ),
@@ -148,7 +142,6 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
               ),
             ),
           ),
-        _buildLimitSelector(provider, inAppBar: true),
         IconButton(
           icon: const Icon(Icons.calendar_today),
           onPressed: () => _selectDate(context),
@@ -174,7 +167,7 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '${provider.limit}',
+              '${provider.limit} items',
               style: TextStyle(
                 color: inAppBar ? Colors.white : Colors.pink[800],
                 fontWeight: FontWeight.w500,
@@ -223,13 +216,13 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.pink[50],
+              color: Colors.pink[400],
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              '${provider.metadata.currentPage}/${provider.metadata.totalPages}',
+              '${provider.metadata.currentPage}/${provider.metadata.totalPages} pages',
               style: TextStyle(
-                color: Colors.pink[800],
+                color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -243,6 +236,7 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
             color: Colors.pink,
             disabledColor: Colors.grey[400],
           ),
+          _buildLimitSelector(provider, inAppBar: true),
         ],
       ),
     );
@@ -281,7 +275,7 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                provider.selectedDate == null
+                _selectedDate == null
                     ? 'Belum Ada Riwayat'
                     : 'Tidak Ada Data Pada Tanggal Ini',
                 style: const TextStyle(
@@ -297,9 +291,9 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
                 style: TextStyle(fontSize: 14, color: Colors.grey, height: 1.5),
               ),
               const SizedBox(height: 16),
-              if (provider.selectedDate != null)
+              if (_selectedDate != null)
                 ElevatedButton(
-                  onPressed: provider.clearDateFilter,
+                  onPressed: _resetDateFilter,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.pink,
                     shape: RoundedRectangleBorder(
@@ -528,40 +522,50 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
 
     return Column(
       children: [
-        Row(
-          children: [
-            const Icon(Icons.timeline, color: Colors.white, size: 24),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Total Riwayat Gejala',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+        Container(
+          padding: const EdgeInsets.all(12),
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.pink,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.timeline, color: Colors.white, size: 24),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Total Riwayat Gejala',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                  Text(
-                    '${provider.metadata.totalData} catatan',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                    Text(
+                      '${provider.metadata.totalData} catatan',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
 
         const SizedBox(height: 16),
         Expanded(
           child: RefreshIndicator(
-            onRefresh: provider.refresh,
+            onRefresh: () async {
+              await provider.fetchSymptomHistory(date: _selectedDate);
+            },
             color: Colors.pink,
             child: ListView.builder(
               controller: _scrollController,
@@ -604,7 +608,7 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
         builder: (context, provider, child) {
           return Column(
             children: [
-              _buildAppBar(provider),
+              _buildAppBar(),
               Expanded(child: _buildContent(provider)),
             ],
           );
