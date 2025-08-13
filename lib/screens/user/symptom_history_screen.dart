@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/models/symptom_history_model.dart';
 import 'package:srikandi_sehat_app/provider/symptom_history_provider.dart';
-import 'package:srikandi_sehat_app/screens/user/symptom_detail_screen.dart';
+import 'package:srikandi_sehat_app/screens/user/symptom_history_detail_screen.dart';
 
 class SymptomHistoryScreen extends StatefulWidget {
   const SymptomHistoryScreen({super.key});

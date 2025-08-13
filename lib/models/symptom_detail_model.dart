@@ -1,76 +1,79 @@
 class SymptomDetail {
   final int id;
   final String logDate;
-  final String? notes;
-  final List<String> loggedSymptoms;
-  final List<String> details;
+  final String? note;
+  final List<SymptomItem> details;
   final List<Recommendation> recommendations;
 
   SymptomDetail({
     required this.id,
     required this.logDate,
+    this.note,
     required this.details,
-    this.notes,
-    required this.loggedSymptoms,
     required this.recommendations,
   });
 
   factory SymptomDetail.fromJson(Map<String, dynamic> json) {
     return SymptomDetail(
-      id: json['id'],
-      logDate: json['logged_at'],
-      notes: json['notes'],
-      details: json['details'] != null
-          ? List<String>.from(json['details'])
-          : [],
-      loggedSymptoms: List<String>.from(json['logged_symptoms'] ?? []),
-      recommendations: (json['recommendations'] as List)
-          .map((e) => Recommendation.fromJson(e))
-          .toList(),
-    );
-  }
-}
-
-class Recommendation {
-  final String symptomName;
-  final String recommendationText;
-  final List<RecommendationUrl> recommendationUrls;
-
-  Recommendation({
-    required this.symptomName,
-    required this.recommendationText,
-    required this.recommendationUrls,
-  });
-
-  factory Recommendation.fromJson(Map<String, dynamic> json) {
-    return Recommendation(
-      symptomName: json['symptom_name'],
-      recommendationText: json['recommendation_txt'],
-      recommendationUrls:
-          (json['recommendation_url'] as List?)
-              ?.map((e) => RecommendationUrl.fromJson(e))
+      id: json['id'] as int? ?? 0, // Handle null dengan default value 0
+      logDate: json['logged_at'] as String? ?? '',
+      note: json['note'] as String?,
+      details:
+          (json['details'] as List<dynamic>?)
+              ?.map((e) => SymptomItem.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      recommendations:
+          (json['recommendations'] as List<dynamic>?)
+              ?.map((e) => Recommendation.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
     );
   }
 }
 
-class RecommendationUrl {
-  final int id;
-  final String action;
-  final String videoUrl;
+class SymptomItem {
+  final int symptomId;
+  final String symptomName;
+  final String symptomCategory;
+  final String? selectedOption;
 
-  RecommendationUrl({
-    required this.id,
-    required this.action,
-    required this.videoUrl,
+  SymptomItem({
+    required this.symptomId,
+    required this.symptomName,
+    required this.symptomCategory,
+    this.selectedOption,
   });
 
-  factory RecommendationUrl.fromJson(Map<String, dynamic> json) {
-    return RecommendationUrl(
-      id: json['id'],
-      action: json['action'],
-      videoUrl: json['video_url'],
+  factory SymptomItem.fromJson(Map<String, dynamic> json) {
+    return SymptomItem(
+      symptomId: json['symptom_id'] as int? ?? 0,
+      symptomName: json['symptom_name'] as String? ?? '',
+      symptomCategory: json['symptom_category'] as String? ?? '',
+      selectedOption: json['selected_option'] as String?,
+    );
+  }
+}
+
+class Recommendation {
+  final String forSymptom;
+  final String title;
+  final String description;
+  final String? videoUrl;
+
+  Recommendation({
+    required this.forSymptom,
+    required this.title,
+    required this.description,
+    this.videoUrl,
+  });
+
+  factory Recommendation.fromJson(Map<String, dynamic> json) {
+    return Recommendation(
+      forSymptom: json['for_symptom'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      videoUrl: json['source'] as String?,
     );
   }
 }

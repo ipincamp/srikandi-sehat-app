@@ -45,19 +45,18 @@ class Symptom {
     required this.totalSymptoms,
     required this.logDate,
   });
-factory Symptom.fromJson(Map<String, dynamic> json) {
-  final rawDate = json['log_date'] ?? '1970-01-01';
-  
-  // Parse sebagai local time
-  final parsedDate = DateTime.parse(rawDate).toLocal();
+  factory Symptom.fromJson(Map<String, dynamic> json) {
+    final rawDate = json['logged_at'] ?? '1970-01-01';
 
-  return Symptom(
-    id: json['id'] ?? 0,
-    totalSymptoms: json['total_symptoms'] ?? 0,
-    logDate: parsedDate,
-  );
-}
+    // Parse sebagai local time
+    final parsedDate = DateTime.parse(rawDate).toLocal();
 
+    return Symptom(
+      id: json['id'] ?? 0,
+      totalSymptoms: json['total_symptoms'] ?? 0,
+      logDate: parsedDate,
+    );
+  }
 }
 
 class Metadata {
