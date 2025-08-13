@@ -6,12 +6,12 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:srikandi_sehat_app/models/menstural_history_detail_model.dart';
 
-class MenstrualCycleDetailProvider with ChangeNotifier {
-  MenstrualCycleDetail? _cycleDetail;
+class MenstrualHistoryDetailProvider with ChangeNotifier {
+  MenstrualCycleDetail? _detail;
   bool _isLoading = false;
   String? _error;
 
-  MenstrualCycleDetail? get cycleDetail => _cycleDetail;
+  MenstrualCycleDetail? get detail => _detail;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -39,7 +39,7 @@ class MenstrualCycleDetailProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
         if (jsonData['data'] != null) {
-          _cycleDetail = MenstrualCycleDetail.fromJson(jsonData['data']);
+          _detail = MenstrualCycleDetail.fromJson(jsonData['data']);
         } else {
           _error = 'Data tidak tersedia';
         }
@@ -55,7 +55,7 @@ class MenstrualCycleDetailProvider with ChangeNotifier {
   }
 
   void clear() {
-    _cycleDetail = null;
+    _detail = null;
     _isLoading = false;
     _error = null;
     notifyListeners();

@@ -3,68 +3,83 @@ class MenstrualCycleDetail {
   final DateTime startDate;
   final DateTime finishDate;
   final int periodLength;
-  final int? cycleLength;
+  final int cycleLength;
   final bool isPeriodNormal;
-  final bool? isCycleNormal;
+  final bool isCycleNormal;
+  final List<CycleSymptom> symptoms;
 
   MenstrualCycleDetail({
     required this.id,
     required this.startDate,
     required this.finishDate,
     required this.periodLength,
-    this.cycleLength,
+    required this.cycleLength,
     required this.isPeriodNormal,
-    this.isCycleNormal,
+    required this.isCycleNormal,
+    required this.symptoms,
   });
 
   factory MenstrualCycleDetail.fromJson(Map<String, dynamic> json) {
     return MenstrualCycleDetail(
-      id: json['id'],
-      startDate: DateTime.parse(json['start_date']),
-      finishDate: DateTime.parse(json['finish_date']),
-      periodLength: json['period_length'],
-      cycleLength: json['cycle_length'],
-      isPeriodNormal: json['is_period_normal'],
-      isCycleNormal: json['is_cycle_normal'],
+      id: json['id'] as int? ?? 0,
+      startDate: DateTime.parse(json['start_date'] as String? ?? ''),
+      finishDate: DateTime.parse(json['finish_date'] as String? ?? ''),
+      periodLength: json['period_length'] as int? ?? 0,
+      cycleLength: json['cycle_length'] as int? ?? 0,
+      isPeriodNormal: json['is_period_normal'] as bool? ?? false,
+      isCycleNormal: json['is_cycle_normal'] as bool? ?? false,
+      symptoms:
+          (json['symptoms'] as List<dynamic>?)
+              ?.map((e) => CycleSymptom.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 }
 
-class MenstrualCycleDetailMetadata {
-  final int limit;
-  final int totalData;
-  final int totalPages;
-  final int currentPage;
+class CycleSymptom {
+  final int id;
+  final DateTime loggedAt;
+  final String? note;
+  final List<SymptomDetail> details;
 
-  MenstrualCycleDetailMetadata({
-    required this.limit,
-    required this.totalData,
-    required this.totalPages,
-    required this.currentPage,
+  CycleSymptom({
+    required this.id,
+    required this.loggedAt,
+    this.note,
+    required this.details,
   });
 
-  factory MenstrualCycleDetailMetadata.fromJson(Map<String, dynamic> json) {
-    return MenstrualCycleDetailMetadata(
-      limit: json['limit'],
-      totalData: json['total_data'],
-      totalPages: json['total_pages'],
-      currentPage: json['current_page'],
+  factory CycleSymptom.fromJson(Map<String, dynamic> json) {
+    return CycleSymptom(
+      id: json['id'] as int? ?? 0,
+      loggedAt: DateTime.parse(json['logged_at'] as String? ?? ''),
+      note: json['note'] as String?,
+      details:
+          (json['details'] as List<dynamic>?)
+              ?.map((e) => SymptomDetail.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 }
 
-class MenstrualCycleDetailResponse {
-  final List<MenstrualCycleDetail> cycles;
-  final MenstrualCycleDetailMetadata metadata;
+class SymptomDetail {
+  final String symptomName;
+  final String symptomCategory;
+  final String? selectedOption;
 
-  MenstrualCycleDetailResponse({required this.cycles, required this.metadata});
+  SymptomDetail({
+    required this.symptomName,
+    required this.symptomCategory,
+    this.selectedOption,
+  });
 
-  factory MenstrualCycleDetailResponse.fromJson(Map<String, dynamic> json) {
-    return MenstrualCycleDetailResponse(
-      cycles: (json['data'] as List)
-          .map((cycle) => MenstrualCycleDetail.fromJson(cycle))
-          .toList(),
-      metadata: MenstrualCycleDetailMetadata.fromJson(json['metadata']),
+  factory SymptomDetail.fromJson(Map<String, dynamic> json) {
+    return SymptomDetail(
+      symptomName: json['symptom_name'] as String? ?? '',
+      symptomCategory: json['symptom_category'] as String? ?? '',
+      selectedOption: json['selected_option'] as String?,
     );
   }
 }

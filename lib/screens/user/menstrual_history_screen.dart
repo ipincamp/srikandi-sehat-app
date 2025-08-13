@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/models/menstural_history_model.dart';
 import 'package:srikandi_sehat_app/provider/menstrual_history_provider.dart';
-import 'package:srikandi_sehat_app/screens/user/mestrual_history_detail_screen.dart';
+import 'package:srikandi_sehat_app/screens/user/menstrual_history_detail_screen.dart';
 
 class MenstrualHistoryScreen extends StatefulWidget {
   const MenstrualHistoryScreen({super.key});
@@ -286,7 +286,7 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
               context,
               MaterialPageRoute(
                 builder: (_) => MenstrualHistoryDetailScreen(
-                  cycle: item,
+                  cycleId: item.id,
                   itemNumber: itemNumber,
                   totalItems: provider.totalData,
                 ),
@@ -429,7 +429,7 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
                           context,
                           MaterialPageRoute(
                             builder: (_) => MenstrualHistoryDetailScreen(
-                              cycle: item,
+                              cycleId: item.id,
                               itemNumber: itemNumber,
                               totalItems: provider.totalData,
                             ),
