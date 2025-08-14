@@ -1,32 +1,43 @@
-// Updated CycleStatus model
+// models/cycle_status_model.dart
 class CycleStatus {
-  final String? cycleId;
-  final String? cycleStatus;
-  final int cycleDurationDays;
-  final String? periodStatus;
-  final int periodLengthDays;
+  final bool isOnCycle;
+  final int? currentPeriodDay;
+  final bool? isPeriodNormal;
+  final bool? isCycleNormal;
+  final int? lastPeriodLength;
+  final int? lastCycleLength;
+  final int? daysUntilNextPeriod;
+  final String? predictedPeriodDate;
+  final String? message;
   final bool isMenstruating;
-  final bool isOnCycle; // New field
 
   CycleStatus({
-    this.cycleId,
-    this.cycleStatus,
-    this.cycleDurationDays = 0,
-    this.periodStatus,
-    this.periodLengthDays = 0,
+    required this.isOnCycle,
+    this.currentPeriodDay,
+    this.isPeriodNormal,
+    this.isCycleNormal,
+    this.lastPeriodLength,
+    this.lastCycleLength,
+    this.daysUntilNextPeriod,
+    this.predictedPeriodDate,
+    this.message,
     this.isMenstruating = false,
-    this.isOnCycle = false, // Default value
   });
 
   factory CycleStatus.fromJson(Map<String, dynamic> json) {
     return CycleStatus(
-      cycleId: json['cycle_id']?.toString(),
-      cycleStatus: json['cycle_status']?.toString(),
-      periodStatus: json['period_status']?.toString(),
-      cycleDurationDays: (json['cycle_duration_days'] as num?)?.toInt() ?? 0,
-      periodLengthDays: (json['period_length_days'] as num?)?.toInt() ?? 0,
-      isMenstruating: json['is_menstruating'] ?? false,
-      isOnCycle: json['is_on_cycle'] ?? false, // Parse from JSON
+      isOnCycle: json['is_on_cycle'] ?? false,
+      currentPeriodDay: json['current_period_day'] as int?,
+      isPeriodNormal: json['is_period_normal'] as bool?,
+      isCycleNormal: json['is_cycle_normal'] as bool?,
+      lastPeriodLength: json['last_period_length'] as int?,
+      lastCycleLength: json['last_cycle_length'] as int?,
+      daysUntilNextPeriod: json['days_until_next_period'] as int?,
+      predictedPeriodDate: json['predicted_period_date'] as String?,
+      message: json['message'] as String?,
+      isMenstruating:
+          (json['is_on_cycle'] ?? false) &&
+          (json['current_period_day'] != null),
     );
   }
 }

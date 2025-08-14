@@ -1,10 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/provider/user_profile_provider.dart';
+import 'package:srikandi_sehat_app/provider/profile_change_provider.dart';
 import 'package:srikandi_sehat_app/utils/user_calc.dart';
 
-class DetailProfileScreen extends StatelessWidget {
+class DetailProfileScreen extends StatefulWidget {
   const DetailProfileScreen({super.key});
+
+  @override
+  State<DetailProfileScreen> createState() => _DetailProfileScreenState();
+}
+
+class _DetailProfileScreenState extends State<DetailProfileScreen> {
+  bool _initialLoadComplete = false;
+  bool _isRefreshing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfileData();
+  }
+
+  Future<void> _fetchProfileData() async {
+    try {
+      setState(() => _isRefreshing = true);
+      final profileProvider = context.read<ProfileChangeProvider>();
+      await profileProvider.fetchProfile();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _initialLoadComplete = true;
+          _isRefreshing = false;
+        });
+      }
+    }
+  }
 
   Widget buildProfileCard({
     required IconData icon,
@@ -149,10 +178,34 @@ class DetailProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final userProfileProvider = context.watch<UserProfileProvider>();
-    final user = userProfileProvider.userData;
-    final detail = user['profile'] ?? {};
-    final isProfileComplete = user['profile_complete'] ?? false;
+    final userProfileProvider = context.watch<ProfileChangeProvider>();
+
+    if (!_initialLoadComplete || userProfileProvider.isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (userProfileProvider.errorMessage.isNotEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Detail Profil')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(userProfileProvider.errorMessage),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _fetchProfileData,
+                child: const Text('Coba Lagi'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final userData = userProfileProvider.userData;
+    final profileData = userData['profile'] ?? {};
+    final isProfileComplete = userProfileProvider.profileComplete;
 
     return Scaffold(
       appBar: AppBar(
@@ -164,37 +217,41 @@ class DetailProfileScreen extends StatelessWidget {
         backgroundColor: Colors.pink,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _isRefreshing ? null : _fetchProfileData,
+          ),
+        ],
       ),
-      body: Container(
-        decoration: const BoxDecoration(color: Colors.transparent),
+      body: RefreshIndicator(
+        onRefresh: _fetchProfileData,
         child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Show warning if profile is incomplete
               if (!isProfileComplete) _buildIncompleteProfileWarning(context),
 
-              // Personal Information Section (only show if profile is complete)
               if (isProfileComplete) ...[
-                // Personal Contact Section
                 buildSectionHeader('Kontak Pribadi'),
                 buildProfileCard(
                   icon: Icons.person_outline,
                   title: 'Nama Lengkap',
-                  value: user['name'] ?? 'Belum diisi',
+                  value: userData['name'] ?? 'Belum diisi',
                   color: Colors.blueAccent,
                 ),
                 buildProfileCard(
                   icon: Icons.email_outlined,
                   title: 'Email',
-                  value: user['email'] ?? 'Belum diisi',
+                  value: userData['email'] ?? 'Belum diisi',
                   color: Colors.green,
                 ),
                 buildProfileCard(
                   icon: Icons.phone_android_outlined,
                   title: 'Nomor Telepon',
-                  value: detail['phone'] ?? 'Belum diisi',
+                  value: profileData['phone'] ?? 'Belum diisi',
                   color: Colors.orange,
                 ),
 
@@ -202,8 +259,8 @@ class DetailProfileScreen extends StatelessWidget {
                 buildProfileCard(
                   icon: Icons.cake_outlined,
                   title: 'Tanggal Lahir',
-                  value: detail['birthdate'] != null
-                      ? '${detail['birthdate']}\n(${calculateAgeFromString(detail['birthdate'])} tahun)'
+                  value: profileData['birthdate'] != null
+                      ? '${profileData['birthdate'].toString().split('T')[0]}\n(${calculateAgeFromString(profileData['birthdate'].toString().split('T')[0])} tahun)'
                       : 'Belum diisi',
                   color: Colors.purple,
                 ),
@@ -211,54 +268,57 @@ class DetailProfileScreen extends StatelessWidget {
                   icon: Icons.height_outlined,
                   title: 'Tinggi & Berat Badan',
                   value:
-                      '${detail['tb_cm'] ?? '-'} cm | ${detail['bb_kg'] ?? '-'} kg',
+                      '${profileData['tb_cm'] ?? '-'} cm | ${profileData['bb_kg'] ?? '-'} kg',
                   color: Colors.blue,
                 ),
                 buildProfileCard(
                   icon: Icons.monitor_weight_outlined,
                   title: 'Indeks Massa Tubuh (IMT)',
-                  value: detail['bmi'] != null && detail['bmi'] is num
-                      ? '${detail['bmi']} kg/m² (${classifyBMI(detail['bmi'])})'
+                  value: profileData['bmi'] != null && profileData['bmi'] is num
+                      ? '${profileData['bmi']} kg/m² (${classifyBMI(profileData['bmi'])})'
                       : 'Belum dihitung',
                   color: Colors.teal,
                 ),
                 buildProfileCard(
                   icon: Icons.location_on_outlined,
                   title: 'Alamat',
-                  value: userProfileProvider.formattedAddress,
+                  value: profileData['address'] ?? 'Belum diisi',
                   color: Colors.redAccent,
-                ),
-                buildProfileCard(
-                  icon: Icons.category_outlined,
-                  title: 'Kategori Tempat Tinggal',
-                  value: userProfileProvider.residentialCategory,
-                  color: Colors.indigo,
                 ),
                 buildProfileCard(
                   icon: Icons.school_outlined,
                   title: 'Pendidikan Terakhir',
-                  value: detail['edu_now'] ?? 'Belum diisi',
+                  value: profileData['edu_now'] ?? 'Belum diisi',
                   color: Colors.amber,
                 ),
                 buildProfileCard(
                   icon: Icons.wifi_outlined,
                   title: 'Akses Internet',
-                  value: detail['inet_access'] ?? 'Belum diisi',
+                  value: profileData['inet_access'] ?? 'Belum diisi',
                   color: Colors.lightBlue,
                 ),
 
-                // Parent Information Section
+                buildSectionHeader('Informasi Menstruasi'),
+                buildProfileCard(
+                  icon: Icons.calendar_today_outlined,
+                  title: 'Usia Saat Menstruasi Pertama',
+                  value: profileData['first_haid'] != null
+                      ? '${profileData['first_haid']} tahun'
+                      : 'Belum diisi',
+                  color: Colors.pinkAccent,
+                ),
+
                 buildSectionHeader('Informasi Orang Tua'),
                 buildProfileCard(
                   icon: Icons.school_outlined,
                   title: 'Pendidikan Terakhir Orang Tua',
-                  value: detail['edu_parent'] ?? 'Belum diisi',
+                  value: profileData['edu_parent'] ?? 'Belum diisi',
                   color: Colors.deepOrange,
                 ),
                 buildProfileCard(
                   icon: Icons.work_outline,
                   title: 'Pekerjaan Orang Tua',
-                  value: detail['last_parent_job'] ?? 'Belum diisi',
+                  value: profileData['job_parent'] ?? 'Belum diisi',
                   color: Colors.brown,
                 ),
               ],

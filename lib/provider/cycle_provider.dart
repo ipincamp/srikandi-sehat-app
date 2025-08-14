@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:srikandi_sehat_app/models/cycle_status_model.dart';
+import 'package:srikandi_sehat_app/utils/datetime_format.dart';
 
 class CycleProvider with ChangeNotifier {
   bool _isMenstruating = false;
@@ -83,7 +83,7 @@ class CycleProvider with ChangeNotifier {
     if (token == null || apiUrl == null) return null;
 
     try {
-      final url = Uri.parse('$apiUrl/cycles/$endpoint');
+      final url = Uri.parse('$apiUrl/menstrual/cycles/status');
       final response = await http
           .get(
             url,
@@ -120,8 +120,7 @@ class CycleProvider with ChangeNotifier {
         throw Exception('Authentication or configuration error');
       }
 
-      final formattedDate =
-          "${DateFormat("yyyy-MM-dd'T'HH:mm:ss").format(startDate)}+07:00";
+      final formattedDate = startDate.toLocalIso8601String();
       debugPrint('Starting cycle with date: $formattedDate');
       final response = await http.post(
         Uri.parse('$apiUrl/menstrual/cycles'),
@@ -136,11 +135,17 @@ class CycleProvider with ChangeNotifier {
         }),
       );
 
-      if (response.statusCode == 201 || response.statusCode == 409) {
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        print(response.statusCode);
         await synchronizeState();
-        return response.statusCode == 201
-            ? 'Siklus berhasil dimulai!'
-            : 'Melanjutkan siklus yang sudah aktif.';
+        final responseData = json.decode(response.body);
+        return responseData['message']?.toString() ?? 'Gagal memulai siklus.';
+      } else if (response.statusCode == 409) {
+        final responseData = json.decode(response.body);
+        throw Exception(
+          responseData['message']?.toString() ??
+              'Akhiri dulu siklus yang sedang berjalan.',
+        );
       } else {
         final responseData = json.decode(response.body);
         throw Exception(
@@ -170,18 +175,16 @@ class CycleProvider with ChangeNotifier {
         throw Exception('Authentication or configuration error');
       }
 
-      final formattedDate = finishDate.toIso8601String();
+      final formattedDate = finishDate.toLocalIso8601String();
+      print(json.encode({'finish_date': formattedDate}));
       final response = await http.post(
-        Uri.parse('$apiUrl/menstrual/cycles/end'),
+        Uri.parse('$apiUrl/menstrual/cycles'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
-        body: json.encode({
-          'finish_date': formattedDate,
-          'is_on_cycle': false, // Explicitly set cycle status
-        }),
+        body: json.encode({'finish_date': formattedDate}),
       );
 
       if (response.statusCode == 200) {

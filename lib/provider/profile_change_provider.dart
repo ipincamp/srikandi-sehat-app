@@ -9,25 +9,34 @@ class ProfileChangeProvider with ChangeNotifier {
   String _errorMessage = '';
   SharedPreferences? _prefs;
 
+  // User data fields
+  String? _id;
+  String? _name;
+  String? _email;
+  String? _role;
+  bool _profileComplete = false;
+
+  // Profile fields
+  String? _phone;
+  String? _dob;
+  String? _districtCode;
+  String? _villageCode;
+  String? _eduNow;
+  String? _eduParent;
+  String? _internetAccess;
+  String? _firstHaid;
+  String? _jobParent;
+  int? _height;
+  double? _weight;
+  double? _bmi;
+  String? _districtName;
+  String? _villageName;
+  String? _address;
+
   // Initialize SharedPreferences
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
   }
-
-  // Profile data fields
-  String? _name,
-      _phone,
-      _dob,
-      _districtCode,
-      _villageCode,
-      _eduNow,
-      _eduParent,
-      _internetAccess,
-      _firstHaid,
-      _jobParent;
-  int? _height;
-  double? _weight;
-  String? _districtName, _villageName;
 
   // Getters
   bool get isLoading => _isLoading;
@@ -46,16 +55,66 @@ class ProfileChangeProvider with ChangeNotifier {
   String? get jobParent => _jobParent;
   String? get districtName => _districtName;
   String? get villageName => _villageName;
+  String? get address => _address;
+  bool get profileComplete => _profileComplete;
 
-  // Helper method to get headers with auth token
-  Future<Map<String, String>> _getHeaders() async {
-    await init(); // Ensure prefs is initialized
-    final token = _prefs?.getString('token') ?? '';
+  // Expose complete user data
+  Map<String, dynamic> get userData {
     return {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
+      'id': _id,
+      'name': _name,
+      'email': _email,
+      'role': _role,
+      'profile_complete': _profileComplete,
+      'profile': {
+        'phone': _phone,
+        'birthdate': _dob,
+        'tb_cm': _height,
+        'bb_kg': _weight,
+        'bmi': _bmi,
+        'edu_now': _eduNow,
+        'edu_parent': _eduParent,
+        'job_parent': _jobParent,
+        'inet_access': _internetAccess,
+        'first_haid': _firstHaid,
+        'address': _address,
+        'address_code': _villageCode,
+      },
     };
+  }
+
+  // Parse profile data from API response
+  void _parseProfileData(Map<String, dynamic> userData) {
+    try {
+      _id = userData['id']?.toString();
+      _name = userData['name']?.toString();
+      _email = userData['email']?.toString();
+      _role = userData['role']?.toString();
+      _profileComplete = userData['profile_complete'] == true;
+
+      final profile = userData['profile'] ?? {};
+      _phone = profile['phone']?.toString();
+      _dob = profile['birthdate']?.toString();
+      _height = profile['tb_cm'] is int
+          ? profile['tb_cm']
+          : int.tryParse(profile['tb_cm']?.toString() ?? '');
+      _weight = profile['bb_kg'] is double
+          ? profile['bb_kg']
+          : double.tryParse(profile['bb_kg']?.toString() ?? '');
+      _bmi = profile['bmi'] is double
+          ? profile['bmi']
+          : double.tryParse(profile['bmi']?.toString() ?? '');
+      _eduNow = profile['edu_now']?.toString();
+      _eduParent = profile['edu_parent']?.toString();
+      _internetAccess = profile['inet_access']?.toString();
+      _firstHaid = profile['first_haid']?.toString();
+      _jobParent = profile['job_parent']?.toString();
+      _address = profile['address']?.toString();
+      _villageCode = profile['address_code']?.toString();
+    } catch (e) {
+      debugPrint('Error parsing profile data: $e');
+      _errorMessage = 'Failed to parse profile data';
+    }
   }
 
   // Update user profile
@@ -65,11 +124,17 @@ class ProfileChangeProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      await init(); // Ensure prefs is initialized
+      final token = _prefs?.getString('token');
+
+      if (token == null || token.isEmpty) {
+        _errorMessage = 'Authentication token not found';
+        return false;
+      }
+
       final baseUrl = dotenv.env['API_URL'] ?? '';
       final url = '$baseUrl/me/details';
-      final headers = await _getHeaders();
 
-      // Convert and clean the data
       final cleanedData = <String, dynamic>{};
 
       // Handle each field with proper type conversion
@@ -115,9 +180,7 @@ class ProfileChangeProvider with ChangeNotifier {
 
       if (profileData['inet_access'] != null &&
           profileData['inet_access'].toString().isNotEmpty) {
-        cleanedData['inet_access'] = profileData['inet_access']
-            .toString()
-            .toLowerCase();
+        cleanedData['inet_access'] = profileData['inet_access'].toString();
       }
 
       if (profileData['first_haid'] != null &&
@@ -131,18 +194,23 @@ class ProfileChangeProvider with ChangeNotifier {
         cleanedData['job_parent'] = profileData['job_parent'].toString();
       }
 
-      // Debug the payload before sending
       debugPrint(
         'Sending profile update with data: ${jsonEncode(cleanedData)}',
+      );
+      debugPrint(
+        'Using token: ${token.substring(0, 5)}...${token.substring(token.length - 5)}',
       );
 
       final response = await http.put(
         Uri.parse(url),
-        headers: headers,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: jsonEncode(cleanedData),
       );
 
-      // Debug the response
       debugPrint(
         'Profile update response: ${response.statusCode} - ${response.body}',
       );
@@ -157,6 +225,9 @@ class ProfileChangeProvider with ChangeNotifier {
           _errorMessage = 'Failed to process server response';
           return false;
         }
+      } else if (response.statusCode == 401) {
+        _errorMessage = 'Session expired. Please login again.';
+        return false;
       } else {
         try {
           final errorData = jsonDecode(response.body);
@@ -185,11 +256,29 @@ class ProfileChangeProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      await init(); // Ensure prefs is initialized
+      final token = _prefs?.getString('token');
+
+      if (token == null || token.isEmpty) {
+        _errorMessage = 'Authentication token not found';
+        return false;
+      }
+
       final baseUrl = dotenv.env['API_URL'] ?? '';
       final url = '$baseUrl/me';
-      final headers = await _getHeaders();
 
-      final response = await http.get(Uri.parse(url), headers: headers);
+      debugPrint(
+        'Using token: ${token.substring(0, 5)}...${token.substring(token.length - 5)}',
+      );
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      );
 
       debugPrint(
         'Fetch profile response: ${response.statusCode} - ${response.body}',
@@ -198,16 +287,21 @@ class ProfileChangeProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         try {
           final responseData = jsonDecode(response.body);
+          print('Profile data: $responseData');
           if (responseData['data'] != null) {
             _parseProfileData(responseData['data']);
             return true;
           }
+
           _errorMessage = 'Profile data not found';
           return false;
         } catch (e) {
           _errorMessage = 'Failed to parse profile data';
           return false;
         }
+      } else if (response.statusCode == 401) {
+        _errorMessage = 'Session expired. Please login again.';
+        return false;
       } else {
         try {
           final errorData = jsonDecode(response.body);
@@ -226,32 +320,6 @@ class ProfileChangeProvider with ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
-    }
-  }
-
-  // Parse profile data from API response
-  void _parseProfileData(Map<String, dynamic> userData) {
-    try {
-      _name = userData['name']?.toString();
-
-      final profile = userData['profile'] ?? {};
-      _phone = profile['phone']?.toString();
-      _dob = profile['birthdate']?.toString();
-      _height = profile['tb_cm'] is int
-          ? profile['tb_cm']
-          : int.tryParse(profile['tb_cm']?.toString() ?? '');
-      _weight = profile['bb_kg'] is double
-          ? profile['bb_kg']
-          : double.tryParse(profile['bb_kg']?.toString() ?? '');
-      _villageCode = profile['address_code']?.toString();
-      _eduNow = profile['edu_now']?.toString();
-      _eduParent = profile['edu_parent']?.toString();
-      _internetAccess = profile['inet_access']?.toString();
-      _firstHaid = profile['first_haid']?.toString();
-      _jobParent = profile['job_parent']?.toString();
-    } catch (e) {
-      debugPrint('Error parsing profile data: $e');
-      _errorMessage = 'Failed to parse profile data';
     }
   }
 

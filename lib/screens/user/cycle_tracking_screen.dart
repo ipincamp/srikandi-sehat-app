@@ -15,33 +15,63 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    _loadInitialData();
+    _scrollController.addListener(_scrollListener);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _loadInitialData() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CycleHistoryProvider>().fetchCycleHistory(context);
+      context.read<CycleHistoryProvider>().fetchCycleHistory(refresh: true);
     });
+  }
+
+  void _scrollListener() {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
+      context.read<CycleHistoryProvider>().fetchCycleHistory();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pelacakan Siklus Haid',
-            style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Pelacakan Siklus Haid',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.pink[400],
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => context
+                .read<CycleHistoryProvider>()
+                .fetchCycleHistory(refresh: true),
+          ),
+        ],
       ),
       backgroundColor: Colors.grey[50],
       body: Consumer<CycleHistoryProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading && provider.cycleHistory.isEmpty) {
             return const Center(
-                child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.pink),
-            ));
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.pink),
+              ),
+            );
           }
 
           if (provider.error != null) {
@@ -49,40 +79,63 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(provider.error!,
-                      style: const TextStyle(color: Colors.pink)),
+                  Text(
+                    provider.error!,
+                    style: const TextStyle(color: Colors.pink),
+                  ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => provider.fetchCycleHistory(context),
+                    onPressed: () => provider.fetchCycleHistory(refresh: true),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.pink[400],
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text('Coba Lagi',
-                        style: TextStyle(color: Colors.white)),
+                    child: const Text(
+                      'Coba Lagi',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
               ),
             );
           }
 
-          return Column(
-            children: [
-              _buildLegendaKalender(),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      _buildKalender(provider.cycleHistory),
-                      const SizedBox(height: 16),
-                      _buildStatistikSiklus(provider.cycleHistory),
-                    ],
+          return RefreshIndicator(
+            onRefresh: () async {
+              await context.read<CycleHistoryProvider>().fetchCycleHistory(
+                refresh: true,
+              );
+            },
+            child: Column(
+              children: [
+                _buildLegendaKalender(),
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Column(
+                      children: [
+                        _buildKalender(provider.cycleHistory),
+                        const SizedBox(height: 16),
+                        _buildStatistikSiklus(provider.cycleHistory),
+                        if (provider.isLoading &&
+                            provider.cycleHistory.isNotEmpty)
+                          const Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.pink,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
@@ -117,6 +170,12 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
             teks: 'Durasi Haid',
             ikon: Icons.fiber_manual_record,
           ),
+          const SizedBox(width: 24),
+          _buildItemLegenda(
+            warna: Colors.orange,
+            teks: 'Prediksi',
+            ikon: Icons.fiber_manual_record,
+          ),
         ],
       ),
     );
@@ -132,12 +191,14 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
       children: [
         Icon(ikon, size: 16, color: warna),
         const SizedBox(width: 8),
-        Text(teks,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[700],
-              fontWeight: FontWeight.w500,
-            )),
+        Text(
+          teks,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[700],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ],
     );
   }
@@ -149,11 +210,12 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
       return DateTimeRange(start: tanggalMulai, end: tanggalSelesai);
     }).toList();
 
+    // Calculate predicted cycles (example logic)
+    final predictedCycles = _calculatePredictedCycles(dataSiklus);
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(12.0),
@@ -189,8 +251,10 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
             ),
             formatButtonTextStyle: const TextStyle(color: Colors.white),
             leftChevronIcon: const Icon(Icons.chevron_left, color: Colors.pink),
-            rightChevronIcon:
-                const Icon(Icons.chevron_right, color: Colors.pink),
+            rightChevronIcon: const Icon(
+              Icons.chevron_right,
+              color: Colors.pink,
+            ),
             headerMargin: const EdgeInsets.only(bottom: 8),
           ),
           selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
@@ -204,13 +268,23 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
           onPageChanged: (focusedDay) => _focusedDay = focusedDay,
           calendarBuilders: CalendarBuilders(
             defaultBuilder: (context, day, focusedDay) {
-              return _buildSelTanggal(day, tanggalHaid);
+              return _buildSelTanggal(day, tanggalHaid, predictedCycles);
             },
             todayBuilder: (context, day, focusedDay) {
-              return _buildSelTanggal(day, tanggalHaid, hariIni: true);
+              return _buildSelTanggal(
+                day,
+                tanggalHaid,
+                predictedCycles,
+                hariIni: true,
+              );
             },
             selectedBuilder: (context, day, focusedDay) {
-              return _buildSelTanggal(day, tanggalHaid, terpilih: true);
+              return _buildSelTanggal(
+                day,
+                tanggalHaid,
+                predictedCycles,
+                terpilih: true,
+              );
             },
           ),
         ),
@@ -218,17 +292,54 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
     );
   }
 
-  Widget _buildSelTanggal(DateTime hari, List<DateTimeRange> tanggalHaid,
-      {bool hariIni = false, bool terpilih = false}) {
+  List<DateTimeRange> _calculatePredictedCycles(List<dynamic> cycles) {
+    if (cycles.length < 2) return [];
+
+    final lastCycle = cycles.first;
+    final lastStartDate = DateTime.parse(lastCycle['start_date']);
+    final averageCycleLength =
+        cycles.map((c) => c['cycle_length'] as int).reduce((a, b) => a + b) ~/
+        cycles.length;
+
+    final nextPredictedStart = lastStartDate.add(
+      Duration(days: averageCycleLength),
+    );
+    final nextPredictedEnd = nextPredictedStart.add(
+      Duration(days: lastCycle['period_length']),
+    );
+
+    return [DateTimeRange(start: nextPredictedStart, end: nextPredictedEnd)];
+  }
+
+  Widget _buildSelTanggal(
+    DateTime hari,
+    List<DateTimeRange> tanggalHaid,
+    List<DateTimeRange> predictedCycles, {
+    bool hariIni = false,
+    bool terpilih = false,
+  }) {
     bool adalahHariHaid = false;
     bool adalahHariPertama = false;
+    bool adalahPrediksi = false;
 
+    // Check actual cycles
     for (final range in tanggalHaid) {
       if (hari.isAfter(range.start.subtract(const Duration(days: 1))) &&
           hari.isBefore(range.end.add(const Duration(days: 1)))) {
         adalahHariHaid = true;
         adalahHariPertama = isSameDay(hari, range.start);
         break;
+      }
+    }
+
+    // Check predicted cycles if not an actual cycle day
+    if (!adalahHariHaid) {
+      for (final range in predictedCycles) {
+        if (hari.isAfter(range.start.subtract(const Duration(days: 1))) &&
+            hari.isBefore(range.end.add(const Duration(days: 1)))) {
+          adalahPrediksi = true;
+          break;
+        }
       }
     }
 
@@ -239,8 +350,8 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
         color: terpilih
             ? Colors.pink[400]
             : hariIni
-                ? Colors.pink[100]
-                : null,
+            ? Colors.pink[100]
+            : null,
       ),
       child: Stack(
         alignment: Alignment.center,
@@ -252,8 +363,8 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
                 color: terpilih
                     ? Colors.white
                     : hariIni
-                        ? Colors.pink[400]
-                        : Colors.grey[800],
+                    ? Colors.pink[400]
+                    : Colors.grey[800],
                 fontWeight: terpilih ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -266,6 +377,18 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
                 height: 4,
                 decoration: BoxDecoration(
                   color: adalahHariPertama ? Colors.purple : Colors.pink[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+          if (adalahPrediksi && !adalahHariHaid)
+            Positioned(
+              bottom: 4,
+              child: Container(
+                width: 16,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.orange,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -289,14 +412,27 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
     final siklusTerakhir = dataSiklus.first;
     final tanggalMulai = DateTime.parse(siklusTerakhir['start_date']);
     final tanggalSelesai = DateTime.parse(siklusTerakhir['finish_date']);
-    final durasiHaid = siklusTerakhir['period_length_days'];
-    final panjangSiklus = siklusTerakhir['cycle_length_days'];
+    final durasiHaid = siklusTerakhir['period_length'];
+    final panjangSiklus = siklusTerakhir['cycle_length'];
+
+    // Calculate statistics
+    final averagePeriod = dataSiklus.length > 1
+        ? dataSiklus
+                  .map((c) => c['period_length'] as int)
+                  .reduce((a, b) => a + b) ~/
+              dataSiklus.length
+        : durasiHaid;
+
+    final averageCycle = dataSiklus.length > 1
+        ? dataSiklus
+                  .map((c) => c['cycle_length'] as int)
+                  .reduce((a, b) => a + b) ~/
+              dataSiklus.length
+        : panjangSiklus;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -308,7 +444,7 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
                 Icon(Icons.insights, color: Colors.pink[400]),
                 const SizedBox(width: 8),
                 Text(
-                  'Statistik Siklus Terakhir',
+                  'Statistik Siklus',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -330,13 +466,24 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
             ),
             _buildItemStatistik(
               ikon: Icons.timelapse,
-              label: 'Durasi Haid',
+              label: 'Durasi Haid Terakhir',
               nilai: '$durasiHaid hari',
             ),
             _buildItemStatistik(
               ikon: Icons.cyclone,
-              label: 'Panjang Siklus',
+              label: 'Panjang Siklus Terakhir',
               nilai: '$panjangSiklus hari',
+            ),
+            const Divider(height: 24),
+            _buildItemStatistik(
+              ikon: Icons.av_timer,
+              label: 'Rata-rata Durasi Haid',
+              nilai: '$averagePeriod hari',
+            ),
+            _buildItemStatistik(
+              ikon: Icons.timeline,
+              label: 'Rata-rata Panjang Siklus',
+              nilai: '$averageCycle hari',
             ),
           ],
         ),
@@ -344,8 +491,11 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
     );
   }
 
-  Widget _buildItemStatistik(
-      {required IconData ikon, required String label, required String nilai}) {
+  Widget _buildItemStatistik({
+    required IconData ikon,
+    required String label,
+    required String nilai,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -359,10 +509,7 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
               children: [
                 Text(
                   label,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
                 ),
                 const SizedBox(height: 4),
                 Text(

@@ -30,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text(
-          'SriKandi Sehat',
+          'Srikandi Sehat',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 22,
@@ -73,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         const Text(
-          'Admin SriKandi!',
+          'Admin Srikandi!',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,

@@ -1,82 +1,108 @@
-// widgets/cycle_status_card.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:math';
+import 'package:srikandi_sehat_app/models/cycle_status_model.dart';
 import 'package:srikandi_sehat_app/provider/cycle_provider.dart';
 
 class CycleStatusCard extends StatelessWidget {
   const CycleStatusCard({super.key});
 
-  String _getPhaseText(String? cycleStatus, String? periodStatus) {
-    if (periodStatus?.toLowerCase() == 'pendek' ||
-        periodStatus?.toLowerCase() == 'panjang' ||
-        periodStatus?.toLowerCase() == 'menstruating') {
+  String _getPhaseText(CycleStatus? status) {
+    if (status == null) return 'Memuat...';
+
+    if (status.isOnCycle && status.isMenstruating) {
       return 'Fase Menstruasi';
     }
-    if (cycleStatus?.toLowerCase() == 'polimenorea') return 'Fase Polimenorea';
-    if (cycleStatus?.toLowerCase() == 'oligomenorea') {
-      return 'Fase Oligomenorea';
+    if (status.isCycleNormal == false) {
+      return 'Fase Tidak Normal';
     }
-    if (cycleStatus?.toLowerCase() == 'amenorea') return 'Fase Amenorea';
-    return 'Fase Normal'; // Default
+    if (status.isPeriodNormal == false) {
+      return 'Fase Menstruasi Tidak Normal';
+    }
+    if (!status.isOnCycle) {
+      return status.daysUntilNextPeriod != null
+          ? 'Fase Folikular'
+          : 'Fase Luteal';
+    }
+    return 'Fase Normal';
   }
 
-  String _getStatusText(bool isMenstruating) {
-    if (isMenstruating) {
-      return 'Menstruasi sedang berlangsung';
-    }
-    return 'Masa Subur / Fase Luteal'; // Teks default jika tidak menstruasi
+  String _getStatusText(CycleStatus? status) {
+    if (status == null) return 'Memuat status...';
+    return status.message ??
+        (status.isOnCycle
+            ? 'Sedang dalam siklus menstruasi'
+            : status.daysUntilNextPeriod != null
+            ? 'Menuju menstruasi berikutnya'
+            : 'Masa subur / Fase luteal');
   }
 
-  String _getDayText(bool isMenstruating, int? runningDays) {
-    if (isMenstruating) {
-      // Gunakan data dari cycle summary
-      return runningDays != null ? 'Hari ke-$runningDays' : 'Memproses...';
+  String _getDayText(CycleStatus? status) {
+    if (status == null) return '...';
+
+    if (status.isOnCycle && status.currentPeriodDay != null) {
+      return 'Hari ke-${status.currentPeriodDay}';
     }
-    // Teks jika tidak sedang menstruasi
+    if (!status.isOnCycle && status.daysUntilNextPeriod != null) {
+      return '${status.daysUntilNextPeriod} hari lagi';
+    }
+    if (status.lastCycleLength != null) {
+      return 'Siklus ${status.lastCycleLength} hari';
+    }
     return 'Siklus Normal';
   }
 
-  double _getProgressValue(int? day, int? totalDays) {
-    if (day == null || totalDays == null || totalDays == 0) return 0.0;
-    final double progress = day / totalDays;
-    // Gunakan .clamp() untuk membatasi nilai antara 0.0 dan 1.0
-    return progress.clamp(0.0, 1.0);
+  double _getProgressValue(CycleStatus? status) {
+    if (status == null) return 0.0;
+
+    // During menstruation
+    if (status.isOnCycle &&
+        status.currentPeriodDay != null &&
+        status.lastPeriodLength != null) {
+      return (status.currentPeriodDay! / status.lastPeriodLength!).clamp(
+        0.0,
+        1.0,
+      );
+    }
+
+    // During cycle (follicular/luteal phase)
+    if (!status.isOnCycle &&
+        status.daysUntilNextPeriod != null &&
+        status.lastCycleLength != null) {
+      final daysPassed = status.lastCycleLength! - status.daysUntilNextPeriod!;
+      return (daysPassed / status.lastCycleLength!).clamp(0.0, 1.0);
+    }
+
+    return 0.0;
   }
 
-  String _getProgressText(int? day, int? totalDays) {
-    if (day == null || totalDays == null || totalDays == 0) return '0%';
-    final rawPercentage = (day / totalDays) * 100;
-    // Gunakan min() untuk memastikan nilai tidak lebih dari 100
-    final displayPercentage = min(100, rawPercentage.round());
-    return '$displayPercentage%';
+  String _getProgressText(CycleStatus? status) {
+    final value = _getProgressValue(status);
+    if (value == 0.0) return '-';
+
+    if (status?.isOnCycle == true) {
+      return '${(value * 100).round()}% selesai';
+    } else {
+      return '${((1 - value) * 100).round()}% menuju haid';
+    }
+  }
+
+  Color _getProgressColor(CycleStatus? status) {
+    if (status == null) return Colors.pink;
+
+    if (status.isOnCycle) {
+      return Colors.pink;
+    } else if (status.daysUntilNextPeriod != null &&
+        status.daysUntilNextPeriod! <= 7) {
+      return Colors.orange;
+    } else {
+      return Colors.blue;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final cycleProvider = Provider.of<CycleProvider>(context);
-    final isMenstruating = cycleProvider.isMenstruating;
-
-    final runningDays = cycleProvider.activeCycleRunningDays;
-    final phaseText = _getPhaseText(cycleProvider.cycleStatus?.cycleStatus,
-        cycleProvider.cycleStatus?.periodStatus);
-    final statusText = _getStatusText(isMenstruating);
-    final dayText = _getDayText(isMenstruating, runningDays);
-
-    // --- PERBAIKAN LOGIKA DI SINI ---
-    final double progressValue;
-    final String progressText;
-
-    // Hanya hitung progres jika sedang menstruasi
-    if (isMenstruating) {
-      // Asumsi periode menstruasi normal adalah 7 hari untuk progress bar
-      progressValue = _getProgressValue(runningDays, 7);
-      progressText = _getProgressText(runningDays, 7);
-    } else {
-      // Jika tidak menstruasi, paksa progres menjadi 0
-      progressValue = 0.0;
-      progressText = '0%';
-    }
+    final statusProvider = Provider.of<CycleProvider>(context);
+    final status = statusProvider.cycleStatus;
 
     return Container(
       width: double.infinity,
@@ -102,14 +128,13 @@ class CycleStatusCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            phaseText,
+            _getPhaseText(status),
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
               color: Colors.pink,
             ),
           ),
-          // ... (Teks (cycleStatus) tidak perlu diubah)
           const SizedBox(height: 15),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -119,15 +144,12 @@ class CycleStatusCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      statusText, // Menggunakan variabel yang sudah diperbarui
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[700],
-                      ),
+                      _getStatusText(status),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      dayText, // Menggunakan variabel yang sudah diperbarui
+                      _getDayText(status),
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -144,27 +166,32 @@ class CycleStatusCard extends StatelessWidget {
                     width: 60,
                     height: 60,
                     child: CircularProgressIndicator(
-                      value: progressValue,
+                      value: _getProgressValue(status),
                       strokeWidth: 6,
                       strokeCap: StrokeCap.round,
                       backgroundColor: Colors.pink.shade100,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Colors.pink,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        _getProgressColor(status),
                       ),
                     ),
                   ),
                   Text(
-                    progressText,
-                    style: const TextStyle(
+                    _getProgressText(status),
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Colors.pink,
+                      color: _getProgressColor(status),
                     ),
                   ),
                 ],
               ),
             ],
           ),
+          if (statusProvider.isLoading)
+            const Padding(
+              padding: EdgeInsets.only(top: 8.0),
+              child: LinearProgressIndicator(),
+            ),
         ],
       ),
     );

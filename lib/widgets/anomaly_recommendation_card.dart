@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:srikandi_sehat_app/models/cycle_status_model.dart';
 import 'package:srikandi_sehat_app/provider/cycle_provider.dart';
 
 class AnomalyRecommendationCard extends StatefulWidget {
@@ -17,17 +18,20 @@ class _AnomalyRecommendationCardState extends State<AnomalyRecommendationCard> {
   Widget build(BuildContext context) {
     final cycleProvider = Provider.of<CycleProvider>(context);
     final flags = cycleProvider.notificationFlags;
+    final cycleStatus = cycleProvider.cycleStatus;
 
-    final hasAnomaly = flags['period_is_prolonged'] == true ||
+    final hasAnomaly =
+        flags['period_is_prolonged'] == true ||
         flags['period_is_short'] == true ||
         flags['cycle_is_late'] == true ||
-        flags['cycle_is_short'] == true;
+        flags['cycle_is_short'] == true ||
+        cycleStatus?.isPeriodNormal == false ||
+        cycleStatus?.isCycleNormal == false;
 
     if (!hasAnomaly) return const SizedBox.shrink();
 
     return Column(
       children: [
-        // Header yang bisa diklik
         InkWell(
           onTap: () => setState(() => _isExpanded = !_isExpanded),
           child: Container(
@@ -58,14 +62,12 @@ class _AnomalyRecommendationCardState extends State<AnomalyRecommendationCard> {
                 Badge(
                   backgroundColor: Colors.red.shade100,
                   textColor: Colors.red,
-                  label: Text(_countAnomalies(flags).toString()),
+                  label: Text(_countAnomalies(flags, cycleStatus).toString()),
                 ),
               ],
             ),
           ),
         ),
-
-        // Konten yang bisa di-expand/collapse
         AnimatedSize(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
@@ -73,119 +75,158 @@ class _AnomalyRecommendationCardState extends State<AnomalyRecommendationCard> {
             width: double.infinity,
             decoration: BoxDecoration(
               color: Colors.orange.shade50,
-              borderRadius: const BorderRadius.all(
-                Radius.circular(12),
-              ),
+              borderRadius: const BorderRadius.all(Radius.circular(12)),
               border: Border.all(color: Colors.orange.shade200),
             ),
             clipBehavior: Clip.antiAlias,
-            child:
-                _isExpanded ? _buildContent(flags) : const SizedBox(height: 0),
+            child: _isExpanded
+                ? _buildContent(flags, cycleStatus)
+                : const SizedBox(height: 0),
           ),
         ),
       ],
     );
   }
 
-  int _countAnomalies(Map<String, dynamic> flags) {
-    return [
+  int _countAnomalies(Map<String, dynamic> flags, CycleStatus? cycleStatus) {
+    int count = [
       flags['period_is_prolonged'],
       flags['period_is_short'],
       flags['cycle_is_late'],
       flags['cycle_is_short'],
     ].where((e) => e == true).length;
+
+    if (cycleStatus?.isPeriodNormal == false) count++;
+    if (cycleStatus?.isCycleNormal == false) count++;
+
+    return count;
   }
 
-  Widget _buildContent(Map<String, dynamic> flags) {
+  Widget _buildContent(Map<String, dynamic> flags, CycleStatus? cycleStatus) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Bagian diagnosis anomali
-          if (flags['period_is_prolonged'] == true)
-            _buildAnomalyAlert(
-              "Durasi Haid Panjang",
-              "Menstruasi lebih dari 7 hari",
+          // Period Duration Anomalies
+          if (flags['period_is_prolonged'] == true ||
+              cycleStatus?.isPeriodNormal == false)
+            _buildDurationAlert(
+              "Durasi Haid",
+              "Durasi saat ini: ${cycleStatus?.lastPeriodLength ?? '?'} hari",
+              "Durasi normal: 3-7 hari",
               Colors.red,
+              isAbnormal: true,
             ),
 
           if (flags['period_is_short'] == true)
-            _buildAnomalyAlert(
+            _buildDurationAlert(
               "Durasi Haid Pendek",
-              "Menstruasi kurang dari 3 hari",
+              "Durasi saat ini: ${cycleStatus?.lastPeriodLength ?? '?'} hari",
+              "Durasi normal: Minimal 3 hari",
               Colors.blue,
+              isAbnormal: true,
             ),
 
-          if (flags['cycle_is_late'] == true)
-            _buildAnomalyAlert(
-              "Siklus Terlambat",
-              "Terlambat lebih dari 7 hari",
+          // Cycle Length Anomalies
+          if (flags['cycle_is_late'] == true ||
+              flags['cycle_is_short'] == true ||
+              cycleStatus?.isCycleNormal == false)
+            _buildDurationAlert(
+              "Panjang Siklus",
+              "Siklus saat ini: ${cycleStatus?.lastCycleLength ?? '?'} hari",
+              "Siklus normal: 21-35 hari",
               Colors.purple,
-            ),
-
-          if (flags['cycle_is_short'] == true)
-            _buildAnomalyAlert(
-              "Siklus Pendek",
-              "Siklus kurang dari 21 hari",
-              Colors.green,
+              isAbnormal: !(cycleStatus?.isCycleNormal ?? true),
             ),
 
           const SizedBox(height: 16),
           const Divider(height: 1),
           const SizedBox(height: 12),
 
-          // Rekomendasi
-          _buildRecommendationSection(),
+          // Rekomendasi spesifik berdasarkan durasi
+          _buildDurationSpecificRecommendations(cycleStatus),
         ],
       ),
     );
   }
 
-  Widget _buildAnomalyAlert(String title, String description, Color color) {
+  Widget _buildDurationAlert(
+    String title,
+    String currentDuration,
+    String normalDuration,
+    Color color, {
+    bool isAbnormal = true,
+  }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            margin: const EdgeInsets.only(right: 8, top: 2),
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(right: 8, top: 2),
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: isAbnormal ? color : Colors.green,
+                  shape: BoxShape.circle,
                 ),
-                Text(
-                  description,
-                  style: const TextStyle(fontSize: 13),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: isAbnormal ? color : Colors.green,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(currentDuration, style: const TextStyle(fontSize: 13)),
+                    Text(
+                      normalDuration,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+          if (isAbnormal) const SizedBox(height: 8),
+          if (isAbnormal)
+            Text(
+              _getDurationAdvice(title, currentDuration),
+              style: const TextStyle(fontSize: 13, color: Colors.black54),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildRecommendationSection() {
+  String _getDurationAdvice(String title, String currentDuration) {
+    if (title.contains("Durasi Haid")) {
+      return "• Perbanyak konsumsi makanan kaya zat besi\n• Hindari aktivitas berat selama menstruasi";
+    } else if (title.contains("Panjang Siklus")) {
+      return "• Catat siklus menstruasi secara teratur\n• Kelola stres dengan teknik relaksasi";
+    }
+    return "• Konsultasikan dengan dokter kandungan";
+  }
+
+  Widget _buildDurationSpecificRecommendations(CycleStatus? cycleStatus) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Rekomendasi:',
+          'Rekomendasi Berdasarkan Durasi:',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
@@ -193,22 +234,51 @@ class _AnomalyRecommendationCardState extends State<AnomalyRecommendationCard> {
           ),
         ),
         const SizedBox(height: 8),
-        _buildAdviceItem('🏋️ Latihan ringan 30 menit/hari'),
-        _buildAdviceItem('🥗 Konsumsi makanan kaya zat besi dan omega-3'),
-        _buildAdviceItem('💧 Minum 2-3L air putih sehari'),
-        _buildAdviceItem('😴 Tidur 7-9 jam dengan kualitas baik'),
-        _buildAdviceItem('🧘 Lakukan relaksasi untuk mengurangi stres'),
+
+        if (cycleStatus?.lastPeriodLength != null)
+          _buildAdviceItem(
+            '📆 Durasi haid terakhir: ${cycleStatus!.lastPeriodLength} hari '
+            '(${cycleStatus.lastPeriodLength! < 3
+                ? "Pendek"
+                : cycleStatus.lastPeriodLength! > 7
+                ? "Panjang"
+                : "Normal"})',
+          ),
+
+        if (cycleStatus?.lastCycleLength != null)
+          _buildAdviceItem(
+            '🔄 Panjang siklus terakhir: ${cycleStatus!.lastCycleLength} hari '
+            '(${cycleStatus.lastCycleLength! < 21
+                ? "Pendek"
+                : cycleStatus.lastCycleLength! > 35
+                ? "Panjang"
+                : "Normal"})',
+          ),
+
+        if (cycleStatus?.currentPeriodDay != null)
+          _buildAdviceItem(
+            '⏳ Hari menstruasi saat ini: ${cycleStatus!.currentPeriodDay}',
+          ),
+
+        if (cycleStatus?.daysUntilNextPeriod != null)
+          _buildAdviceItem(
+            '⏱ Perkiraan menstruasi berikutnya: ${cycleStatus!.daysUntilNextPeriod} hari lagi',
+          ),
+
         const SizedBox(height: 12),
         Text(
-          'Segera ke dokter jika:',
+          'Tips Menjaga Siklus Sehat:',
           style: TextStyle(
-            color: Colors.red.shade700,
+            color: Colors.green.shade700,
             fontWeight: FontWeight.bold,
           ),
         ),
-        _buildAdviceItem('• Nyeri tidak tertahankan'),
-        _buildAdviceItem('• Perdarahan sangat deras'),
-        _buildAdviceItem('• Gejala berlangsung >3 siklus'),
+        _buildAdviceItem(
+          '• Konsumsi makanan seimbang dengan zat besi dan vitamin B',
+        ),
+        _buildAdviceItem('• Olahraga teratur 3-5 kali seminggu'),
+        _buildAdviceItem('• Tidur cukup 7-9 jam per hari'),
+        _buildAdviceItem('• Kelola stres dengan meditasi atau yoga'),
       ],
     );
   }
@@ -220,12 +290,7 @@ class _AnomalyRecommendationCardState extends State<AnomalyRecommendationCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(fontSize: 13),
-            ),
-          ),
+          Expanded(child: Text(text, style: const TextStyle(fontSize: 13))),
         ],
       ),
     );

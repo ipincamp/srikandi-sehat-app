@@ -71,6 +71,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           type: AlertType.info,
           duration: const Duration(seconds: 4),
         );
+        Navigator.pushReplacementNamed(context, '/login');
         // DO NOT NAVIGATE HERE ANYMORE
       } else {
         // Show error from API if the request itself failed (e.g., email already exists)

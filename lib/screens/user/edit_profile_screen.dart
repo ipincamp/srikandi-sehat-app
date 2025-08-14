@@ -216,13 +216,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         context,
         forceRefresh: true,
       );
+      Navigator.pushReplacement(context, '/detail-profile' as Route<Object?>);
       if (mounted) {
         CustomAlert.show(
           context,
           'Profil berhasil diperbarui',
           type: AlertType.success,
         );
-        Navigator.pop(context);
       }
     } else {
       if (mounted) {

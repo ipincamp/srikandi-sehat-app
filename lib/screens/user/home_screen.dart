@@ -51,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _checkProfileStatus() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _showProfileCard = !(prefs.getBool('hasProfile') ?? false);
+      _showProfileCard = !(prefs.getBool('profile_complete') ?? false);
     });
   }
 
@@ -302,13 +302,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMenstruating = context.watch<CycleProvider>().isMenstruating;
+    final cycleProvider = context.watch<CycleProvider>();
+    final isOnCycle = cycleProvider.isOnCycle;
 
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text(
-          'SriKandi Sehat',
+          'Srikandi Sehat',
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: Colors.pink,
@@ -339,11 +340,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   flex: 2,
                   child: CycleActionButtons(
-                    onStart: !isMenstruating
-                        ? () => _handleStartCycle()
-                        : () {},
-                    onEnd: isMenstruating ? () => _handleEndCycle() : () {},
-                    isMenstruating: isMenstruating,
+                    onStart: !isOnCycle ? () => _handleStartCycle() : () {},
+                    onEnd: isOnCycle ? () => _handleEndCycle() : () {},
+                    isMenstruating: isOnCycle,
                   ),
                 ),
                 const SizedBox(width: 10),
