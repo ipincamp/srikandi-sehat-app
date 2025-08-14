@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class AuthProvider with ChangeNotifier {
   String? _authToken;
@@ -27,43 +30,246 @@ class AuthProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
 
-  Future<bool> login(String email, String password) async {
+  // Check internet connection
+  Future<bool> _checkInternetConnection() async {
+    final connectivityResult = await Connectivity().checkConnectivity();
+    return connectivityResult != ConnectivityResult.none;
+  }
+
+  // Tampilkan dialog peringatan tidak ada internet
+  Future<void> _showNoInternetAlert(BuildContext context) async {
+    if (context.mounted) {
+      await showDialog(
+        context: context,
+        barrierDismissible: false, // User harus menekan tombol
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          elevation: 8,
+          title: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.wifi_off_rounded,
+                  color: Colors.red.shade700,
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Tidak Ada Koneksi Internet',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Perangkat Anda tidak terhubung ke internet. Silakan:',
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+              ),
+              const SizedBox(height: 12),
+              _buildStep(
+                '1. Periksa koneksi WiFi atau data seluler',
+                Icons.network_check,
+              ),
+              _buildStep(
+                '2. Hidupkan mode pesawat lalu matikan lagi',
+                Icons.airplanemode_active,
+              ),
+              _buildStep('3. Coba muat ulang halaman', Icons.refresh),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),
+              child: const Text(
+                'MENGERTI',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+          actionsAlignment: MainAxisAlignment.center,
+          contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+        ),
+      );
+    }
+  }
+
+  Widget _buildStep(String text, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: Colors.red.shade600),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade800),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Tampilkan dialog error dengan styling yang lebih baik
+  // Tampilkan dialog error dengan styling yang lebih baik
+  Future<void> _showErrorAlert(BuildContext context, String message) async {
+    if (context.mounted) {
+      await showDialog(
+        context: context,
+        barrierDismissible: false, // User harus menekan tombol
+        builder: (ctx) => Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          elevation: 8,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header dengan icon error
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.error_outline_rounded,
+                    size: 32,
+                    color: Colors.red.shade600,
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Judul
+                Text(
+                  'Terjadi Kesalahan',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red.shade800,
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // Pesan error
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade700,
+                    height: 1.4,
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Tombol aksi
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade600,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text(
+                      'MENGERTI',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<bool> login(
+    String email,
+    String password,
+    BuildContext context,
+  ) async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
+
+    // Check internet connection
+    final hasConnection = await _checkInternetConnection();
+    if (!hasConnection) {
+      _isLoading = false;
+      _errorMessage = 'No internet connection';
+      notifyListeners();
+      await _showNoInternetAlert(context);
+      return false;
+    }
 
     final baseUrl = dotenv.env['API_URL'];
     final url = '$baseUrl/auth/login';
 
     try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json; charset=UTF-8'},
-        body: jsonEncode(<String, String>{
-          'email': email,
-          'password': password,
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse(url),
+            headers: {'Content-Type': 'application/json; charset=UTF-8'},
+            body: jsonEncode(<String, String>{
+              'email': email,
+              'password': password,
+            }),
+          )
+          .timeout(const Duration(seconds: 30));
 
       final responseData = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        // First check if the response has the expected structure
         if (responseData == null || responseData['data'] == null) {
           _errorMessage = 'Invalid server response';
           notifyListeners();
+          await _showErrorAlert(context, _errorMessage);
           return false;
         }
 
-        // Handle case where 'data' might not be a Map
         final data = responseData['data'];
         if (data is! Map<String, dynamic>) {
           _errorMessage = 'Invalid user data format';
           notifyListeners();
+          await _showErrorAlert(context, _errorMessage);
           return false;
         }
 
-        // Update provider state with null checks
         _authToken = data['token']?.toString();
         _userId = data['id']?.toString();
         _name = data['name']?.toString();
@@ -75,6 +281,7 @@ class AuthProvider with ChangeNotifier {
         if (_authToken == null || _userId == null) {
           _errorMessage = 'Missing required user data';
           notifyListeners();
+          await _showErrorAlert(context, _errorMessage);
           return false;
         }
 
@@ -92,16 +299,24 @@ class AuthProvider with ChangeNotifier {
         notifyListeners();
         return true;
       } else {
-        // Handle error response
         _errorMessage =
             responseData['message']?.toString() ??
             responseData['error']?.toString() ??
             'Login failed with status ${response.statusCode}';
         notifyListeners();
+        await _showErrorAlert(context, _errorMessage);
         return false;
       }
     } catch (error) {
       _errorMessage = 'An error occurred: ${error.toString()}';
+      if (error is http.ClientException ||
+          error.toString().contains('SocketException')) {
+        _errorMessage = 'Network error. Please check your internet connection.';
+        await _showNoInternetAlert(context);
+      } else if (error is TimeoutException) {
+        _errorMessage = 'Request timed out. Please try again.';
+        await _showErrorAlert(context, _errorMessage);
+      }
       notifyListeners();
       return false;
     } finally {
@@ -116,26 +331,39 @@ class AuthProvider with ChangeNotifier {
     String password,
     String confirmPassword,
     String fcmToken,
+    BuildContext context,
   ) async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
 
+    // Check internet connection
+    final hasConnection = await _checkInternetConnection();
+    if (!hasConnection) {
+      _isLoading = false;
+      _errorMessage = 'No internet connection';
+      notifyListeners();
+      await _showNoInternetAlert(context);
+      return false;
+    }
+
     final baseUrl = dotenv.env['API_URL'];
     final url = '$baseUrl/auth/register';
 
     try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json; charset=UTF-8'},
-        body: jsonEncode(<String, String>{
-          'name': name,
-          'email': email,
-          'password': password,
-          'password_confirmation': confirmPassword,
-          'fcm_token': fcmToken,
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse(url),
+            headers: {'Content-Type': 'application/json; charset=UTF-8'},
+            body: jsonEncode(<String, String>{
+              'name': name,
+              'email': email,
+              'password': password,
+              'password_confirmation': confirmPassword,
+              'fcm_token': fcmToken,
+            }),
+          )
+          .timeout(const Duration(seconds: 30));
 
       final responseData = jsonDecode(response.body) as Map<String, dynamic>;
 
@@ -143,6 +371,7 @@ class AuthProvider with ChangeNotifier {
         _errorMessage =
             'Registration is being processed. You will receive a notification.';
         notifyListeners();
+        await _showErrorAlert(context, _errorMessage);
         return true;
       } else {
         if (responseData.containsKey('message')) {
@@ -156,10 +385,19 @@ class AuthProvider with ChangeNotifier {
           _errorMessage = 'Registration failed.';
         }
         notifyListeners();
+        await _showErrorAlert(context, _errorMessage);
         return false;
       }
     } catch (error) {
       _errorMessage = 'An error occurred: $error';
+      if (error is http.ClientException ||
+          error.toString().contains('SocketException')) {
+        _errorMessage = 'Network error. Please check your internet connection.';
+        await _showNoInternetAlert(context);
+      } else if (error is TimeoutException) {
+        _errorMessage = 'Request timed out. Please try again.';
+        await _showErrorAlert(context, _errorMessage);
+      }
       notifyListeners();
       return false;
     } finally {
@@ -169,20 +407,31 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<bool> logout(BuildContext context) async {
+    // Check internet connection
+    final hasConnection = await _checkInternetConnection();
+    if (!hasConnection) {
+      _errorMessage = 'No internet connection';
+      notifyListeners();
+      await _showNoInternetAlert(context);
+      return false;
+    }
+
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token') ?? '';
+    final token = prefs.getString('token');
 
     final baseUrl = dotenv.env['API_URL'];
     final url = '$baseUrl/auth/logout';
 
     try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json; charset=UTF-8',
-          'Authorization': 'Bearer $token',
-        },
-      );
+      final response = await http
+          .post(
+            Uri.parse(url),
+            headers: {
+              'Content-Type': 'application/json; charset=UTF-8',
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(const Duration(seconds: 30));
 
       // Clear provider state
       _authToken = null;
@@ -208,10 +457,21 @@ class AuthProvider with ChangeNotifier {
         }
         return false;
       } else {
-        throw Exception('Logout failed');
+        _errorMessage = 'Logout failed with status ${response.statusCode}';
+        notifyListeners();
+        await _showErrorAlert(context, _errorMessage);
+        return false;
       }
     } catch (error) {
       _errorMessage = 'An error occurred: $error';
+      if (error is http.ClientException ||
+          error.toString().contains('SocketException')) {
+        _errorMessage = 'Network error. Please check your internet connection.';
+        await _showNoInternetAlert(context);
+      } else if (error is TimeoutException) {
+        _errorMessage = 'Request timed out. Please try again.';
+        await _showErrorAlert(context, _errorMessage);
+      }
       notifyListeners();
       return false;
     }
@@ -234,30 +494,59 @@ class AuthProvider with ChangeNotifier {
     return _authToken != null;
   }
 
-  Future<bool> refreshToken() async {
+  Future<bool> refreshToken(BuildContext context) async {
+    // Check internet connection
+    final hasConnection = await _checkInternetConnection();
+    if (!hasConnection) {
+      _errorMessage = 'No internet connection';
+      notifyListeners();
+      await _showNoInternetAlert(context);
+      return false;
+    }
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final refreshToken = prefs.getString('refresh_token');
 
       if (refreshToken == null) return false;
 
-      final response = await http.post(
-        Uri.parse('${dotenv.env['API_URL']}/auth/refresh'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({'refresh_token': refreshToken}),
-      );
+      final response = await http
+          .post(
+            Uri.parse('${dotenv.env['API_URL']}/auth/refresh'),
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode({'refresh_token': refreshToken}),
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         await prefs.setString('token', data['access_token']);
         await prefs.setString('refresh_token', data['refresh_token']);
-        await prefs.setString('token_expiry', data['expires_at']); // Jika ada
+        await prefs.setString('token_expiry', data['expires_at'] ?? '');
         return true;
+      } else {
+        _errorMessage = 'Failed to refresh token: ${response.statusCode}';
+        notifyListeners();
+        await _showErrorAlert(context, _errorMessage);
+        return false;
       }
-      return false;
-    } catch (e) {
-      print('Error refreshing token: $e');
+    } catch (error) {
+      _errorMessage = 'Error refreshing token: $error';
+      if (error is http.ClientException ||
+          error.toString().contains('SocketException')) {
+        _errorMessage = 'Network error. Please check your internet connection.';
+        await _showNoInternetAlert(context);
+      } else if (error is TimeoutException) {
+        _errorMessage = 'Request timed out. Please try again.';
+        await _showErrorAlert(context, _errorMessage);
+      }
+      notifyListeners();
       return false;
     }
+  }
+
+  void clearError() {
+    _errorMessage = '';
+    notifyListeners();
   }
 }

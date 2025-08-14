@@ -1,44 +1,91 @@
+// cycle_history_provider.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:srikandi_sehat_app/models/cycle_history_model.dart';
 
 class CycleHistoryProvider with ChangeNotifier {
-  List<dynamic> _cycleHistory = [];
+  List<CycleData> _cycleHistory = [];
   bool _isLoading = false;
   String? _error;
   int _currentPage = 1;
   bool _hasMore = true;
+  String? _emptyMessage;
 
-  List<dynamic> get cycleHistory => _cycleHistory;
+  List<CycleData> get cycleHistory => _cycleHistory;
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get hasMore => _hasMore;
+  String? get emptyMessage => _emptyMessage;
 
-  Future<void> fetchCycleHistory({bool refresh = false}) async {
+  Future<bool> _checkInternetConnection() async {
+    final connectivityResult = await Connectivity().checkConnectivity();
+    return connectivityResult != ConnectivityResult.none;
+  }
+
+  Future<void> _showNoInternetAlert(BuildContext context) async {
+    if (context.mounted) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('No Internet Connection'),
+          content: const Text(
+            'Please check your internet connection and try again.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Future<void> fetchCycleHistory({
+    bool refresh = false,
+    BuildContext? context,
+  }) async {
     if (refresh) {
       _currentPage = 1;
       _hasMore = true;
+      _emptyMessage = null;
     }
 
     if (!_hasMore && !refresh) return;
 
-    _isLoading = true;
-    notifyListeners();
-
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-    final apiUrl = dotenv.env['API_URL'];
-
-    if (token == null || apiUrl == null) {
-      _error = 'Authentication token or API URL not found';
-      _isLoading = false;
-      notifyListeners();
-      return;
+    // Check internet connection if context is provided
+    if (context != null) {
+      final hasConnection = await _checkInternetConnection();
+      if (!hasConnection) {
+        _error = 'No internet connection';
+        _isLoading = false;
+        notifyListeners();
+        await _showNoInternetAlert(context);
+        return;
+      }
     }
 
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      final apiUrl = dotenv.env['API_URL'];
+
+      if (token == null || apiUrl == null) {
+        _error = 'Authentication token or API URL not found';
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
+
       final url = Uri.parse(
         '$apiUrl/menstrual/cycles?page=$_currentPage&limit=100',
       );
@@ -52,25 +99,31 @@ class CycleHistoryProvider with ChangeNotifier {
           )
           .timeout(const Duration(seconds: 10));
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final newCycles = data['data']['data'] ?? [];
-        final metadata = data['data']['metadata'] ?? {};
+      final responseData = json.decode(response.body);
+      final cycleResponse = CycleHistoryResponse.fromJson(responseData);
 
-        if (refresh) {
-          _cycleHistory = newCycles;
-        } else {
-          _cycleHistory = [..._cycleHistory, ...newCycles];
+      if (response.statusCode == 200) {
+        if (cycleResponse.data.isEmpty && refresh) {
+          _emptyMessage = cycleResponse.message;
         }
 
+        if (refresh) {
+          _cycleHistory = cycleResponse.data;
+        } else {
+          _cycleHistory = [..._cycleHistory, ...cycleResponse.data];
+        }
+
+        // Simple pagination logic - assumes no more data if returned list is empty
+        _hasMore = cycleResponse.data.isNotEmpty;
         _currentPage++;
-        _hasMore = _currentPage <= (metadata['total_pages'] ?? 1);
         _error = null;
       } else {
-        _error = 'Failed to load cycle history: ${response.statusCode}';
+        _error = cycleResponse.message.isNotEmpty
+            ? cycleResponse.message
+            : 'Failed to load cycle history: ${response.statusCode}';
+
         if (response.statusCode == 401) {
           // Handle unauthorized (token expired)
-          // You might want to trigger logout or token refresh here
         }
       }
     } catch (e) {

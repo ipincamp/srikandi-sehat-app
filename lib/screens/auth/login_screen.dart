@@ -39,26 +39,32 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    final success = await loginProvider.login(email, password);
+    final success = await loginProvider.login(email, password, context);
     final prefs = await SharedPreferences.getInstance();
     final role = prefs.getString('role');
     await prefs.setBool('showLoginModal', true);
 
     if (success) {
+      // Simpan token terlebih dahulu
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', loginProvider.authToken!);
+      await prefs.setString('userId', loginProvider.userId!);
+
+      // Beri delay 500ms untuk memastikan token tersimpan
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Tampilkan alert sukses terlebih dahulu
+      CustomAlert.show(context, 'Login berhasil!', type: AlertType.success);
+
+      // Beri delay tambahan 1 detik sebelum navigasi
+      await Future.delayed(const Duration(seconds: 1));
+
+      // Lakukan navigasi berdasarkan role
       if (role == 'admin') {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          '/admin',
-          (route) => false,
-        );
+        Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
       } else {
         Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
       }
-      CustomAlert.show(
-        context,
-        'Login berhasil!',
-        type: AlertType.success,
-      );
     } else {
       CustomAlert.show(
         context,
@@ -100,19 +106,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 'Menjadi remaja sehat dan cerdas,',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                    height: 1.2,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Colors.pinkAccent),
+                  height: 1.2,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.pinkAccent,
+                ),
               ),
               const Text(
                 'dalam memahami menstruasi',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                    height: 1.2,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Colors.pinkAccent),
+                  height: 1.2,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.pinkAccent,
+                ),
               ),
               const SizedBox(height: 50),
               CustomFormField(
@@ -147,10 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   Text(
                     'Belum punya akun? ',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
                   ),
                   GestureDetector(
                     child: TextButton(

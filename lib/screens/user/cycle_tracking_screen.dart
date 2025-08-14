@@ -1,3 +1,4 @@
+// cycle_tracking_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/provider/cycle_history_provider.dart';
@@ -32,14 +33,17 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
 
   void _loadInitialData() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CycleHistoryProvider>().fetchCycleHistory(refresh: true);
+      context.read<CycleHistoryProvider>().fetchCycleHistory(
+        refresh: true,
+        context: context,
+      );
     });
   }
 
   void _scrollListener() {
     if (_scrollController.position.pixels ==
         _scrollController.position.maxScrollExtent) {
-      context.read<CycleHistoryProvider>().fetchCycleHistory();
+      context.read<CycleHistoryProvider>().fetchCycleHistory(context: context);
     }
   }
 
@@ -59,81 +63,77 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
             icon: const Icon(Icons.refresh),
             onPressed: () => context
                 .read<CycleHistoryProvider>()
-                .fetchCycleHistory(refresh: true),
+                .fetchCycleHistory(refresh: true, context: context),
           ),
         ],
       ),
       backgroundColor: Colors.grey[50],
       body: Consumer<CycleHistoryProvider>(
         builder: (context, provider, child) {
-          if (provider.isLoading && provider.cycleHistory.isEmpty) {
-            return const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.pink),
-              ),
-            );
-          }
-
-          if (provider.error != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    provider.error!,
-                    style: const TextStyle(color: Colors.pink),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => provider.fetchCycleHistory(refresh: true),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.pink[400],
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      'Coba Lagi',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
           return RefreshIndicator(
             onRefresh: () async {
-              await context.read<CycleHistoryProvider>().fetchCycleHistory(
-                refresh: true,
-              );
+              await provider.fetchCycleHistory(refresh: true, context: context);
             },
-            child: Column(
-              children: [
-                _buildLegendaKalender(),
-                Expanded(
-                  child: SingleChildScrollView(
-                    controller: _scrollController,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    child: Column(
-                      children: [
-                        _buildKalender(provider.cycleHistory),
-                        const SizedBox(height: 16),
-                        _buildStatistikSiklus(provider.cycleHistory),
-                        if (provider.isLoading &&
-                            provider.cycleHistory.isNotEmpty)
-                          const Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.pink,
-                              ),
-                            ),
-                          ),
-                      ],
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(child: _buildLegendaKalender()),
+                SliverToBoxAdapter(
+                  child: _buildKalender(provider.cycleHistory),
+                ),
+                if (provider.isLoading && provider.cycleHistory.isEmpty)
+                  const SliverFillRemaining(
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.pink),
+                      ),
                     ),
                   ),
-                ),
+                if (provider.error != null)
+                  SliverFillRemaining(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            provider.error!,
+                            style: const TextStyle(color: Colors.pink),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
+                    ),
+                  ),
+                if (provider.emptyMessage != null &&
+                    provider.cycleHistory.isEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        provider.emptyMessage!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ),
+                  ),
+                if (provider.cycleHistory.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: _buildStatistikSiklus(provider.cycleHistory),
+                  ),
+                if (provider.isLoading && provider.cycleHistory.isNotEmpty)
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.pink,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           );

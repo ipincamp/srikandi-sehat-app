@@ -105,7 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final String successMessage = await context
           .read<CycleProvider>()
-          .startCycle(selectedDate);
+          .startCycle(selectedDate, context);
 
       if (mounted) {
         CustomAlert.show(context, successMessage, type: AlertType.success);
@@ -169,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (confirmed != true) return;
 
     try {
-      await context.read<CycleProvider>().endCycle(selectedDate);
+      await context.read<CycleProvider>().endCycle(selectedDate, context);
       if (mounted) {
         CustomAlert.show(
           context,

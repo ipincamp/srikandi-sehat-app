@@ -32,7 +32,7 @@ class HttpClient {
     // If unauthorized, try refresh token
     if (response.statusCode == 401) {
       print('Attempting token refresh...');
-      final refreshSuccess = await authProvider.refreshToken();
+      final refreshSuccess = await authProvider.refreshToken(context);
 
       if (refreshSuccess) {
         print('Token refreshed, retrying request...');

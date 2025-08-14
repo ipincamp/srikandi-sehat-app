@@ -186,7 +186,13 @@ class _DetailProfileScreenState extends State<DetailProfileScreen> {
 
     if (userProfileProvider.errorMessage.isNotEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Detail Profil')),
+        appBar: AppBar(
+          backgroundColor: Colors.pink,
+          title: const Text(
+            'Detail Profil',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

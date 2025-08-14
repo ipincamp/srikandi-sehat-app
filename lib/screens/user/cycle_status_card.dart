@@ -6,8 +6,19 @@ import 'package:srikandi_sehat_app/provider/cycle_provider.dart';
 class CycleStatusCard extends StatelessWidget {
   const CycleStatusCard({super.key});
 
+  bool _hasNoCycleData(CycleStatus? status) {
+    return status != null &&
+        status.message != null &&
+        status.message!.contains("No cycle data") &&
+        status.currentPeriodDay == null &&
+        status.daysUntilNextPeriod == null &&
+        status.lastCycleLength == null &&
+        status.lastPeriodLength == null;
+  }
+
   String _getPhaseText(CycleStatus? status) {
     if (status == null) return 'Memuat...';
+    if (_hasNoCycleData(status)) return 'Belum Ada Data Siklus';
 
     if (status.isOnCycle && status.isMenstruating) {
       return 'Fase Menstruasi';
@@ -28,6 +39,9 @@ class CycleStatusCard extends StatelessWidget {
 
   String _getStatusText(CycleStatus? status) {
     if (status == null) return 'Memuat status...';
+    if (_hasNoCycleData(status))
+      return status.message ?? 'Belum ada data siklus';
+
     return status.message ??
         (status.isOnCycle
             ? 'Sedang dalam siklus menstruasi'
@@ -38,6 +52,7 @@ class CycleStatusCard extends StatelessWidget {
 
   String _getDayText(CycleStatus? status) {
     if (status == null) return '...';
+    if (_hasNoCycleData(status)) return '-';
 
     if (status.isOnCycle && status.currentPeriodDay != null) {
       return 'Hari ke-${status.currentPeriodDay}';
@@ -52,7 +67,7 @@ class CycleStatusCard extends StatelessWidget {
   }
 
   double _getProgressValue(CycleStatus? status) {
-    if (status == null) return 0.0;
+    if (status == null || _hasNoCycleData(status)) return 0.0;
 
     // During menstruation
     if (status.isOnCycle &&
@@ -76,6 +91,8 @@ class CycleStatusCard extends StatelessWidget {
   }
 
   String _getProgressText(CycleStatus? status) {
+    if (_hasNoCycleData(status)) return '-';
+
     final value = _getProgressValue(status);
     if (value == 0.0) return '-';
 
@@ -87,7 +104,7 @@ class CycleStatusCard extends StatelessWidget {
   }
 
   Color _getProgressColor(CycleStatus? status) {
-    if (status == null) return Colors.pink;
+    if (status == null || _hasNoCycleData(status)) return Colors.pink;
 
     if (status.isOnCycle) {
       return Colors.pink;
@@ -103,12 +120,13 @@ class CycleStatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final statusProvider = Provider.of<CycleProvider>(context);
     final status = statusProvider.cycleStatus;
+    final noCycleData = _hasNoCycleData(status);
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
-        color: Colors.pink.shade50,
+        color: noCycleData ? Colors.grey.shade200 : Colors.pink.shade50,
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
@@ -124,15 +142,18 @@ class CycleStatusCard extends StatelessWidget {
         children: [
           Text(
             'Status Siklus Menstruasi:',
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            style: TextStyle(
+              fontSize: 16,
+              color: noCycleData ? Colors.grey : Colors.grey[600],
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             _getPhaseText(status),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: Colors.pink,
+              color: noCycleData ? Colors.grey : Colors.pink,
             ),
           ),
           const SizedBox(height: 15),
@@ -145,46 +166,52 @@ class CycleStatusCard extends StatelessWidget {
                   children: [
                     Text(
                       _getStatusText(status),
-                      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: noCycleData ? Colors.grey : Colors.grey[700],
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       _getDayText(status),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.pink,
+                        color: noCycleData ? Colors.grey : Colors.pink,
                       ),
                     ),
                   ],
                 ),
               ),
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: 60,
-                    height: 60,
-                    child: CircularProgressIndicator(
-                      value: _getProgressValue(status),
-                      strokeWidth: 6,
-                      strokeCap: StrokeCap.round,
-                      backgroundColor: Colors.pink.shade100,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        _getProgressColor(status),
+              if (!noCycleData)
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      width: 60,
+                      height: 60,
+                      child: CircularProgressIndicator(
+                        value: _getProgressValue(status),
+                        strokeWidth: 6,
+                        strokeCap: StrokeCap.round,
+                        backgroundColor: Colors.pink.shade100,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          _getProgressColor(status),
+                        ),
                       ),
                     ),
-                  ),
-                  Text(
-                    _getProgressText(status),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: _getProgressColor(status),
+                    Text(
+                      _getProgressText(status),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: _getProgressColor(status),
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              if (noCycleData)
+                const Icon(Icons.error_outline, size: 40, color: Colors.grey),
             ],
           ),
           if (statusProvider.isLoading)

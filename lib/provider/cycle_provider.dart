@@ -5,25 +5,184 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:srikandi_sehat_app/models/cycle_status_model.dart';
 import 'package:srikandi_sehat_app/utils/datetime_format.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class CycleProvider with ChangeNotifier {
   bool _isMenstruating = false;
-  bool _isOnCycle = false; // New field to track cycle status
+  bool _isOnCycle = false;
   CycleStatus? _cycleStatus;
   Map<String, dynamic> _notificationFlags = {};
   int? _activeCycleRunningDays;
   bool _isLoading = false;
+  bool _hasNetworkError = false;
 
   bool get isMenstruating => _isMenstruating;
-  bool get isOnCycle => _isOnCycle; // New getter
+  bool get isOnCycle => _isOnCycle;
   CycleStatus? get cycleStatus => _cycleStatus;
   Map<String, dynamic> get notificationFlags => _notificationFlags;
   int? get activeCycleRunningDays => _activeCycleRunningDays;
   bool get isLoading => _isLoading;
+  bool get hasNetworkError => _hasNetworkError;
 
-  Future<void> synchronizeState() async {
+  Future<bool> _checkInternetConnection() async {
+    final connectivityResult = await Connectivity().checkConnectivity();
+    return connectivityResult != ConnectivityResult.none;
+  }
+
+  Future<void> _showNetworkErrorAlert(BuildContext context) async {
+    if (context.mounted) {
+      await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Tidak Ada Koneksi Internet'),
+          content: const Text(
+            'Silakan periksa koneksi internet Anda dan coba lagi.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Future<void> _checkProfileCompletion(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    final isProfileComplete = prefs.getBool('profile_complete') ?? false;
+
+    if (!isProfileComplete && context.mounted) {
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          elevation: 8,
+          title: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade50,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.warning_rounded,
+                  color: Colors.orange.shade700,
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Profil Belum Lengkap',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange.shade800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Untuk menggunakan fitur pelacakan siklus menstruasi, Anda perlu melengkapi:',
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+              ),
+              const SizedBox(height: 12),
+              _buildProfileItem('Data diri lengkap', Icons.person_outline),
+              _buildProfileItem(
+                'Riwayat kesehatan',
+                Icons.medical_services_outlined,
+              ),
+              _buildProfileItem(
+                'Informasi siklus',
+                Icons.calendar_today_outlined,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'NANTI',
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange.shade600,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/edit-profile');
+              },
+              child: const Text(
+                'LENGKAPI SEKARANG',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+        ),
+      );
+    }
+  }
+
+  Widget _buildProfileItem(String text, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.orange.shade600),
+          const SizedBox(width: 12),
+          Text(
+            text,
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade800),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> synchronizeState({BuildContext? context}) async {
     _isLoading = true;
+    _hasNetworkError = false;
     notifyListeners();
+
+    // Check internet connection
+    if (context != null) {
+      final hasConnection = await _checkInternetConnection();
+      if (!hasConnection) {
+        _isLoading = false;
+        _hasNetworkError = true;
+        notifyListeners();
+        await _showNetworkErrorAlert(context);
+        return;
+      }
+    }
 
     final prefs = await SharedPreferences.getInstance();
 
@@ -33,6 +192,11 @@ class CycleProvider with ChangeNotifier {
         _fetchDataFromServer(prefs, 'summary'),
       ]);
 
+      // Check profile completion if context is provided
+      if (context != null) {
+        await _checkProfileCompletion(context);
+      }
+
       final statusResponseData = responses[0];
       final summaryResponseData = responses[1];
 
@@ -40,12 +204,8 @@ class CycleProvider with ChangeNotifier {
         final runningDaysValue =
             summaryResponseData['active_cycle_running_days'];
 
-        _isOnCycle =
-            summaryResponseData['is_on_cycle'] ??
-            false; // Set is_on_cycle status
-        _isMenstruating =
-            (runningDaysValue != null) &&
-            _isOnCycle; // Only menstruating if on cycle
+        _isOnCycle = summaryResponseData['is_on_cycle'] ?? false;
+        _isMenstruating = (runningDaysValue != null) && _isOnCycle;
 
         _activeCycleRunningDays = (runningDaysValue is num)
             ? runningDaysValue.toInt()
@@ -53,21 +213,25 @@ class CycleProvider with ChangeNotifier {
         _notificationFlags = summaryResponseData['notification_flags'] ?? {};
       } else {
         _isMenstruating = prefs.getBool('isMenstruating') ?? false;
-        _isOnCycle =
-            prefs.getBool('isOnCycle') ?? false; // Fallback to local storage
+        _isOnCycle = prefs.getBool('isOnCycle') ?? false;
       }
 
       if (statusResponseData != null) {
         statusResponseData['is_menstruating'] = _isMenstruating;
-        statusResponseData['is_on_cycle'] = _isOnCycle; // Include in status
+        statusResponseData['is_on_cycle'] = _isOnCycle;
         _cycleStatus = CycleStatus.fromJson(statusResponseData);
       }
 
       await prefs.setBool('isMenstruating', _isMenstruating);
-      await prefs.setBool('isOnCycle', _isOnCycle); // Save to local storage
+      await prefs.setBool('isOnCycle', _isOnCycle);
     } catch (e) {
+      _hasNetworkError = true;
       print('Gagal sinkronisasi data: $e');
       await _handleError(prefs);
+
+      if (context != null && context.mounted) {
+        await _showNetworkErrorAlert(context);
+      }
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -83,7 +247,7 @@ class CycleProvider with ChangeNotifier {
     if (token == null || apiUrl == null) return null;
 
     try {
-      final url = Uri.parse('$apiUrl/menstrual/cycles/status');
+      final url = Uri.parse('$apiUrl/menstrual/cycles/$endpoint');
       final response = await http
           .get(
             url,
@@ -98,22 +262,38 @@ class CycleProvider with ChangeNotifier {
         final responseData = json.decode(response.body);
         return responseData['data'];
       }
+      return null;
     } catch (e) {
       print("Gagal fetch data dari endpoint '$endpoint': $e");
+      return null;
     }
-    return null;
   }
 
-  Future<String> startCycle(DateTime startDate) async {
+  Future<String> startCycle(DateTime startDate, BuildContext context) async {
+    // Check profile completion first
+    final prefs = await SharedPreferences.getInstance();
+    final isProfileComplete = prefs.getBool('profile_complete') ?? false;
+
+    if (!isProfileComplete) {
+      await _checkProfileCompletion(context);
+      return 'Silakan lengkapi profil terlebih dahulu';
+    }
+
     if (_isOnCycle) {
       return 'Anda sudah dalam siklus menstruasi. Tidak bisa memulai siklus baru.';
+    }
+
+    // Check internet connection
+    final hasConnection = await _checkInternetConnection();
+    if (!hasConnection) {
+      await _showNetworkErrorAlert(context);
+      return 'Tidak ada koneksi internet';
     }
 
     _isLoading = true;
     notifyListeners();
 
     try {
-      final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
       final apiUrl = dotenv.env['API_URL'];
       if (token == null || token.isEmpty || apiUrl == null || apiUrl.isEmpty) {
@@ -121,7 +301,6 @@ class CycleProvider with ChangeNotifier {
       }
 
       final formattedDate = startDate.toLocalIso8601String();
-      debugPrint('Starting cycle with date: $formattedDate');
       final response = await http.post(
         Uri.parse('$apiUrl/menstrual/cycles'),
         headers: {
@@ -129,15 +308,11 @@ class CycleProvider with ChangeNotifier {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
-        body: json.encode({
-          'start_date': formattedDate,
-          'is_on_cycle': true, // Explicitly set cycle status
-        }),
+        body: json.encode({'start_date': formattedDate, 'is_on_cycle': true}),
       );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        print(response.statusCode);
-        await synchronizeState();
+        await synchronizeState(context: context);
         final responseData = json.decode(response.body);
         return responseData['message']?.toString() ?? 'Gagal memulai siklus.';
       } else if (response.statusCode == 409) {
@@ -160,7 +335,23 @@ class CycleProvider with ChangeNotifier {
     }
   }
 
-  Future<String> endCycle(DateTime finishDate) async {
+  Future<String> endCycle(DateTime finishDate, BuildContext context) async {
+    // Check profile completion first
+    final prefs = await SharedPreferences.getInstance();
+    final isProfileComplete = prefs.getBool('profile_complete') ?? false;
+
+    if (!isProfileComplete) {
+      await _checkProfileCompletion(context);
+      return 'Silakan lengkapi profil terlebih dahulu';
+    }
+
+    // Check internet connection
+    final hasConnection = await _checkInternetConnection();
+    if (!hasConnection) {
+      await _showNetworkErrorAlert(context);
+      return 'Tidak ada koneksi internet';
+    }
+
     if (!_isOnCycle) {
       return 'Tidak ada siklus aktif yang bisa diakhiri.';
     }
@@ -168,7 +359,6 @@ class CycleProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
       final apiUrl = dotenv.env['API_URL'];
       if (token == null || token.isEmpty || apiUrl == null || apiUrl.isEmpty) {
@@ -176,7 +366,6 @@ class CycleProvider with ChangeNotifier {
       }
 
       final formattedDate = finishDate.toLocalIso8601String();
-      print(json.encode({'finish_date': formattedDate}));
       final response = await http.post(
         Uri.parse('$apiUrl/menstrual/cycles'),
         headers: {
@@ -188,7 +377,7 @@ class CycleProvider with ChangeNotifier {
       );
 
       if (response.statusCode == 200) {
-        await synchronizeState();
+        await synchronizeState(context: context);
         return 'Siklus berhasil diakhiri.';
       } else {
         final responseData = json.decode(response.body);
@@ -206,7 +395,7 @@ class CycleProvider with ChangeNotifier {
 
   Future<void> _handleError(SharedPreferences prefs) async {
     _isMenstruating = prefs.getBool('isMenstruating') ?? false;
-    _isOnCycle = prefs.getBool('isOnCycle') ?? false; // Handle error case
+    _isOnCycle = prefs.getBool('isOnCycle') ?? false;
     _cycleStatus = CycleStatus(
       isMenstruating: _isMenstruating,
       isOnCycle: _isOnCycle,

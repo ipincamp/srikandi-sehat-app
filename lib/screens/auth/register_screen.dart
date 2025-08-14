@@ -58,6 +58,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password,
         confirmPassword,
         fcmToken,
+        context,
       );
 
       // --- SIMPLIFIED LOGIC ---
