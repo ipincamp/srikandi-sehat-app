@@ -24,7 +24,6 @@ class HttpClient {
     String endpoint, {
     Map<String, dynamic>? body,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     // Attempt 1
