@@ -47,6 +47,7 @@ import 'package:srikandi_sehat_app/screens/admin/user_data_screen.dart'
     as admin;
 import 'package:srikandi_sehat_app/core/auth/route_observer.dart';
 import 'package:srikandi_sehat_app/core/auth/auth_wrapper.dart';
+import 'package:flutter/foundation.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -61,7 +62,7 @@ void main() async {
 
   runApp(
     DevicePreview(
-      enabled: true,
+      enabled: !kReleaseMode,
       tools: const [...DevicePreview.defaultTools],
       builder: (context) => const AppProviders(),
     ),
