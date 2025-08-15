@@ -9,8 +9,8 @@ class AuthGuard {
       final expiry = prefs.getString('token_expiry');
 
       // Debugging
-      // print('Token: $token');
-      // print('Expiry: $expiry');
+      print('Token: $token');
+      print('Expiry: $expiry');
 
       if (token == null || token.isEmpty) return false;
 

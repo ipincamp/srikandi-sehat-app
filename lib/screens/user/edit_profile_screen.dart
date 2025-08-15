@@ -7,6 +7,7 @@ import 'package:srikandi_sehat_app/provider/profile_change_provider.dart';
 import 'package:srikandi_sehat_app/provider/district_provider.dart';
 import 'package:srikandi_sehat_app/provider/user_profile_provider.dart';
 import 'package:srikandi_sehat_app/provider/village_provider.dart';
+import 'package:srikandi_sehat_app/screens/user/profile_detail_screen.dart';
 import 'package:srikandi_sehat_app/utils/string_extentions.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/custom_button.dart';
@@ -216,12 +217,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         context,
         forceRefresh: true,
       );
-      Navigator.pushReplacement(context, '/detail-profile' as Route<Object?>);
       if (mounted) {
         CustomAlert.show(
           context,
           'Profil berhasil diperbarui',
           type: AlertType.success,
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DetailProfileScreen(),
+            settings: RouteSettings(name: '/detail-profile'),
+          ),
         );
       }
     } else {

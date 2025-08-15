@@ -27,7 +27,7 @@ class CycleStatusCard extends StatelessWidget {
       return 'Fase Tidak Normal';
     }
     if (status.isPeriodNormal == false) {
-      return 'Fase Menstruasi Tidak Normal';
+      return 'Fase Tidak Normal';
     }
     if (!status.isOnCycle) {
       return status.daysUntilNextPeriod != null
@@ -151,7 +151,7 @@ class CycleStatusCard extends StatelessWidget {
           Text(
             _getPhaseText(status),
             style: TextStyle(
-              fontSize: 28,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
               color: noCycleData ? Colors.grey : Colors.pink,
             ),

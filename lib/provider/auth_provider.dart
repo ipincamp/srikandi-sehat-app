@@ -128,7 +128,6 @@ class AuthProvider with ChangeNotifier {
   }
 
   // Tampilkan dialog error dengan styling yang lebih baik
-  // Tampilkan dialog error dengan styling yang lebih baik
   Future<void> _showErrorAlert(BuildContext context, String message) async {
     if (context.mounted) {
       await showDialog(
@@ -368,34 +367,80 @@ class AuthProvider with ChangeNotifier {
       final responseData = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 202) {
+        // Status 202 (Accepted) dianggap sukses
         _errorMessage =
-            'Registration is being processed. You will receive a notification.';
+            responseData['message'] ??
+            'Pendaftaran sedang diproses. Anda akan menerima notifikasi.';
         notifyListeners();
-        await _showErrorAlert(context, _errorMessage);
-        return true;
-      } else {
-        if (responseData.containsKey('message')) {
-          _errorMessage = responseData['message'];
-        } else if (responseData.containsKey('errors')) {
-          _errorMessage = (responseData['errors'] as Map<String, dynamic>)
-              .values
-              .map((e) => e.join(', '))
-              .join('\n');
-        } else {
-          _errorMessage = 'Registration failed.';
+
+        if (context.mounted) {
+          await showDialog(
+            context: context,
+            barrierDismissible: false, // User harus tekan tombol
+            builder: (ctx) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+              title: const Text(
+                'Pendaftaran Diproses',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              content: Text(
+                _errorMessage,
+                style: const TextStyle(fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+              actionsAlignment: MainAxisAlignment.center,
+              actions: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    minimumSize: const Size(120, 40),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text(
+                    'Mengerti',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+              contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+              actionsPadding: const EdgeInsets.only(bottom: 16),
+            ),
+          );
         }
-        notifyListeners();
-        await _showErrorAlert(context, _errorMessage);
-        return false;
+        return true;
       }
+
+      // Handle error cases
+      if (responseData.containsKey('message')) {
+        _errorMessage = responseData['message'];
+      } else if (responseData.containsKey('errors')) {
+        _errorMessage = (responseData['errors'] as Map<String, dynamic>).values
+            .map((e) => e.join(', '))
+            .join('\n');
+      } else {
+        _errorMessage = 'Pendaftaran gagal. Silakan coba lagi.';
+      }
+
+      notifyListeners();
+      await _showErrorAlert(context, _errorMessage);
+      return false;
     } catch (error) {
-      _errorMessage = 'An error occurred: $error';
+      _errorMessage = 'Terjadi kesalahan: $error';
       if (error is http.ClientException ||
           error.toString().contains('SocketException')) {
-        _errorMessage = 'Network error. Please check your internet connection.';
+        _errorMessage = 'Kesalahan jaringan. Periksa koneksi internet Anda.';
         await _showNoInternetAlert(context);
       } else if (error is TimeoutException) {
-        _errorMessage = 'Request timed out. Please try again.';
+        _errorMessage = 'Waktu permintaan habis. Silakan coba lagi.';
         await _showErrorAlert(context, _errorMessage);
       }
       notifyListeners();

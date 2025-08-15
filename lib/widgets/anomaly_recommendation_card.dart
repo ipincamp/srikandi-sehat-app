@@ -113,7 +113,7 @@ class _AnomalyRecommendationCardState extends State<AnomalyRecommendationCard> {
               cycleStatus?.isPeriodNormal == false)
             _buildDurationAlert(
               "Durasi Haid",
-              "Durasi saat ini: ${cycleStatus?.lastPeriodLength ?? '?'} hari",
+              "Durasi saat ini: ${cycleStatus?.lastPeriodLength ?? cycleStatus?.currentPeriodDay} hari",
               "Durasi normal: 3-7 hari",
               Colors.red,
               isAbnormal: true,
@@ -122,7 +122,7 @@ class _AnomalyRecommendationCardState extends State<AnomalyRecommendationCard> {
           if (flags['period_is_short'] == true)
             _buildDurationAlert(
               "Durasi Haid Pendek",
-              "Durasi saat ini: ${cycleStatus?.lastPeriodLength ?? '?'} hari",
+              "Durasi saat ini: ${cycleStatus?.lastPeriodLength ?? cycleStatus?.currentPeriodDay} hari",
               "Durasi normal: Minimal 3 hari",
               Colors.blue,
               isAbnormal: true,
@@ -134,7 +134,7 @@ class _AnomalyRecommendationCardState extends State<AnomalyRecommendationCard> {
               cycleStatus?.isCycleNormal == false)
             _buildDurationAlert(
               "Panjang Siklus",
-              "Siklus saat ini: ${cycleStatus?.lastCycleLength ?? '?'} hari",
+              "Siklus saat ini: ${cycleStatus?.lastCycleLength ?? cycleStatus?.currentPeriodDay} hari",
               "Siklus normal: 21-35 hari",
               Colors.purple,
               isAbnormal: !(cycleStatus?.isCycleNormal ?? true),

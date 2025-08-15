@@ -1,6 +1,6 @@
-// cycle_tracking_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:srikandi_sehat_app/models/cycle_history_model.dart';
 import 'package:srikandi_sehat_app/provider/cycle_history_provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
@@ -33,17 +33,18 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
 
   void _loadInitialData() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CycleHistoryProvider>().fetchCycleHistory(
-        refresh: true,
-        context: context,
-      );
+      final provider = context.read<CycleHistoryProvider>();
+      provider.fetchCycleHistory(refresh: true, context: context);
     });
   }
 
   void _scrollListener() {
     if (_scrollController.position.pixels ==
         _scrollController.position.maxScrollExtent) {
-      context.read<CycleHistoryProvider>().fetchCycleHistory(context: context);
+      final provider = context.read<CycleHistoryProvider>();
+      if (!provider.isLoading && provider.hasMore) {
+        provider.fetchCycleHistory(context: context);
+      }
     }
   }
 
@@ -101,6 +102,13 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
                             style: const TextStyle(color: Colors.pink),
                           ),
                           const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () => provider.fetchCycleHistory(
+                              refresh: true,
+                              context: context,
+                            ),
+                            child: const Text('Coba Lagi'),
+                          ),
                         ],
                       ),
                     ),
@@ -203,14 +211,11 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
     );
   }
 
-  Widget _buildKalender(List<dynamic> dataSiklus) {
+  Widget _buildKalender(List<CycleData> dataSiklus) {
     final tanggalHaid = dataSiklus.map((siklus) {
-      final tanggalMulai = DateTime.parse(siklus['start_date']);
-      final tanggalSelesai = DateTime.parse(siklus['finish_date']);
-      return DateTimeRange(start: tanggalMulai, end: tanggalSelesai);
+      return DateTimeRange(start: siklus.startDate, end: siklus.finishDate);
     }).toList();
 
-    // Calculate predicted cycles (example logic)
     final predictedCycles = _calculatePredictedCycles(dataSiklus);
 
     return Card(
@@ -292,20 +297,23 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
     );
   }
 
-  List<DateTimeRange> _calculatePredictedCycles(List<dynamic> cycles) {
+  List<DateTimeRange> _calculatePredictedCycles(List<CycleData> cycles) {
     if (cycles.length < 2) return [];
 
-    final lastCycle = cycles.first;
-    final lastStartDate = DateTime.parse(lastCycle['start_date']);
-    final averageCycleLength =
-        cycles.map((c) => c['cycle_length'] as int).reduce((a, b) => a + b) ~/
-        cycles.length;
+    // Filter cycles that have cycleLength data
+    final validCycles = cycles.where((c) => c.cycleLength != null).toList();
+    if (validCycles.length < 2) return [];
 
-    final nextPredictedStart = lastStartDate.add(
+    final lastCycle = validCycles.first;
+    final averageCycleLength =
+        validCycles.map((c) => c.cycleLength!).reduce((a, b) => a + b) ~/
+        validCycles.length;
+
+    final nextPredictedStart = lastCycle.startDate.add(
       Duration(days: averageCycleLength),
     );
     final nextPredictedEnd = nextPredictedStart.add(
-      Duration(days: lastCycle['period_length']),
+      Duration(days: lastCycle.periodLength),
     );
 
     return [DateTimeRange(start: nextPredictedStart, end: nextPredictedEnd)];
@@ -322,7 +330,6 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
     bool adalahHariPertama = false;
     bool adalahPrediksi = false;
 
-    // Check actual cycles
     for (final range in tanggalHaid) {
       if (hari.isAfter(range.start.subtract(const Duration(days: 1))) &&
           hari.isBefore(range.end.add(const Duration(days: 1)))) {
@@ -332,7 +339,6 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
       }
     }
 
-    // Check predicted cycles if not an actual cycle day
     if (!adalahHariHaid) {
       for (final range in predictedCycles) {
         if (hari.isAfter(range.start.subtract(const Duration(days: 1))) &&
@@ -398,7 +404,7 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
     );
   }
 
-  Widget _buildStatistikSiklus(List<dynamic> dataSiklus) {
+  Widget _buildStatistikSiklus(List<CycleData> dataSiklus) {
     if (dataSiklus.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(16.0),
@@ -410,25 +416,17 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
     }
 
     final siklusTerakhir = dataSiklus.first;
-    final tanggalMulai = DateTime.parse(siklusTerakhir['start_date']);
-    final tanggalSelesai = DateTime.parse(siklusTerakhir['finish_date']);
-    final durasiHaid = siklusTerakhir['period_length'];
-    final panjangSiklus = siklusTerakhir['cycle_length'];
+    final cyclesWithLength = dataSiklus.where((c) => c.cycleLength != null);
 
-    // Calculate statistics
     final averagePeriod = dataSiklus.length > 1
-        ? dataSiklus
-                  .map((c) => c['period_length'] as int)
-                  .reduce((a, b) => a + b) ~/
+        ? dataSiklus.map((c) => c.periodLength).reduce((a, b) => a + b) ~/
               dataSiklus.length
-        : durasiHaid;
+        : siklusTerakhir.periodLength;
 
-    final averageCycle = dataSiklus.length > 1
-        ? dataSiklus
-                  .map((c) => c['cycle_length'] as int)
-                  .reduce((a, b) => a + b) ~/
-              dataSiklus.length
-        : panjangSiklus;
+    final averageCycle = cyclesWithLength.length > 1
+        ? cyclesWithLength.map((c) => c.cycleLength!).reduce((a, b) => a + b) ~/
+              cyclesWithLength.length
+        : null;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -457,34 +455,40 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
             _buildItemStatistik(
               ikon: Icons.calendar_today,
               label: 'HPHT (Hari Pertama Haid Terakhir)',
-              nilai: DateFormat('EEEE, dd MMMM yyyy').format(tanggalMulai),
+              nilai: DateFormat(
+                'EEEE, dd MMMM yyyy',
+              ).format(siklusTerakhir.startDate),
             ),
             _buildItemStatistik(
               ikon: Icons.calendar_today_outlined,
               label: 'Selesai Haid Terakhir',
-              nilai: DateFormat('EEEE, dd MMMM yyyy').format(tanggalSelesai),
+              nilai: DateFormat(
+                'EEEE, dd MMMM yyyy',
+              ).format(siklusTerakhir.finishDate),
             ),
             _buildItemStatistik(
               ikon: Icons.timelapse,
               label: 'Durasi Haid Terakhir',
-              nilai: '$durasiHaid hari',
+              nilai: '${siklusTerakhir.periodLength} hari',
             ),
-            _buildItemStatistik(
-              ikon: Icons.cyclone,
-              label: 'Panjang Siklus Terakhir',
-              nilai: '$panjangSiklus hari',
-            ),
+            if (siklusTerakhir.cycleLength != null)
+              _buildItemStatistik(
+                ikon: Icons.cyclone,
+                label: 'Panjang Siklus Terakhir',
+                nilai: '${siklusTerakhir.cycleLength} hari',
+              ),
             const Divider(height: 24),
             _buildItemStatistik(
               ikon: Icons.av_timer,
               label: 'Rata-rata Durasi Haid',
               nilai: '$averagePeriod hari',
             ),
-            _buildItemStatistik(
-              ikon: Icons.timeline,
-              label: 'Rata-rata Panjang Siklus',
-              nilai: '$averageCycle hari',
-            ),
+            if (averageCycle != null)
+              _buildItemStatistik(
+                ikon: Icons.timeline,
+                label: 'Rata-rata Panjang Siklus',
+                nilai: '$averageCycle hari',
+              ),
           ],
         ),
       ),

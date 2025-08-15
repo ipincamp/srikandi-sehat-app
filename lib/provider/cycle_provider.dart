@@ -8,7 +8,6 @@ import 'package:srikandi_sehat_app/utils/datetime_format.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 class CycleProvider with ChangeNotifier {
-  bool _isMenstruating = false;
   bool _isOnCycle = false;
   CycleStatus? _cycleStatus;
   Map<String, dynamic> _notificationFlags = {};
@@ -16,7 +15,6 @@ class CycleProvider with ChangeNotifier {
   bool _isLoading = false;
   bool _hasNetworkError = false;
 
-  bool get isMenstruating => _isMenstruating;
   bool get isOnCycle => _isOnCycle;
   CycleStatus? get cycleStatus => _cycleStatus;
   Map<String, dynamic> get notificationFlags => _notificationFlags;
@@ -94,18 +92,8 @@ class CycleProvider with ChangeNotifier {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Untuk menggunakan fitur pelacakan siklus menstruasi, Anda perlu melengkapi:',
+                'Untuk menggunakan fitur pelacakan siklus menstruasi, Anda perlu melengkapi Profile',
                 style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
-              ),
-              const SizedBox(height: 12),
-              _buildProfileItem('Data diri lengkap', Icons.person_outline),
-              _buildProfileItem(
-                'Riwayat kesehatan',
-                Icons.medical_services_outlined,
-              ),
-              _buildProfileItem(
-                'Informasi siklus',
-                Icons.calendar_today_outlined,
               ),
             ],
           ),
@@ -151,21 +139,21 @@ class CycleProvider with ChangeNotifier {
     }
   }
 
-  Widget _buildProfileItem(String text, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: Colors.orange.shade600),
-          const SizedBox(width: 12),
-          Text(
-            text,
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade800),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildProfileItem(String text, IconData icon) {
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(vertical: 6),
+  //     child: Row(
+  //       children: [
+  //         Icon(icon, size: 20, color: Colors.orange.shade600),
+  //         const SizedBox(width: 12),
+  //         Text(
+  //           text,
+  //           style: TextStyle(fontSize: 14, color: Colors.grey.shade800),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Future<void> synchronizeState({BuildContext? context}) async {
     _isLoading = true;
@@ -205,24 +193,20 @@ class CycleProvider with ChangeNotifier {
             summaryResponseData['active_cycle_running_days'];
 
         _isOnCycle = summaryResponseData['is_on_cycle'] ?? false;
-        _isMenstruating = (runningDaysValue != null) && _isOnCycle;
 
         _activeCycleRunningDays = (runningDaysValue is num)
             ? runningDaysValue.toInt()
             : null;
         _notificationFlags = summaryResponseData['notification_flags'] ?? {};
       } else {
-        _isMenstruating = prefs.getBool('isMenstruating') ?? false;
         _isOnCycle = prefs.getBool('isOnCycle') ?? false;
       }
 
       if (statusResponseData != null) {
-        statusResponseData['is_menstruating'] = _isMenstruating;
         statusResponseData['is_on_cycle'] = _isOnCycle;
         _cycleStatus = CycleStatus.fromJson(statusResponseData);
       }
 
-      await prefs.setBool('isMenstruating', _isMenstruating);
       await prefs.setBool('isOnCycle', _isOnCycle);
     } catch (e) {
       _hasNetworkError = true;
@@ -273,6 +257,11 @@ class CycleProvider with ChangeNotifier {
     // Check profile completion first
     final prefs = await SharedPreferences.getInstance();
     final isProfileComplete = prefs.getBool('profile_complete') ?? false;
+    final isMenstruating = prefs.getBool('isMenstruating') ?? false;
+    final isOnCycle = prefs.getBool('isOnCycle') ?? false;
+    print('Apakah profile sudah lengkap? $isProfileComplete');
+    print('Apakah sedang menstruasi? $isMenstruating');
+    print('Apakah sedang dalam siklus? $isOnCycle');
 
     if (!isProfileComplete) {
       await _checkProfileCompletion(context);
@@ -312,6 +301,8 @@ class CycleProvider with ChangeNotifier {
       );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
+        await prefs.setBool('isMenstruating', true);
+        await prefs.setBool('isOnCycle', true);
         await synchronizeState(context: context);
         final responseData = json.decode(response.body);
         return responseData['message']?.toString() ?? 'Gagal memulai siklus.';
@@ -338,12 +329,6 @@ class CycleProvider with ChangeNotifier {
   Future<String> endCycle(DateTime finishDate, BuildContext context) async {
     // Check profile completion first
     final prefs = await SharedPreferences.getInstance();
-    final isProfileComplete = prefs.getBool('profile_complete') ?? false;
-
-    if (!isProfileComplete) {
-      await _checkProfileCompletion(context);
-      return 'Silakan lengkapi profil terlebih dahulu';
-    }
 
     // Check internet connection
     final hasConnection = await _checkInternetConnection();
@@ -378,6 +363,8 @@ class CycleProvider with ChangeNotifier {
 
       if (response.statusCode == 200) {
         await synchronizeState(context: context);
+        await prefs.setBool('isMenstruating', false);
+        await prefs.setBool('isOnCycle', false);
         return 'Siklus berhasil diakhiri.';
       } else {
         final responseData = json.decode(response.body);
@@ -394,11 +381,7 @@ class CycleProvider with ChangeNotifier {
   }
 
   Future<void> _handleError(SharedPreferences prefs) async {
-    _isMenstruating = prefs.getBool('isMenstruating') ?? false;
     _isOnCycle = prefs.getBool('isOnCycle') ?? false;
-    _cycleStatus = CycleStatus(
-      isMenstruating: _isMenstruating,
-      isOnCycle: _isOnCycle,
-    );
+    _cycleStatus = CycleStatus(isOnCycle: _isOnCycle);
   }
 }

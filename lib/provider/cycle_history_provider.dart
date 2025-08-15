@@ -1,4 +1,3 @@
-// cycle_history_provider.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -27,28 +26,28 @@ class CycleHistoryProvider with ChangeNotifier {
   }
 
   Future<void> _showNoInternetAlert(BuildContext context) async {
-    if (context.mounted) {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('No Internet Connection'),
-          content: const Text(
-            'Please check your internet connection and try again.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('OK'),
-            ),
-          ],
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Tidak Ada Koneksi Internet'),
+        content: const Text(
+          'Silakan periksa koneksi internet Anda dan coba lagi.',
         ),
-      );
-    }
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> fetchCycleHistory({
     bool refresh = false,
-    BuildContext? context,
+    required BuildContext context,
   }) async {
     if (refresh) {
       _currentPage = 1;
@@ -58,16 +57,13 @@ class CycleHistoryProvider with ChangeNotifier {
 
     if (!_hasMore && !refresh) return;
 
-    // Check internet connection if context is provided
-    if (context != null) {
-      final hasConnection = await _checkInternetConnection();
-      if (!hasConnection) {
-        _error = 'No internet connection';
-        _isLoading = false;
-        notifyListeners();
-        await _showNoInternetAlert(context);
-        return;
-      }
+    final hasConnection = await _checkInternetConnection();
+    if (!hasConnection) {
+      _error = 'Tidak ada koneksi internet';
+      _isLoading = false;
+      notifyListeners();
+      await _showNoInternetAlert(context);
+      return;
     }
 
     _isLoading = true;
@@ -80,18 +76,15 @@ class CycleHistoryProvider with ChangeNotifier {
       final apiUrl = dotenv.env['API_URL'];
 
       if (token == null || apiUrl == null) {
-        _error = 'Authentication token or API URL not found';
+        _error = 'Token autentikasi atau URL API tidak ditemukan';
         _isLoading = false;
         notifyListeners();
         return;
       }
 
-      final url = Uri.parse(
-        '$apiUrl/menstrual/cycles?page=$_currentPage&limit=100',
-      );
       final response = await http
           .get(
-            url,
+            Uri.parse('$apiUrl/menstrual/cycles?page=$_currentPage&limit=10'),
             headers: {
               'Authorization': 'Bearer $token',
               'Accept': 'application/json',
@@ -99,32 +92,26 @@ class CycleHistoryProvider with ChangeNotifier {
           )
           .timeout(const Duration(seconds: 10));
 
-      final responseData = json.decode(response.body);
+      final responseData = json.decode(response.body) as Map<String, dynamic>;
       final cycleResponse = CycleHistoryResponse.fromJson(responseData);
 
       if (response.statusCode == 200) {
         if (cycleResponse.data.isEmpty && refresh) {
-          _emptyMessage = cycleResponse.message;
+          _emptyMessage = 'Belum ada data siklus';
         }
 
         if (refresh) {
           _cycleHistory = cycleResponse.data;
         } else {
-          _cycleHistory = [..._cycleHistory, ...cycleResponse.data];
+          _cycleHistory.addAll(cycleResponse.data);
         }
 
-        // Simple pagination logic - assumes no more data if returned list is empty
-        _hasMore = cycleResponse.data.isNotEmpty;
+        _hasMore = _cycleHistory.length < cycleResponse.metadata.totalData;
         _currentPage++;
-        _error = null;
       } else {
         _error = cycleResponse.message.isNotEmpty
             ? cycleResponse.message
-            : 'Failed to load cycle history: ${response.statusCode}';
-
-        if (response.statusCode == 401) {
-          // Handle unauthorized (token expired)
-        }
+            : 'Gagal memuat riwayat siklus: ${response.statusCode}';
       }
     } catch (e) {
       _error = 'Error: ${e.toString()}';

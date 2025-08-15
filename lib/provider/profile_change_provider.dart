@@ -219,6 +219,7 @@ class ProfileChangeProvider with ChangeNotifier {
         try {
           final responseData = jsonDecode(response.body);
           _updateLocalProfile(cleanedData);
+          await _prefs?.setBool('profile_complete', true);
           await _prefs?.setString('name', _name ?? '');
           return true;
         } catch (e) {
