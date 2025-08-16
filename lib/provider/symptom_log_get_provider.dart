@@ -79,7 +79,6 @@ class SymptomProvider with ChangeNotifier {
   void _useFallbackData() {
     _symptoms = fallbackSymptoms;
     _usingFallbackData = true;
-    debugPrint('Menggunakan data gejala statis fallback');
   }
 
   // Untuk testing: force menggunakan data fallback

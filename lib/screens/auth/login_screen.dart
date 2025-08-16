@@ -51,7 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
       await prefs.setString('userId', loginProvider.userId!);
 
       // Beri delay 500ms untuk memastikan token tersimpan
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 1000));
 
       // Tampilkan alert sukses terlebih dahulu
       CustomAlert.show(context, 'Login berhasil!', type: AlertType.success);
@@ -60,10 +60,10 @@ class _LoginScreenState extends State<LoginScreen> {
       await Future.delayed(const Duration(seconds: 1));
 
       // Lakukan navigasi berdasarkan role
-      if (role == 'admin') {
-        Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
-      } else {
+      if (role == 'user') {
         Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
+      } else {
+        Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
       }
     } else {
       CustomAlert.show(

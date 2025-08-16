@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 
 class UserDataStatsProvider with ChangeNotifier {
   int _totalUsers = 0;
@@ -49,9 +50,11 @@ class UserDataStatsProvider with ChangeNotifier {
       }
     } catch (e) {
       print('Error fetching stats: $e');
-      // Show error to user without logging out
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load statistics: ${e.toString()}')),
+      CustomAlert.show(
+        context,
+        'Tidak ada Koneksi Internet\nTidak Bisa Mendapatkan Statistik',
+        type: AlertType.warning,
+        duration: Duration(seconds: 2),
       );
     }
   }

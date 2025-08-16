@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:srikandi_sehat_app/models/cycle_history_model.dart';
 
 class CycleTrackingProvider with ChangeNotifier {
@@ -65,7 +64,6 @@ class CycleTrackingProvider with ChangeNotifier {
         if (cycleResponse.data.isEmpty && refresh) {
           _emptyMessage = 'Belum ada data siklus';
         }
-        debugPrint('Cycle history fetched successfully: ${responseData} items');
 
         if (refresh) {
           _cycleHistory = cycleResponse.data;

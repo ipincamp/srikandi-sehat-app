@@ -71,7 +71,6 @@ class MenstrualHistoryProvider with ChangeNotifier {
           _cycles = cycleResponse.cycles;
           _metadata = cycleResponse.metadata;
           _errorMessage = '';
-          debugPrint('Fetched menstrual cycles successfully');
         } else {
           _errorMessage = data['message'] ?? 'Gagal mengambil data siklus';
         }
@@ -80,7 +79,6 @@ class MenstrualHistoryProvider with ChangeNotifier {
       }
     } catch (e) {
       _errorMessage = 'Terjadi kesalahan: $e';
-      debugPrint('Error fetching menstrual cycles: $e');
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -112,7 +112,6 @@ class ProfileChangeProvider with ChangeNotifier {
       _address = profile['address']?.toString();
       _villageCode = profile['address_code']?.toString();
     } catch (e) {
-      debugPrint('Error parsing profile data: $e');
       _errorMessage = 'Failed to parse profile data';
     }
   }
@@ -194,13 +193,6 @@ class ProfileChangeProvider with ChangeNotifier {
         cleanedData['job_parent'] = profileData['job_parent'].toString();
       }
 
-      debugPrint(
-        'Sending profile update with data: ${jsonEncode(cleanedData)}',
-      );
-      debugPrint(
-        'Using token: ${token.substring(0, 5)}...${token.substring(token.length - 5)}',
-      );
-
       final response = await http.put(
         Uri.parse(url),
         headers: {
@@ -209,10 +201,6 @@ class ProfileChangeProvider with ChangeNotifier {
           'Accept': 'application/json',
         },
         body: jsonEncode(cleanedData),
-      );
-
-      debugPrint(
-        'Profile update response: ${response.statusCode} - ${response.body}',
       );
 
       if (response.statusCode == 200) {
@@ -267,10 +255,6 @@ class ProfileChangeProvider with ChangeNotifier {
 
       final baseUrl = dotenv.env['API_URL'] ?? '';
       final url = '$baseUrl/me';
-
-      debugPrint(
-        'Using token: ${token.substring(0, 5)}...${token.substring(token.length - 5)}',
-      );
 
       final response = await http.get(
         Uri.parse(url),
@@ -361,7 +345,7 @@ class ProfileChangeProvider with ChangeNotifier {
         _jobParent = profileData['job_parent']?.toString();
       }
     } catch (e) {
-      debugPrint('Error updating local profile: $e');
+      _errorMessage = 'Error fetching local profile';
     }
   }
 

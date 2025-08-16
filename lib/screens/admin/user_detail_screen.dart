@@ -1,18 +1,97 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:srikandi_sehat_app/provider/user_detail_provider.dart';
 import 'package:srikandi_sehat_app/models/user_detail_model.dart';
 import 'package:srikandi_sehat_app/utils/date_format.dart';
 import 'package:srikandi_sehat_app/utils/string_extentions.dart';
 import 'package:srikandi_sehat_app/utils/user_calc.dart';
+import 'package:srikandi_sehat_app/widgets/connection_error_card.dart';
 
-class UserDetailScreen extends StatelessWidget {
+class UserDetailScreen extends StatefulWidget {
   final String userId;
 
   const UserDetailScreen({super.key, required this.userId});
 
   @override
-  Widget build(BuildContext context) {
+  State<UserDetailScreen> createState() => _UserDetailScreenState();
+}
+
+class _UserDetailScreenState extends State<UserDetailScreen> {
+  bool _initialLoadComplete = false;
+  bool _isRefreshing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialData();
+  }
+
+  Future<bool> _checkInternetConnection() async {
+    final connectivityResult = await Connectivity().checkConnectivity();
+    return connectivityResult != ConnectivityResult.none;
+  }
+
+  Future<void> _loadInitialData() async {
+    try {
+      setState(() => _isRefreshing = true);
+
+      final hasConnection = await _checkInternetConnection();
+      if (!hasConnection) {
+        throw Exception('Tidak ada koneksi internet');
+      }
+
+      final provider = Provider.of<UserDetailProvider>(context, listen: false);
+      await provider.fetchUserDetail(widget.userId, context);
+    } catch (e) {
+      await Future.delayed(const Duration(seconds: 1));
+      if (await _checkInternetConnection()) {
+        final provider = Provider.of<UserDetailProvider>(
+          context,
+          listen: false,
+        );
+        await provider.fetchUserDetail(widget.userId, context);
+      } else {
+        throw e;
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _initialLoadComplete = true;
+          _isRefreshing = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleRefresh() async {
+    try {
+      setState(() => _isRefreshing = true);
+
+      final hasConnection = await _checkInternetConnection();
+      if (!hasConnection) {
+        throw Exception('Tidak ada koneksi internet');
+      }
+
+      final provider = Provider.of<UserDetailProvider>(context, listen: false);
+      await provider.fetchUserDetail(widget.userId, context);
+    } catch (e) {
+      await Future.delayed(const Duration(seconds: 1));
+      if (await _checkInternetConnection()) {
+        final provider = Provider.of<UserDetailProvider>(
+          context,
+          listen: false,
+        );
+        await provider.fetchUserDetail(widget.userId, context);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isRefreshing = false);
+      }
+    }
+  }
+
+  Widget _buildErrorScreen() {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -24,55 +103,92 @@ class UserDetailScreen extends StatelessWidget {
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: ChangeNotifierProvider(
-        create: (_) => UserDetailProvider()..fetchUserDetail(userId, context),
-        child: Consumer<UserDetailProvider>(
-          builder: (context, provider, _) {
-            if (provider.isLoading) {
-              return const Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.pink),
-                ),
-              );
-            }
-            if (provider.errorMessage.isNotEmpty) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    provider.errorMessage,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                      fontSize: 16,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              );
-            }
-            if (provider.userDetail == null) {
-              return const Center(
-                child: Text(
-                  'Data tidak ditemukan',
-                  style: TextStyle(fontSize: 16),
-                ),
-              );
-            }
+      body: Center(
+        child: ConnectionErrorWidget(
+          message: "Tidak ada koneksi, periksa jaringan anda",
+          icon: Icons.wifi_off,
+          iconColor: Colors.red,
+          iconSize: 60,
+          isLoading: _isRefreshing,
+          onRetry: _isRefreshing ? null : _handleRefresh,
+          retryText: 'Refresh',
+        ),
+      ),
+    );
+  }
 
-            final user = provider.userDetail!;
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _buildUserInfoCard(context, user),
-                  const SizedBox(height: 16),
-                  _buildProfileInfoCard(context, user.profile),
-                  const SizedBox(height: 16),
-                  _buildCycleHistoryCard(context, user.cycleHistory),
-                ],
-              ),
-            );
-          },
+  Widget _buildAppBar(UserDetailProvider provider) {
+    return AppBar(
+      title: const Text(
+        'Detail Pengguna',
+        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      ),
+      backgroundColor: Colors.pink[600],
+      elevation: 0,
+      centerTitle: true,
+      iconTheme: const IconThemeData(color: Colors.white),
+      actions: [
+        IconButton(
+          icon: _isRefreshing
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Icon(Icons.refresh),
+          onPressed: _isRefreshing ? null : _handleRefresh,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContent(UserDetailProvider provider) {
+    if (!_initialLoadComplete || provider.isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.pink),
+        ),
+      );
+    }
+
+    if (provider.errorMessage.isNotEmpty) {
+      return Center(
+        child: ConnectionErrorWidget(
+          message: "Tidak ada koneksi, periksa jaringan anda",
+          icon: Icons.wifi_off,
+          iconColor: Colors.red,
+          iconSize: 60,
+          isLoading: _isRefreshing,
+          onRetry: _isRefreshing ? null : _handleRefresh,
+          retryText: 'Refresh',
+        ),
+      );
+    }
+
+    if (provider.userDetail == null) {
+      return const Center(
+        child: Text('Data tidak ditemukan', style: TextStyle(fontSize: 16)),
+      );
+    }
+
+    final user = provider.userDetail!;
+    return RefreshIndicator(
+      onRefresh: _handleRefresh,
+      color: Colors.pink,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _buildUserInfoCard(context, user),
+            const SizedBox(height: 16),
+            _buildProfileInfoCard(context, user.profile),
+            const SizedBox(height: 16),
+            _buildCycleHistoryCard(context, user.cycleHistory),
+          ],
         ),
       ),
     );
@@ -348,6 +464,25 @@ class UserDetailScreen extends StatelessWidget {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = Provider.of<UserDetailProvider>(context);
+
+    if (provider.errorMessage.isNotEmpty && !_initialLoadComplete) {
+      return _buildErrorScreen();
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      body: Column(
+        children: [
+          _buildAppBar(provider),
+          Expanded(child: _buildContent(provider)),
         ],
       ),
     );

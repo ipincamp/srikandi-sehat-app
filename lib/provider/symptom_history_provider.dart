@@ -75,7 +75,6 @@ class SymptomHistoryProvider with ChangeNotifier {
       }
     } catch (e) {
       _errorMessage = 'Error fetching symptom history: $e';
-      debugPrint('Error fetching symptom history: $e');
       rethrow;
     } finally {
       _isLoading = false;
