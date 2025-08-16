@@ -19,13 +19,11 @@ class UserDetailProvider with ChangeNotifier {
 
     try {
       String endpoint = 'admin/users/$userId';
-      print('Fetching user detail from: $endpoint');
 
       final response = await HttpClient.get(context, endpoint, body: {});
 
       if (response.statusCode == 200) {
         final jsonBody = json.decode(response.body);
-        print(jsonBody);
         _userDetail = UserDetail.fromJson(jsonBody['data']);
       } else {
         _errorMessage =

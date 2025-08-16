@@ -91,28 +91,28 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
                       ),
                     ),
                   ),
-                if (provider.error != null)
-                  SliverFillRemaining(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            provider.error!,
-                            style: const TextStyle(color: Colors.pink),
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () => provider.fetchCycleHistory(
-                              refresh: true,
-                              context: context,
-                            ),
-                            child: const Text('Coba Lagi'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                // if (provider.error != null)
+                //   SliverFillRemaining(
+                //     child: Center(
+                //       child: Column(
+                //         mainAxisAlignment: MainAxisAlignment.center,
+                //         children: [
+                //           Text(
+                //             provider.error!,
+                //             style: const TextStyle(color: Colors.pink),
+                //           ),
+                //           const SizedBox(height: 16),
+                //           ElevatedButton(
+                //             onPressed: () => provider.fetchCycleHistory(
+                //               refresh: true,
+                //               context: context,
+                //             ),
+                //             child: const Text('Coba Lagi'),
+                //           ),
+                //         ],
+                //       ),
+                //     ),
+                //   ),
                 if (provider.emptyMessage != null &&
                     provider.cycleHistory.isEmpty)
                   SliverToBoxAdapter(

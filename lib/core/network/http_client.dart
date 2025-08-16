@@ -31,14 +31,11 @@ class HttpClient {
 
     // If unauthorized, try refresh token
     if (response.statusCode == 401) {
-      print('Attempting token refresh...');
       final refreshSuccess = await authProvider.refreshToken(context);
 
       if (refreshSuccess) {
-        print('Token refreshed, retrying request...');
         response = await _attemptRequest(context, method, endpoint, body: body);
       } else {
-        print('Refresh token failed');
         AuthGuard.redirectToLogin(context);
         throw ApiException('Unauthorized', 401);
       }
@@ -54,14 +51,12 @@ class HttpClient {
     Map<String, dynamic>? body,
   }) async {
     if (!await AuthGuard.isValidSession()) {
-      print('Invalid session in attemptRequest');
       AuthGuard.redirectToLogin(context);
       throw ApiException('Unauthorized', 401);
     }
 
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token')!;
-    print('Making $method request to $endpoint');
 
     try {
       final uri = Uri.parse('${dotenv.env['API_URL']}/$endpoint');
@@ -93,10 +88,8 @@ class HttpClient {
           response = await http.get(uri, headers: headers);
       }
 
-      print('Response status: ${response.statusCode}');
       return response;
     } catch (e) {
-      print('Request error: $e');
       throw ApiException(e.toString(), 500);
     }
   }

@@ -1,4 +1,3 @@
-// models/cycle_status_model.dart
 class CycleStatus {
   final bool isOnCycle;
   final int? currentPeriodDay;

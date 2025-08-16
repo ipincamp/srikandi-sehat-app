@@ -177,7 +177,6 @@ class CycleProvider with ChangeNotifier {
     try {
       final responses = await Future.wait([
         _fetchDataFromServer(prefs, 'status'),
-        _fetchDataFromServer(prefs, 'summary'),
       ]);
 
       // Check profile completion if context is provided
@@ -188,25 +187,27 @@ class CycleProvider with ChangeNotifier {
       final statusResponseData = responses[0];
       final summaryResponseData = responses[1];
 
+      // Prioritize status response for isOnCycle
+      if (statusResponseData != null) {
+        _isOnCycle = statusResponseData['is_on_cycle'] ?? false;
+        statusResponseData['is_on_cycle'] = _isOnCycle;
+        _cycleStatus = CycleStatus.fromJson(statusResponseData);
+      }
+
+      // Then update with summary data if available
       if (summaryResponseData != null) {
         final runningDaysValue =
             summaryResponseData['active_cycle_running_days'];
-
-        _isOnCycle = summaryResponseData['is_on_cycle'] ?? false;
-
         _activeCycleRunningDays = (runningDaysValue is num)
             ? runningDaysValue.toInt()
             : null;
         _notificationFlags = summaryResponseData['notification_flags'] ?? {};
       } else {
-        _isOnCycle = prefs.getBool('isOnCycle') ?? false;
+        // Fallback to local storage if no summary data
+        _isOnCycle = prefs.getBool('isOnCycle') ?? _isOnCycle;
       }
 
-      if (statusResponseData != null) {
-        statusResponseData['is_on_cycle'] = _isOnCycle;
-        _cycleStatus = CycleStatus.fromJson(statusResponseData);
-      }
-
+      // Save the state to local storage
       await prefs.setBool('isOnCycle', _isOnCycle);
     } catch (e) {
       _hasNetworkError = true;
@@ -254,14 +255,8 @@ class CycleProvider with ChangeNotifier {
   }
 
   Future<String> startCycle(DateTime startDate, BuildContext context) async {
-    // Check profile completion first
     final prefs = await SharedPreferences.getInstance();
     final isProfileComplete = prefs.getBool('profile_complete') ?? false;
-    final isMenstruating = prefs.getBool('isMenstruating') ?? false;
-    final isOnCycle = prefs.getBool('isOnCycle') ?? false;
-    print('Apakah profile sudah lengkap? $isProfileComplete');
-    print('Apakah sedang menstruasi? $isMenstruating');
-    print('Apakah sedang dalam siklus? $isOnCycle');
 
     if (!isProfileComplete) {
       await _checkProfileCompletion(context);
@@ -301,17 +296,10 @@ class CycleProvider with ChangeNotifier {
       );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        await prefs.setBool('isMenstruating', true);
-        await prefs.setBool('isOnCycle', true);
-        await synchronizeState(context: context);
+        await synchronizeState(context: context); // This will update isOnCycle
         final responseData = json.decode(response.body);
-        return responseData['message']?.toString() ?? 'Gagal memulai siklus.';
-      } else if (response.statusCode == 409) {
-        final responseData = json.decode(response.body);
-        throw Exception(
-          responseData['message']?.toString() ??
-              'Akhiri dulu siklus yang sedang berjalan.',
-        );
+        return responseData['message']?.toString() ??
+            'Siklus berhasil dimulai.';
       } else {
         final responseData = json.decode(response.body);
         throw Exception(
@@ -327,9 +315,6 @@ class CycleProvider with ChangeNotifier {
   }
 
   Future<String> endCycle(DateTime finishDate, BuildContext context) async {
-    // Check profile completion first
-    final prefs = await SharedPreferences.getInstance();
-
     // Check internet connection
     final hasConnection = await _checkInternetConnection();
     if (!hasConnection) {
@@ -343,7 +328,9 @@ class CycleProvider with ChangeNotifier {
 
     _isLoading = true;
     notifyListeners();
+
     try {
+      final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
       final apiUrl = dotenv.env['API_URL'];
       if (token == null || token.isEmpty || apiUrl == null || apiUrl.isEmpty) {
@@ -362,9 +349,7 @@ class CycleProvider with ChangeNotifier {
       );
 
       if (response.statusCode == 200) {
-        await synchronizeState(context: context);
-        await prefs.setBool('isMenstruating', false);
-        await prefs.setBool('isOnCycle', false);
+        await synchronizeState(context: context); // This will update isOnCycle
         return 'Siklus berhasil diakhiri.';
       } else {
         final responseData = json.decode(response.body);

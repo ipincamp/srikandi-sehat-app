@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:srikandi_sehat_app/widgets/action_button.dart';
 
 class CycleActionButtons extends StatelessWidget {
-  final VoidCallback onStart;
-  final VoidCallback onEnd;
+  final VoidCallback? onStart;
+  final VoidCallback? onEnd;
   final bool isMenstruating;
 
   const CycleActionButtons({

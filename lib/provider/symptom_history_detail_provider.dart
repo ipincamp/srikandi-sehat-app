@@ -15,7 +15,6 @@ class SymptomDetailProvider with ChangeNotifier {
   String? get error => _error;
 
   Future<void> fetchDetail(int id) async {
-    print('ini adalah id detail symptom: $id');
     if (_isLoading) return;
 
     _isLoading = true;
@@ -27,7 +26,6 @@ class SymptomDetailProvider with ChangeNotifier {
       final token = prefs.getString('token') ?? '';
       final baseUrl = dotenv.env['API_URL'] ?? '';
       final url = '$baseUrl/menstrual/symptoms/log/$id';
-      print('Fetching symptom detail from: $url');
 
       final response = await http.get(
         Uri.parse(url),
@@ -39,7 +37,6 @@ class SymptomDetailProvider with ChangeNotifier {
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
-        print('Symptom detail fetched successfully: $jsonData');
         _detail = SymptomDetail.fromJson(jsonData['data']);
       } else {
         _error = 'Failed to load data: ${response.statusCode}';

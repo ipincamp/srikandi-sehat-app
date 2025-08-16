@@ -9,8 +9,6 @@ class AuthGuard {
       final expiry = prefs.getString('token_expiry');
 
       // Debugging
-      print('Token: $token');
-      print('Expiry: $expiry');
 
       if (token == null || token.isEmpty) return false;
 
@@ -30,7 +28,6 @@ class AuthGuard {
   }
 
   static Future<void> redirectToLogin(BuildContext context) async {
-    print('Redirecting to login...');
     Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
   }
 }

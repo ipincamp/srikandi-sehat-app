@@ -78,7 +78,6 @@ class UserProfileProvider with ChangeNotifier {
       final response = await HttpClient.get(context, 'me', body: {});
 
       final responseData = jsonDecode(response.body);
-      print('Profile response: $responseData');
 
       if (response.statusCode == 200 && responseData['data'] != null) {
         _userData = responseData['data'];

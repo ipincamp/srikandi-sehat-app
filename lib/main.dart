@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:srikandi_sehat_app/core/auth/auth_guard.dart';
 import 'package:srikandi_sehat_app/core/auth/notification_service.dart';
 import 'package:srikandi_sehat_app/firebase_options.dart';
 import 'package:srikandi_sehat_app/provider/auth_provider.dart';
@@ -163,26 +164,93 @@ class MyApp extends StatelessWidget {
         userChild: const user.MainScreen(),
         guestChild: const LoginScreen(),
       ),
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        '/register': (context) => const RegisterScreen(),
+      onGenerateRoute: (RouteSettings settings) {
+        return MaterialPageRoute(
+          builder: (context) => AuthWrapper(
+            initialAuthState: initialAuthState,
+            adminChild: _buildAdminScreen(settings.name),
+            userChild: _buildUserScreen(settings.name),
+            guestChild: _buildGuestScreen(settings.name),
+          ),
+          settings: settings, // Penting untuk mempertahankan settings
+        );
+      },
+      // Hapus routes: {} jika ada
+    );
+  }
 
-        // User routes
-        '/main': (context) => const user.MainScreen(),
-        '/home': (context) => const user.HomeScreen(),
-        '/profile': (context) => const user.ProfileScreen(),
-        '/change-password': (context) => const user.ChangePasswordScreen(),
-        '/edit-profile': (context) => const user.EditProfileScreen(),
-        '/detail-profile': (context) => const user.DetailProfileScreen(),
-        '/symptom-history': (context) => const user.SymptomHistoryScreen(),
-        '/menstrual-history': (context) => const user.MenstrualHistoryScreen(),
+  // Helper methods untuk membangun screen dengan loading state
+  Widget _buildAdminScreen(String? routeName) {
+    return FutureBuilder(
+      future: AuthGuard.isValidSession(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-        // Admin routes
-        '/admin': (context) => const admin.MainScreen(),
-        '/admin/home': (context) => const admin.HomeScreen(),
-        '/admin/data': (context) => const admin.UserDataScreen(),
-        '/admin/profile': (context) => const admin.ProfileScreen(),
+        if (!(snapshot.data ?? false)) return const LoginScreen();
+
+        switch (routeName) {
+          case '/admin':
+            return const admin.MainScreen();
+          case '/admin/home':
+            return const admin.HomeScreen();
+          case '/admin/data':
+            return const admin.UserDataScreen();
+          case '/admin/profile':
+            return const admin.ProfileScreen();
+          default:
+            return const admin.MainScreen();
+        }
       },
     );
+  }
+
+  Widget _buildUserScreen(String? routeName) {
+    return FutureBuilder(
+      future: AuthGuard.isValidSession(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (!(snapshot.data ?? false)) return const LoginScreen();
+
+        switch (routeName) {
+          case '/main':
+            return const user.MainScreen();
+          case '/home':
+            return const user.HomeScreen();
+          case '/profile':
+            return const user.ProfileScreen();
+          case '/change-password':
+            return const user.ChangePasswordScreen();
+          case '/edit-profile':
+            return const user.EditProfileScreen();
+          case '/detail-profile':
+            return const user.DetailProfileScreen();
+          case '/symptom-history':
+            return const user.SymptomHistoryScreen();
+          case '/menstrual-history':
+            return const user.MenstrualHistoryScreen();
+          default:
+            return const user.MainScreen();
+        }
+      },
+    );
+  }
+
+  Widget _buildGuestScreen(String? routeName) {
+    switch (routeName) {
+      case '/register':
+        return const RegisterScreen();
+      case '/login':
+      default:
+        return const LoginScreen();
+    }
   }
 }

@@ -245,7 +245,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (flags.isEmpty) {
-      return const SizedBox.shrink(); // Jangan tampilkan apa-apa jika tidak ada data
+      return const ReminderTile(
+        message: 'Tidak ada menstruasi dan siklus yang terganggu',
+      ); // Jangan tampilkan apa-apa jika tidak ada data
     }
 
     final List<Widget> notifications = [];
@@ -340,9 +342,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   flex: 2,
                   child: CycleActionButtons(
-                    onStart: !isOnCycle ? () => _handleStartCycle() : () {},
-                    onEnd: isOnCycle ? () => _handleEndCycle() : () {},
-                    isMenstruating: isOnCycle,
+                    onStart: !isOnCycle ? () => _handleStartCycle() : null,
+                    onEnd: isOnCycle ? () => _handleEndCycle() : null,
+                    isMenstruating:
+                        cycleProvider.cycleStatus?.isMenstruating ?? false,
                   ),
                 ),
                 const SizedBox(width: 10),
