@@ -1,4 +1,3 @@
-// models/symptom_history_model.dart
 class SymptomHistoryResponse {
   final bool status;
   final String message;

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:srikandi_sehat_app/models/menstural_history_model.dart';
 import 'package:srikandi_sehat_app/provider/menstrual_history_provider.dart';
 import 'package:srikandi_sehat_app/screens/user/menstrual_history_detail_screen.dart';
+import 'package:srikandi_sehat_app/widgets/connection_error_card.dart';
 
 class MenstrualHistoryScreen extends StatefulWidget {
   const MenstrualHistoryScreen({super.key});
@@ -14,6 +16,8 @@ class MenstrualHistoryScreen extends StatefulWidget {
 
 class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
   final ScrollController _scrollController = ScrollController();
+  bool _initialLoadComplete = false;
+  bool _isRefreshing = false;
 
   @override
   void initState() {
@@ -28,12 +32,76 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
     super.dispose();
   }
 
-  void _loadInitialData() {
-    final provider = Provider.of<MenstrualHistoryProvider>(
-      context,
-      listen: false,
-    );
-    provider.fetchCycles();
+  Future<bool> _checkInternetConnection() async {
+    final connectivityResult = await Connectivity().checkConnectivity();
+    return connectivityResult != ConnectivityResult.none;
+  }
+
+  Future<void> _loadInitialData() async {
+    try {
+      setState(() => _isRefreshing = true);
+
+      final hasConnection = await _checkInternetConnection();
+      if (!hasConnection) {
+        throw Exception('Tidak ada koneksi internet');
+      }
+
+      final provider = Provider.of<MenstrualHistoryProvider>(
+        context,
+        listen: false,
+      );
+      await provider.fetchCycles();
+    } catch (e) {
+      await Future.delayed(const Duration(seconds: 1));
+      if (await _checkInternetConnection()) {
+        final provider = Provider.of<MenstrualHistoryProvider>(
+          context,
+          listen: false,
+        );
+        await provider.fetchCycles();
+      } else {
+        throw e;
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _initialLoadComplete = true;
+          _isRefreshing = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleRefresh() async {
+    try {
+      setState(() => _isRefreshing = true);
+
+      final hasConnection = await _checkInternetConnection();
+      if (!hasConnection) {
+        throw Exception('Tidak ada koneksi internet');
+      }
+
+      final provider = Provider.of<MenstrualHistoryProvider>(
+        context,
+        listen: false,
+      );
+      await provider.refreshData();
+    } catch (e) {
+      // Jika gagal, coba sekali lagi setelah delay
+      await Future.delayed(const Duration(seconds: 1));
+
+      if (await _checkInternetConnection()) {
+        final provider = Provider.of<MenstrualHistoryProvider>(
+          context,
+          listen: false,
+        );
+        await provider.refreshData();
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isRefreshing = false);
+      }
+    }
   }
 
   void _scrollListener() {
@@ -43,6 +111,7 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
     );
     if (_scrollController.position.pixels ==
             _scrollController.position.maxScrollExtent &&
+        !provider.isLoading &&
         provider.currentPage < provider.totalPages) {
       provider.fetchCycles(page: provider.currentPage + 1);
     }
@@ -89,7 +158,7 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.clear, size: 18),
-                    onPressed: provider.clearDateFilter,
+                    onPressed: _isRefreshing ? null : provider.clearDateFilter,
                     color: Colors.white,
                     padding: EdgeInsets.zero,
                   ),
@@ -97,7 +166,43 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
               ),
             ),
           ),
+        IconButton(
+          icon: _isRefreshing
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Icon(Icons.refresh),
+          onPressed: _isRefreshing ? null : _handleRefresh,
+        ),
       ],
+    );
+  }
+
+  Widget _buildErrorScreen() {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.pink,
+        title: const Text(
+          'Riwayat Menstruasi',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+      ),
+      body: Center(
+        child: ConnectionErrorWidget(
+          message: "Tidak ada koneksi, periksa jaringan anda",
+          icon: Icons.wifi_off,
+          iconColor: Colors.red,
+          iconSize: 60,
+          isLoading: _isRefreshing,
+          onRetry: _isRefreshing ? null : _handleRefresh,
+          retryText: 'Refresh',
+        ),
+      ),
     );
   }
 
@@ -131,7 +236,16 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
           ],
         ),
       ),
-      onSelected: provider.setLimit,
+      onSelected: (limit) async {
+        setState(() => _isRefreshing = true);
+        try {
+          await provider.setLimit(limit);
+        } finally {
+          if (mounted) {
+            setState(() => _isRefreshing = false);
+          }
+        }
+      },
       itemBuilder: (context) => [5, 10, 20, 50, 100].map((limit) {
         return PopupMenuItem<int>(
           value: limit,
@@ -157,9 +271,20 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
         children: [
           IconButton(
             icon: const Icon(Icons.chevron_left),
-            onPressed: provider.currentPage > 1
-                ? () => provider.fetchCycles(page: provider.currentPage - 1)
-                : null,
+            onPressed: _isRefreshing || provider.currentPage <= 1
+                ? null
+                : () async {
+                    setState(() => _isRefreshing = true);
+                    try {
+                      await provider.fetchCycles(
+                        page: provider.currentPage - 1,
+                      );
+                    } finally {
+                      if (mounted) {
+                        setState(() => _isRefreshing = false);
+                      }
+                    }
+                  },
             color: Colors.pink,
             disabledColor: Colors.grey[400],
           ),
@@ -179,9 +304,21 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.chevron_right),
-            onPressed: provider.currentPage < provider.totalPages
-                ? () => provider.fetchCycles(page: provider.currentPage + 1)
-                : null,
+            onPressed:
+                _isRefreshing || provider.currentPage >= provider.totalPages
+                ? null
+                : () async {
+                    setState(() => _isRefreshing = true);
+                    try {
+                      await provider.fetchCycles(
+                        page: provider.currentPage + 1,
+                      );
+                    } finally {
+                      if (mounted) {
+                        setState(() => _isRefreshing = false);
+                      }
+                    }
+                  },
             color: Colors.pink,
             disabledColor: Colors.grey[400],
           ),
@@ -242,7 +379,7 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
               const SizedBox(height: 16),
               if (provider.selectedDate != null)
                 ElevatedButton(
-                  onPressed: provider.clearDateFilter,
+                  onPressed: _isRefreshing ? null : provider.clearDateFilter,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.pink,
                     shape: RoundedRectangleBorder(
@@ -253,10 +390,19 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
                       vertical: 12,
                     ),
                   ),
-                  child: const Text(
-                    'Lihat Semua Riwayat',
-                    style: TextStyle(color: Colors.white),
-                  ),
+                  child: _isRefreshing
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Lihat Semua Riwayat',
+                          style: TextStyle(color: Colors.white),
+                        ),
                 ),
             ],
           ),
@@ -473,9 +619,18 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
   }
 
   Widget _buildContent(MenstrualHistoryProvider provider) {
-    if (provider.isLoading && provider.cycles.isEmpty) {
-      return const Center(child: CircularProgressIndicator(color: Colors.pink));
+    if (!_initialLoadComplete ||
+        provider.isLoading && provider.cycles.isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.pink),
+        ),
+      );
     }
+
+    // if (provider.errorMessage.isNotEmpty) {
+    //   return _buildErrorScreen();
+    // }
 
     if (provider.cycles.isEmpty) {
       return _buildEmptyState(provider);
@@ -483,7 +638,6 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
 
     return Column(
       children: [
-        // Summary Card
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Card(
@@ -526,7 +680,7 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
         // History List
         Expanded(
           child: RefreshIndicator(
-            onRefresh: provider.refreshData,
+            onRefresh: _handleRefresh,
             color: Colors.pink,
             child: ListView.builder(
               controller: _scrollController,
@@ -559,17 +713,19 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<MenstrualHistoryProvider>(context);
+
+    if (provider.errorMessage.isNotEmpty && provider.cycles.isEmpty) {
+      return _buildErrorScreen();
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      body: Consumer<MenstrualHistoryProvider>(
-        builder: (context, provider, child) {
-          return Column(
-            children: [
-              _buildAppBar(provider),
-              Expanded(child: _buildContent(provider)),
-            ],
-          );
-        },
+      body: Column(
+        children: [
+          _buildAppBar(provider),
+          Expanded(child: _buildContent(provider)),
+        ],
       ),
     );
   }

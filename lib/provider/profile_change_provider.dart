@@ -281,10 +281,6 @@ class ProfileChangeProvider with ChangeNotifier {
         },
       );
 
-      debugPrint(
-        'Fetch profile response: ${response.statusCode} - ${response.body}',
-      );
-
       if (response.statusCode == 200) {
         try {
           final responseData = jsonDecode(response.body);

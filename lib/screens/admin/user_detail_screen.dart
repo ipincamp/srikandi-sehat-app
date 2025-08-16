@@ -2,55 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/provider/user_detail_provider.dart';
 import 'package:srikandi_sehat_app/models/user_detail_model.dart';
-import 'package:intl/intl.dart';
+import 'package:srikandi_sehat_app/utils/date_format.dart';
+import 'package:srikandi_sehat_app/utils/string_extentions.dart';
 import 'package:srikandi_sehat_app/utils/user_calc.dart';
 
 class UserDetailScreen extends StatelessWidget {
   final String userId;
 
   const UserDetailScreen({super.key, required this.userId});
-
-  String formatNumber(num? value, {String suffix = ''}) {
-    if (value == null) return '-$suffix';
-    if (value % 1 == 0) return '${value.toInt()}$suffix';
-    return '${value.toStringAsFixed(1)}$suffix';
-  }
-
-  String _formatDate(String? dateString) {
-    if (dateString == null) return '-';
-    try {
-      final dateTime = DateTime.parse(dateString).toLocal();
-      return DateFormat('dd MMMM yyyy HH:mm', 'id_ID').format(dateTime);
-    } catch (e) {
-      return dateString;
-    }
-  }
-
-  String _formatShortDate(String? dateString) {
-    if (dateString == null) return '-';
-    try {
-      final dateTime = DateTime.parse(dateString).toLocal();
-      return DateFormat('dd MMM yyyy', 'id_ID').format(dateTime);
-    } catch (e) {
-      return dateString;
-    }
-  }
-
-  String _getOrdinalNumber(int number) {
-    if (number % 100 >= 11 && number % 100 <= 13) {
-      return 'ke-$number';
-    }
-    switch (number % 10) {
-      case 1:
-        return 'ke-$number';
-      case 2:
-        return 'ke-$number';
-      case 3:
-        return 'ke-$number';
-      default:
-        return 'ke-$number';
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -158,13 +117,13 @@ class UserDetailScreen extends StatelessWidget {
             _buildInfoItem(
               context,
               'Bergabung pada',
-              _formatDate(user.createdAt),
+              DateFormatter.format(user.createdAt, short: true),
             ),
             if (user.currentCycleNumber != null)
               _buildInfoItem(
                 context,
                 'Siklus Saat Ini',
-                'Siklus ${_getOrdinalNumber(user.currentCycleNumber!)}',
+                'Siklus ${ordinalNumberFormat(user.currentCycleNumber!)}',
                 valueColor: Colors.pink[600],
               ),
           ],
@@ -207,7 +166,7 @@ class UserDetailScreen extends StatelessWidget {
             _buildInfoItem(
               context,
               'Tanggal Lahir',
-              _formatShortDate(profile.birthdate),
+              DateFormatter.format(profile.birthdate, short: true),
             ),
             _buildInfoItem(
               context,
@@ -251,7 +210,7 @@ class UserDetailScreen extends StatelessWidget {
             _buildInfoItem(
               context,
               'Diperbarui',
-              _formatDate(profile.updatedAt),
+              DateFormatter.format(profile.updatedAt),
             ),
           ],
         ),
@@ -330,18 +289,22 @@ class UserDetailScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Siklus ${_getOrdinalNumber(cycleNumber)}',
+            'Siklus ${ordinalNumberFormat(cycleNumber)}',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: Colors.pink[600],
             ),
           ),
           const SizedBox(height: 8),
-          _buildInfoItem(context, 'Mulai', _formatShortDate(cycle.startDate)),
+          _buildInfoItem(
+            context,
+            'Mulai',
+            DateFormatter.format(cycle.startDate),
+          ),
           _buildInfoItem(
             context,
             'Selesai',
-            _formatShortDate(cycle.finishDate),
+            DateFormatter.format(cycle.finishDate),
           ),
           _buildInfoItem(context, 'Durasi', '${cycle.periodLengthDays} hari'),
           if (cycle.cycleLengthDays != null)

@@ -7,10 +7,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:srikandi_sehat_app/models/symptom_history_model.dart';
 
 class SymptomHistoryProvider with ChangeNotifier {
+  List<Symptom> _symptoms = [];
+
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-  List<Symptom> _symptoms = [];
   List<Symptom> get symptoms => _symptoms;
 
   Metadata _metadata = Metadata(
@@ -20,9 +21,11 @@ class SymptomHistoryProvider with ChangeNotifier {
     currentPage: 1,
   );
   Metadata get metadata => _metadata;
+  String _errorMessage = '';
 
   DateTime? _selectedDate;
   DateTime? get selectedDate => _selectedDate;
+  String get errorMessage => _errorMessage;
 
   int _limit = 10;
   int get limit => _limit;
@@ -71,6 +74,7 @@ class SymptomHistoryProvider with ChangeNotifier {
         );
       }
     } catch (e) {
+      _errorMessage = 'Error fetching symptom history: $e';
       debugPrint('Error fetching symptom history: $e');
       rethrow;
     } finally {
@@ -87,7 +91,7 @@ class SymptomHistoryProvider with ChangeNotifier {
     await fetchSymptomHistory(page: page);
   }
 
-  Future<void> refresh() async {
+  Future<void> refreshData() async {
     await fetchSymptomHistory(isRefresh: true);
   }
 

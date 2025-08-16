@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:srikandi_sehat_app/models/cycle_history_model.dart';
 
-class CycleHistoryProvider with ChangeNotifier {
+class CycleTrackingProvider with ChangeNotifier {
   List<CycleData> _cycleHistory = [];
   bool _isLoading = false;
   String? _error;
@@ -20,31 +20,6 @@ class CycleHistoryProvider with ChangeNotifier {
   bool get hasMore => _hasMore;
   String? get emptyMessage => _emptyMessage;
 
-  Future<bool> _checkInternetConnection() async {
-    final connectivityResult = await Connectivity().checkConnectivity();
-    return connectivityResult != ConnectivityResult.none;
-  }
-
-  Future<void> _showNoInternetAlert(BuildContext context) async {
-    if (!context.mounted) return;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Tidak Ada Koneksi Internet'),
-        content: const Text(
-          'Silakan periksa koneksi internet Anda dan coba lagi.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> fetchCycleHistory({
     bool refresh = false,
     required BuildContext context,
@@ -56,15 +31,6 @@ class CycleHistoryProvider with ChangeNotifier {
     }
 
     if (!_hasMore && !refresh) return;
-
-    final hasConnection = await _checkInternetConnection();
-    if (!hasConnection) {
-      _error = 'Tidak ada koneksi internet';
-      _isLoading = false;
-      notifyListeners();
-      await _showNoInternetAlert(context);
-      return;
-    }
 
     _isLoading = true;
     _error = null;
@@ -99,6 +65,7 @@ class CycleHistoryProvider with ChangeNotifier {
         if (cycleResponse.data.isEmpty && refresh) {
           _emptyMessage = 'Belum ada data siklus';
         }
+        debugPrint('Cycle history fetched successfully: ${responseData} items');
 
         if (refresh) {
           _cycleHistory = cycleResponse.data;

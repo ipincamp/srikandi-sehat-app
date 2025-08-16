@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:srikandi_sehat_app/models/symptom_history_model.dart';
 import 'package:srikandi_sehat_app/provider/symptom_history_provider.dart';
 import 'package:srikandi_sehat_app/screens/user/symptom_history_detail_screen.dart';
+import 'package:srikandi_sehat_app/widgets/connection_error_card.dart';
 
 class SymptomHistoryScreen extends StatefulWidget {
   const SymptomHistoryScreen({super.key});
@@ -14,6 +16,8 @@ class SymptomHistoryScreen extends StatefulWidget {
 
 class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
   final ScrollController _scrollController = ScrollController();
+  bool _initialLoadComplete = false;
+  bool _isRefreshing = false;
   DateTime? _selectedDate;
 
   @override
@@ -29,12 +33,76 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
     super.dispose();
   }
 
-  void _loadInitialData() {
-    final provider = Provider.of<SymptomHistoryProvider>(
-      context,
-      listen: false,
-    );
-    provider.fetchSymptomHistory();
+  Future<bool> _checkInternetConnection() async {
+    final connectivityResult = await Connectivity().checkConnectivity();
+    return connectivityResult != ConnectivityResult.none;
+  }
+
+  Future<void> _loadInitialData() async {
+    try {
+      setState(() => _isRefreshing = true);
+
+      final hasConnection = await _checkInternetConnection();
+      if (!hasConnection) {
+        throw Exception('Tidak ada koneksi internet');
+      }
+
+      final provider = Provider.of<SymptomHistoryProvider>(
+        context,
+        listen: false,
+      );
+      await provider.fetchSymptomHistory();
+    } catch (e) {
+      await Future.delayed(const Duration(seconds: 1));
+      if (await _checkInternetConnection()) {
+        final provider = Provider.of<SymptomHistoryProvider>(
+          context,
+          listen: false,
+        );
+        await provider.fetchSymptomHistory();
+      } else {
+        throw e;
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _initialLoadComplete = true;
+          _isRefreshing = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleRefresh() async {
+    try {
+      setState(() => _isRefreshing = true);
+
+      final hasConnection = await _checkInternetConnection();
+      if (!hasConnection) {
+        throw Exception('Tidak ada koneksi internet');
+      }
+
+      final provider = Provider.of<SymptomHistoryProvider>(
+        context,
+        listen: false,
+      );
+      await provider.refreshData();
+    } catch (e) {
+      // Jika gagal, coba sekali lagi setelah delay
+      await Future.delayed(const Duration(seconds: 1));
+
+      if (await _checkInternetConnection()) {
+        final provider = Provider.of<SymptomHistoryProvider>(
+          context,
+          listen: false,
+        );
+        await provider.refreshData();
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isRefreshing = false);
+      }
+    }
   }
 
   void _scrollListener() {
@@ -45,7 +113,7 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
     if (_scrollController.position.pixels ==
             _scrollController.position.maxScrollExtent &&
         provider.metadata.currentPage < provider.metadata.totalPages) {
-      provider.goToPage(provider.metadata.currentPage + 1);
+      provider.fetchSymptomHistory(page: provider.metadata.currentPage + 1);
     }
   }
 
@@ -63,7 +131,7 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
               onPrimary: Colors.white,
               onSurface: Colors.black,
             ),
-            dialogBackgroundColor: Colors.white,
+            dialogTheme: DialogThemeData(backgroundColor: Colors.white),
           ),
           child: child!,
         );
@@ -93,7 +161,7 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
     await provider.fetchSymptomHistory();
   }
 
-  Widget _buildAppBar() {
+  Widget _buildAppBar(SymptomHistoryProvider provider) {
     return AppBar(
       title: const Text(
         'Riwayat Gejala',
@@ -147,7 +215,43 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
           onPressed: () => _selectDate(context),
           tooltip: 'Filter Tanggal',
         ),
+        IconButton(
+          icon: _isRefreshing
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Icon(Icons.refresh),
+          onPressed: _isRefreshing ? null : _handleRefresh,
+        ),
       ],
+    );
+  }
+
+  Widget _buildErrorScreen() {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.pink,
+        title: const Text(
+          'Riwayat Gejala',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+      ),
+      body: Center(
+        child: ConnectionErrorWidget(
+          message: "Tidak ada koneksi, periksa jaringan anda",
+          icon: Icons.wifi_off,
+          iconColor: Colors.red,
+          iconSize: 60,
+          isLoading: _isRefreshing,
+          onRetry: _isRefreshing ? null : _handleRefresh,
+          retryText: 'Refresh',
+        ),
+      ),
     );
   }
 
@@ -508,13 +612,18 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
   }
 
   Widget _buildContent(SymptomHistoryProvider provider) {
-    if (provider.isLoading && provider.symptoms.isEmpty) {
+    if (!_initialLoadComplete ||
+        provider.isLoading && provider.symptoms.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(
           valueColor: AlwaysStoppedAnimation<Color>(Colors.pink),
         ),
       );
     }
+
+    // if (provider.errorMessage.isNotEmpty) {
+    //   return _buildErrorScreen();
+    // }
 
     if (provider.symptoms.isEmpty) {
       return _buildEmptyState(provider);
@@ -563,9 +672,7 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
         const SizedBox(height: 16),
         Expanded(
           child: RefreshIndicator(
-            onRefresh: () async {
-              await provider.fetchSymptomHistory(date: _selectedDate);
-            },
+            onRefresh: _handleRefresh,
             color: Colors.pink,
             child: ListView.builder(
               controller: _scrollController,
@@ -578,9 +685,7 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
                           padding: EdgeInsets.all(16.0),
                           child: Center(
                             child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.pink,
-                              ),
+                              color: Colors.pink,
                             ),
                           ),
                         )
@@ -602,17 +707,19 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<SymptomHistoryProvider>(context);
+
+    if (provider.errorMessage.isNotEmpty && provider.symptoms.isEmpty) {
+      return _buildErrorScreen();
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      body: Consumer<SymptomHistoryProvider>(
-        builder: (context, provider, child) {
-          return Column(
-            children: [
-              _buildAppBar(),
-              Expanded(child: _buildContent(provider)),
-            ],
-          );
-        },
+      body: Column(
+        children: [
+          _buildAppBar(provider),
+          Expanded(child: _buildContent(provider)),
+        ],
       ),
     );
   }

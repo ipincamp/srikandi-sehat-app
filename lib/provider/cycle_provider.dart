@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:srikandi_sehat_app/models/cycle_status_model.dart';
-import 'package:srikandi_sehat_app/utils/datetime_format.dart';
+import 'package:srikandi_sehat_app/utils/date_format.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 class CycleProvider with ChangeNotifier {

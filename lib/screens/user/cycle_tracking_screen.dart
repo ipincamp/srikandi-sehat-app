@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/models/cycle_history_model.dart';
-import 'package:srikandi_sehat_app/provider/cycle_history_provider.dart';
+import 'package:srikandi_sehat_app/provider/cycle_tracking_provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 
@@ -33,7 +33,7 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
 
   void _loadInitialData() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<CycleHistoryProvider>();
+      final provider = context.read<CycleTrackingProvider>();
       provider.fetchCycleHistory(refresh: true, context: context);
     });
   }
@@ -41,7 +41,7 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
   void _scrollListener() {
     if (_scrollController.position.pixels ==
         _scrollController.position.maxScrollExtent) {
-      final provider = context.read<CycleHistoryProvider>();
+      final provider = context.read<CycleTrackingProvider>();
       if (!provider.isLoading && provider.hasMore) {
         provider.fetchCycleHistory(context: context);
       }
@@ -63,13 +63,13 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => context
-                .read<CycleHistoryProvider>()
+                .read<CycleTrackingProvider>()
                 .fetchCycleHistory(refresh: true, context: context),
           ),
         ],
       ),
       backgroundColor: Colors.grey[50],
-      body: Consumer<CycleHistoryProvider>(
+      body: Consumer<CycleTrackingProvider>(
         builder: (context, provider, child) {
           return RefreshIndicator(
             onRefresh: () async {
@@ -83,7 +83,7 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
                 SliverToBoxAdapter(
                   child: _buildKalender(provider.cycleHistory),
                 ),
-                if (provider.isLoading && provider.cycleHistory.isEmpty)
+                if (provider.isLoading)
                   const SliverFillRemaining(
                     child: Center(
                       child: CircularProgressIndicator(
@@ -91,28 +91,64 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
                       ),
                     ),
                   ),
-                // if (provider.error != null)
-                //   SliverFillRemaining(
-                //     child: Center(
-                //       child: Column(
-                //         mainAxisAlignment: MainAxisAlignment.center,
-                //         children: [
-                //           Text(
-                //             provider.error!,
-                //             style: const TextStyle(color: Colors.pink),
-                //           ),
-                //           const SizedBox(height: 16),
-                //           ElevatedButton(
-                //             onPressed: () => provider.fetchCycleHistory(
-                //               refresh: true,
-                //               context: context,
-                //             ),
-                //             child: const Text('Coba Lagi'),
-                //           ),
-                //         ],
-                //       ),
-                //     ),
-                //   ),
+
+                if (provider.cycleHistory.isEmpty && !provider.isLoading)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Optional icon for better visual indication
+                            Icon(
+                              Icons.assignment_outlined,
+                              size: 48,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 16),
+                            // Improved empty state container
+                            Container(
+                              width: double.infinity,
+                              constraints: const BoxConstraints(maxWidth: 400),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.1),
+                                    spreadRadius: 2,
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 24,
+                                horizontal: 16,
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    provider.emptyMessage ??
+                                        'Tidak ada data siklus',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey[600],
+                                      height: 1.4,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 if (provider.emptyMessage != null &&
                     provider.cycleHistory.isEmpty)
                   SliverToBoxAdapter(

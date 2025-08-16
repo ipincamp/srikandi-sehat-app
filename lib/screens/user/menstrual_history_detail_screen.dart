@@ -54,8 +54,6 @@ class _MenstrualHistoryDetailScreenState
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(provider.error!),
-                  const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => provider.fetchCycleDetail(widget.cycleId),
                     child: const Text('Coba Lagi'),

@@ -1,14 +1,15 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:srikandi_sehat_app/models/menstural_history_model.dart';
-import 'dart:convert';
 
 class MenstrualHistoryProvider with ChangeNotifier {
   List<MenstrualCycle> _cycles = [];
   bool _isLoading = false;
+
   MenstrualCycleMetadata _metadata = MenstrualCycleMetadata(
     limit: 10,
     totalData: 0,
@@ -26,6 +27,7 @@ class MenstrualHistoryProvider with ChangeNotifier {
   String get errorMessage => _errorMessage;
   DateTime? get selectedDate => _selectedDate;
   int get limit => _limit;
+
   List<int> get availableLimits => _availableLimits;
   int get totalData => _metadata.totalData;
   int get currentPage => _metadata.currentPage;
@@ -44,7 +46,7 @@ class MenstrualHistoryProvider with ChangeNotifier {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token') ?? '';
+      final token = prefs.getString('token');
       final baseUrl = dotenv.env['API_URL'];
 
       String url = '$baseUrl/menstrual/cycles?page=$page&limit=$_limit';
@@ -69,6 +71,7 @@ class MenstrualHistoryProvider with ChangeNotifier {
           _cycles = cycleResponse.cycles;
           _metadata = cycleResponse.metadata;
           _errorMessage = '';
+          debugPrint('Fetched menstrual cycles successfully');
         } else {
           _errorMessage = data['message'] ?? 'Gagal mengambil data siklus';
         }

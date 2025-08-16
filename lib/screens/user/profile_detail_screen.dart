@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/provider/profile_change_provider.dart';
 import 'package:srikandi_sehat_app/utils/user_calc.dart';
+import 'package:srikandi_sehat_app/widgets/connection_error_card.dart';
 
 class DetailProfileScreen extends StatefulWidget {
   const DetailProfileScreen({super.key});
@@ -190,20 +191,18 @@ class _DetailProfileScreenState extends State<DetailProfileScreen> {
           backgroundColor: Colors.pink,
           title: const Text(
             'Detail Profil',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
           ),
         ),
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(userProfileProvider.errorMessage),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _fetchProfileData,
-                child: const Text('Coba Lagi'),
-              ),
-            ],
+          child: ConnectionErrorWidget(
+            message: "Tidak ada koneksi, periksa jaringan anda",
+            icon: Icons.wifi_off,
+            iconColor: Colors.red,
+            iconSize: 60,
+            isLoading: _isRefreshing,
+            onRetry: _isRefreshing ? null : _fetchProfileData,
+            retryText: 'Refresh',
           ),
         ),
       );

@@ -5,7 +5,7 @@ import 'package:srikandi_sehat_app/provider/symptom_history_detail_provider.dart
 import 'package:srikandi_sehat_app/provider/symptom_log_get_provider.dart';
 import 'package:srikandi_sehat_app/provider/symptom_log_post_provider.dart';
 import 'package:srikandi_sehat_app/screens/user/symptom_history_detail_screen.dart';
-import 'package:srikandi_sehat_app/utils/datetime_format.dart';
+import 'package:srikandi_sehat_app/utils/date_format.dart';
 import 'package:srikandi_sehat_app/widgets/action_button.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/custom_form.dart';
