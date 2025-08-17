@@ -64,10 +64,17 @@ class SymptomHistoryProvider with ChangeNotifier {
         },
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final data = SymptomHistoryResponse.fromJson(jsonDecode(response.body));
         _symptoms = data.data.data;
         _metadata = data.data.metadata;
+        _errorMessage = '';
+      } else if (response.statusCode == 401) {
+        _errorMessage = 'Unauthorized access. Please log in again.';
+        throw Exception(_errorMessage);
+      } else if (response.statusCode == 404) {
+        _errorMessage = 'No symptom history found for the selected date.';
+        _symptoms = [];
       } else {
         throw Exception(
           'Failed to load symptom history: ${response.statusCode}',

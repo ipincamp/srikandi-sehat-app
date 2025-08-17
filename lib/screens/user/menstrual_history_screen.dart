@@ -620,7 +620,7 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
 
   Widget _buildContent(MenstrualHistoryProvider provider) {
     if (!_initialLoadComplete ||
-        provider.isLoading && provider.cycles.isEmpty) {
+        (provider.isLoading && provider.cycles.isEmpty)) {
       return const Center(
         child: CircularProgressIndicator(
           valueColor: AlwaysStoppedAnimation<Color>(Colors.pink),
@@ -715,7 +715,8 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
   Widget build(BuildContext context) {
     final provider = Provider.of<MenstrualHistoryProvider>(context);
 
-    if (provider.errorMessage.isNotEmpty && provider.cycles.isEmpty) {
+    if (provider.errorMessage.isNotEmpty &&
+        !provider.errorMessage.contains("You have no cycle history")) {
       return _buildErrorScreen();
     }
 

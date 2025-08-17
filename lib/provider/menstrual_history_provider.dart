@@ -10,7 +10,7 @@ class MenstrualHistoryProvider with ChangeNotifier {
   List<MenstrualCycle> _cycles = [];
   bool _isLoading = false;
 
-  MenstrualCycleMetadata _metadata = MenstrualCycleMetadata(
+  Metadata _metadata = Metadata(
     limit: 10,
     totalData: 0,
     totalPages: 1,
@@ -23,7 +23,7 @@ class MenstrualHistoryProvider with ChangeNotifier {
 
   List<MenstrualCycle> get cycles => _cycles;
   bool get isLoading => _isLoading;
-  MenstrualCycleMetadata get metadata => _metadata;
+  Metadata get metadata => _metadata;
   String get errorMessage => _errorMessage;
   DateTime? get selectedDate => _selectedDate;
   int get limit => _limit;
@@ -64,13 +64,32 @@ class MenstrualHistoryProvider with ChangeNotifier {
         },
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final data = json.decode(response.body);
+
         if (data['status'] == true) {
-          final cycleResponse = MenstrualCycleResponse.fromJson(data['data']);
-          _cycles = cycleResponse.cycles;
-          _metadata = cycleResponse.metadata;
-          _errorMessage = '';
+          // Case 1: Data kosong (response berupa array kosong)
+          if (data['data'] is List && data['data'].isEmpty) {
+            _cycles = [];
+            _metadata = Metadata(
+              limit: _limit,
+              totalData: 0,
+              totalPages: 1,
+              currentPage: 1,
+            );
+            _errorMessage = data['message'] ?? '';
+          }
+          // Case 2: Data ada (response berupa object dengan data dan metadata)
+          else if (data['data'] is Map && data['data']['data'] is List) {
+            final cycleResponse = MenstrualCycleResponse.fromJson(data['data']);
+            _cycles = cycleResponse.cycles;
+            _metadata = cycleResponse.metadata;
+            _errorMessage = '';
+          }
+          // Case 3: Format response tidak dikenali
+          else {
+            _errorMessage = 'Format response tidak valid';
+          }
         } else {
           _errorMessage = data['message'] ?? 'Gagal mengambil data siklus';
         }

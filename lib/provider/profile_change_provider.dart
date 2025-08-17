@@ -268,7 +268,6 @@ class ProfileChangeProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         try {
           final responseData = jsonDecode(response.body);
-          print('Profile data: $responseData');
           if (responseData['data'] != null) {
             _parseProfileData(responseData['data']);
             return true;

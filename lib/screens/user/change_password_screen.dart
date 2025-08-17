@@ -35,14 +35,20 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     final confirmPass = _confirmPasswordController.text;
 
     if (newPass != confirmPass) {
-      CustomAlert.show(context, 'Konfirmasi password tidak cocok',
-          type: AlertType.error);
+      CustomAlert.show(
+        context,
+        'Konfirmasi password tidak cocok',
+        type: AlertType.error,
+      );
       return;
     }
 
     setState(() => _isLoading = true);
-    final success =
-        await userProvider.changePassword(oldPass, newPass, confirmPass);
+    final success = await userProvider.changePassword(
+      oldPass,
+      newPass,
+      confirmPass,
+    );
 
     setState(() => _isLoading = false);
 
@@ -70,9 +76,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         Navigator.pushReplacementNamed(context, '/login');
       }
     } else {
-      CustomAlert.show(context, userProvider.errorMessage,
-          type: AlertType.error);
-      print(userProvider.errorMessage);
+      CustomAlert.show(
+        context,
+        userProvider.errorMessage,
+        type: AlertType.error,
+      );
     }
   }
 
@@ -107,10 +115,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Ubah Password'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Ubah Password'), centerTitle: true),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(

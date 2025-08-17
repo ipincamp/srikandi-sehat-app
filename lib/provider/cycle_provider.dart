@@ -211,7 +211,6 @@ class CycleProvider with ChangeNotifier {
       await prefs.setBool('isOnCycle', _isOnCycle);
     } catch (e) {
       _hasNetworkError = true;
-      print('Gagal sinkronisasi data: $e');
       await _handleError(prefs);
 
       if (context != null && context.mounted) {
@@ -249,7 +248,6 @@ class CycleProvider with ChangeNotifier {
       }
       return null;
     } catch (e) {
-      print("Gagal fetch data dari endpoint '$endpoint': $e");
       return null;
     }
   }
@@ -309,7 +307,6 @@ class CycleProvider with ChangeNotifier {
     } catch (e) {
       _isLoading = false;
       notifyListeners();
-      print('Error saat memulai siklus: $e');
       rethrow;
     }
   }
@@ -360,7 +357,6 @@ class CycleProvider with ChangeNotifier {
     } catch (e) {
       _isLoading = false;
       notifyListeners();
-      print('Error saat mengakhiri siklus: $e');
       rethrow;
     }
   }

@@ -15,9 +15,6 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   String? _name;
   String? _email;
-  String? _role;
-  bool _isLoading = false;
-  bool _notificationsEnabled = true;
 
   @override
   void initState() {
@@ -26,7 +23,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadProfile() async {
-    setState(() => _isLoading = true);
     final userProvider = Provider.of<AuthProvider>(context, listen: false);
 
     try {
@@ -35,14 +31,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           _name = userProvider.name;
           _email = userProvider.email;
-          _role = userProvider.role;
         });
       }
     } catch (e) {
-      CustomAlert.show(context, 'Gagal memuat profil', type: AlertType.error);
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+      CustomAlert.show(context, 'Gagral memuat profil', type: AlertType.error);
+    } finally {}
   }
 
   Widget buildListTile({

@@ -278,7 +278,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
               ],
             ),
             const Divider(height: 24),
-            _buildInfoItem(context, 'No. Telepon', profile.phone ?? '-'),
+            _buildInfoItem(context, 'No. Telepon', profile.phone),
             _buildInfoItem(
               context,
               'Tanggal Lahir',
@@ -301,28 +301,20 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
               bmiCategory,
               valueColor: bmiColor,
             ),
-            _buildInfoItem(context, 'Pendidikan', profile.lastEducation ?? '-'),
+            _buildInfoItem(context, 'Pendidikan', profile.lastEducation),
             _buildInfoItem(
               context,
               'Pendidikan Ortu',
-              profile.lastParentEducation ?? '-',
+              profile.lastParentEducation,
             ),
-            _buildInfoItem(
-              context,
-              'Pekerjaan Ortu',
-              profile.lastParentJob ?? '-',
-            ),
-            _buildInfoItem(
-              context,
-              'Akses Internet',
-              profile.internetAccess ?? '-',
-            ),
+            _buildInfoItem(context, 'Pekerjaan Ortu', profile.lastParentJob),
+            _buildInfoItem(context, 'Akses Internet', profile.internetAccess),
             _buildInfoItem(
               context,
               'Menarche',
               '${formatNumber(profile.firstMenstruation)} tahun',
             ),
-            _buildInfoItem(context, 'Alamat', profile.address ?? '-'),
+            _buildInfoItem(context, 'Alamat', profile.address),
             _buildInfoItem(
               context,
               'Diperbarui',

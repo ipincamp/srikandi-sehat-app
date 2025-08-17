@@ -30,32 +30,9 @@ class MenstrualCycle {
   }
 }
 
-class MenstrualCycleMetadata {
-  final int limit;
-  final int totalData;
-  final int totalPages;
-  final int currentPage;
-
-  MenstrualCycleMetadata({
-    required this.limit,
-    required this.totalData,
-    required this.totalPages,
-    required this.currentPage,
-  });
-
-  factory MenstrualCycleMetadata.fromJson(Map<String, dynamic> json) {
-    return MenstrualCycleMetadata(
-      limit: json['limit'],
-      totalData: json['total_data'],
-      totalPages: json['total_pages'],
-      currentPage: json['current_page'],
-    );
-  }
-}
-
 class MenstrualCycleResponse {
   final List<MenstrualCycle> cycles;
-  final MenstrualCycleMetadata metadata;
+  final Metadata metadata;
 
   MenstrualCycleResponse({required this.cycles, required this.metadata});
 
@@ -64,7 +41,30 @@ class MenstrualCycleResponse {
       cycles: (json['data'] as List)
           .map((cycle) => MenstrualCycle.fromJson(cycle))
           .toList(),
-      metadata: MenstrualCycleMetadata.fromJson(json['metadata']),
+      metadata: Metadata.fromJson(json['metadata']),
+    );
+  }
+}
+
+class Metadata {
+  final int limit;
+  final int totalData;
+  final int totalPages;
+  final int currentPage;
+
+  Metadata({
+    required this.limit,
+    required this.totalData,
+    required this.totalPages,
+    required this.currentPage,
+  });
+
+  factory Metadata.fromJson(Map<String, dynamic> json) {
+    return Metadata(
+      limit: json['limit'],
+      totalData: json['total_data'],
+      totalPages: json['total_pages'],
+      currentPage: json['current_page'],
     );
   }
 }
