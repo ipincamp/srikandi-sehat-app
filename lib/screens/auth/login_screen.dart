@@ -40,30 +40,32 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     final success = await loginProvider.login(email, password, context);
-    final prefs = await SharedPreferences.getInstance();
-    final role = prefs.getString('role');
-    await prefs.setBool('showLoginModal', true);
 
     if (success) {
-      // Simpan token terlebih dahulu
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('token', loginProvider.authToken!);
-      await prefs.setString('userId', loginProvider.userId!);
+      // Tunggu sampai state provider terupdate
+      await Future.delayed(const Duration(milliseconds: 100));
 
-      // Beri delay 500ms untuk memastikan token tersimpan
-      await Future.delayed(const Duration(milliseconds: 1000));
+      // Ambil role DARI PROVIDER, bukan shared preferences
+      final role = loginProvider.role;
 
-      // Tampilkan alert sukses terlebih dahulu
       CustomAlert.show(context, 'Login berhasil!', type: AlertType.success);
 
-      // Beri delay tambahan 1 detik sebelum navigasi
       await Future.delayed(const Duration(seconds: 1));
 
-      // Lakukan navigasi berdasarkan role
+      // Navigasi berdasarkan role
       if (role == 'user') {
         Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
-      } else {
+      } else if (role == 'admin') {
         Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
+      } else {
+        // Fallback jika role tidak dikenali
+        CustomAlert.show(
+          context,
+          'Role tidak dikenali: $role',
+          type: AlertType.error,
+        );
+        // Redirect ke halaman default atau logout
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
     } else {
       CustomAlert.show(

@@ -101,14 +101,12 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // Optional icon for better visual indication
                             Icon(
                               Icons.assignment_outlined,
                               size: 48,
                               color: Colors.grey[400],
                             ),
                             const SizedBox(height: 16),
-                            // Improved empty state container
                             Container(
                               width: double.infinity,
                               constraints: const BoxConstraints(maxWidth: 400),
@@ -248,9 +246,18 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
   }
 
   Widget _buildKalender(List<CycleData> dataSiklus) {
-    final tanggalHaid = dataSiklus.map((siklus) {
-      return DateTimeRange(start: siklus.startDate, end: siklus.finishDate);
-    }).toList();
+    final List<DateTimeRange> tanggalHaid = [];
+    final List<DateTime> hphtDates = [];
+
+    for (final siklus in dataSiklus) {
+      DateTime endDate = siklus.finishDate;
+      if (siklus.finishDate.isAfter(DateTime.now())) {
+        endDate = DateTime.now();
+      }
+
+      tanggalHaid.add(DateTimeRange(start: siklus.startDate, end: endDate));
+      hphtDates.add(siklus.startDate);
+    }
 
     final predictedCycles = _calculatePredictedCycles(dataSiklus);
 
@@ -309,12 +316,18 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
           onPageChanged: (focusedDay) => _focusedDay = focusedDay,
           calendarBuilders: CalendarBuilders(
             defaultBuilder: (context, day, focusedDay) {
-              return _buildSelTanggal(day, tanggalHaid, predictedCycles);
+              return _buildSelTanggal(
+                day,
+                tanggalHaid,
+                hphtDates,
+                predictedCycles,
+              );
             },
             todayBuilder: (context, day, focusedDay) {
               return _buildSelTanggal(
                 day,
                 tanggalHaid,
+                hphtDates,
                 predictedCycles,
                 hariIni: true,
               );
@@ -323,6 +336,7 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
               return _buildSelTanggal(
                 day,
                 tanggalHaid,
+                hphtDates,
                 predictedCycles,
                 terpilih: true,
               );
@@ -334,9 +348,16 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
   }
 
   List<DateTimeRange> _calculatePredictedCycles(List<CycleData> cycles) {
+    if (cycles.isEmpty) return [];
+
+    final latestCycle = cycles.first;
+
+    if (latestCycle.finishDate.isAfter(DateTime.now())) {
+      return [];
+    }
+
     if (cycles.length < 2) return [];
 
-    // Filter cycles that have cycleLength data
     final validCycles = cycles.where((c) => c.cycleLength != null).toList();
     if (validCycles.length < 2) return [];
 
@@ -358,6 +379,7 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
   Widget _buildSelTanggal(
     DateTime hari,
     List<DateTimeRange> tanggalHaid,
+    List<DateTime> hphtDates,
     List<DateTimeRange> predictedCycles, {
     bool hariIni = false,
     bool terpilih = false,
@@ -366,19 +388,34 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
     bool adalahHariPertama = false;
     bool adalahPrediksi = false;
 
-    for (final range in tanggalHaid) {
-      if (hari.isAfter(range.start.subtract(const Duration(days: 1))) &&
-          hari.isBefore(range.end.add(const Duration(days: 1)))) {
+    // Cek apakah hari adalah HPHT (Hari Pertama Haid Terakhir)
+    for (final hphtDate in hphtDates) {
+      if (isSameDay(hari, hphtDate)) {
+        adalahHariPertama = true;
         adalahHariHaid = true;
-        adalahHariPertama = isSameDay(hari, range.start);
         break;
+      }
+    }
+
+    // Jika bukan HPHT, cek apakah hari dalam range haid
+    if (!adalahHariPertama) {
+      for (final range in tanggalHaid) {
+        final startMinusOne = range.start.subtract(const Duration(days: 1));
+        final endPlusOne = range.end.add(const Duration(days: 1));
+
+        if (hari.isAfter(startMinusOne) && hari.isBefore(endPlusOne)) {
+          adalahHariHaid = true;
+          break;
+        }
       }
     }
 
     if (!adalahHariHaid) {
       for (final range in predictedCycles) {
-        if (hari.isAfter(range.start.subtract(const Duration(days: 1))) &&
-            hari.isBefore(range.end.add(const Duration(days: 1)))) {
+        final startMinusOne = range.start.subtract(const Duration(days: 1));
+        final endPlusOne = range.end.add(const Duration(days: 1));
+
+        if (hari.isAfter(startMinusOne) && hari.isBefore(endPlusOne)) {
           adalahPrediksi = true;
           break;
         }
@@ -464,6 +501,10 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
               cyclesWithLength.length
         : null;
 
+    final bool isCurrentCycleActive = siklusTerakhir.finishDate.isAfter(
+      DateTime.now(),
+    );
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -497,17 +538,24 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
             ),
             _buildItemStatistik(
               ikon: Icons.calendar_today_outlined,
-              label: 'Selesai Haid Terakhir',
-              nilai: DateFormat(
-                'EEEE, dd MMMM yyyy',
-              ).format(siklusTerakhir.finishDate),
+              label: isCurrentCycleActive
+                  ? 'Perkiraan Selesai Haid'
+                  : 'Selesai Haid Terakhir',
+              nilai: isCurrentCycleActive
+                  ? '${DateFormat('EEEE, dd MMMM yyyy').format(siklusTerakhir.finishDate)} (perkiraan)'
+                  : DateFormat(
+                      'EEEE, dd MMMM yyyy',
+                    ).format(siklusTerakhir.finishDate),
             ),
             _buildItemStatistik(
               ikon: Icons.timelapse,
-              label: 'Durasi Haid Terakhir',
-              nilai: '${siklusTerakhir.periodLength} hari',
+              label:
+                  'Durasi Haid ${isCurrentCycleActive ? 'Sampai Sekarang' : 'Terakhir'}',
+              nilai: isCurrentCycleActive
+                  ? '${DateTime.now().difference(siklusTerakhir.startDate).inDays + 1} hari (masih berlangsung)'
+                  : '${siklusTerakhir.periodLength} hari',
             ),
-            if (siklusTerakhir.cycleLength != null)
+            if (siklusTerakhir.cycleLength != null && !isCurrentCycleActive)
               _buildItemStatistik(
                 ikon: Icons.cyclone,
                 label: 'Panjang Siklus Terakhir',

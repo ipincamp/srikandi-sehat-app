@@ -82,4 +82,17 @@ class CycleData {
       'cycle_length': cycleLength,
     };
   }
+
+  // Method untuk mengecek apakah siklus masih berlangsung
+  bool isActive() {
+    return finishDate.isAfter(DateTime.now());
+  }
+
+  // Method untuk mendapatkan durasi haid sampai hari ini jika masih berlangsung
+  int getCurrentPeriodLength() {
+    if (isActive()) {
+      return DateTime.now().difference(startDate).inDays + 1;
+    }
+    return periodLength;
+  }
 }

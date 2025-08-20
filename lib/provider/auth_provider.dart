@@ -273,7 +273,15 @@ class AuthProvider with ChangeNotifier {
         _userId = data['id']?.toString();
         _name = data['name']?.toString();
         _email = data['email']?.toString();
-        _role = data['role']?.toString();
+        // Di method login(), setelah mendapatkan response
+        _role = data['role']?.toString().toLowerCase(); // Convert ke lowercase
+
+        // Validasi role yang diharapkan
+        if (_role != 'user' && _role != 'admin') {
+          _errorMessage = 'Role tidak valid: $_role';
+          notifyListeners();
+          return false;
+        }
         _profileComplete = data['profile_complete'] ?? false;
         _createdAt = data['created_at']?.toString();
 
