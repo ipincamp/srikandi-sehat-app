@@ -300,7 +300,6 @@ class AuthProvider with ChangeNotifier {
       } else if (response.statusCode == 401) {
         _errorMessage = "Email atau Kata sandi salah";
         notifyListeners();
-        await _showErrorAlert(context, _errorMessage);
         return false;
       } else {
         _errorMessage =

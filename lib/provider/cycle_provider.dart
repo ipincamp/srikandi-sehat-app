@@ -139,38 +139,10 @@ class CycleProvider with ChangeNotifier {
     }
   }
 
-  // Widget _buildProfileItem(String text, IconData icon) {
-  //   return Padding(
-  //     padding: const EdgeInsets.symmetric(vertical: 6),
-  //     child: Row(
-  //       children: [
-  //         Icon(icon, size: 20, color: Colors.orange.shade600),
-  //         const SizedBox(width: 12),
-  //         Text(
-  //           text,
-  //           style: TextStyle(fontSize: 14, color: Colors.grey.shade800),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
   Future<void> synchronizeState({BuildContext? context}) async {
     _isLoading = true;
     _hasNetworkError = false;
     notifyListeners();
-
-    // Check internet connection
-    if (context != null) {
-      final hasConnection = await _checkInternetConnection();
-      if (!hasConnection) {
-        _isLoading = false;
-        _hasNetworkError = true;
-        notifyListeners();
-        await _showNetworkErrorAlert(context);
-        return;
-      }
-    }
 
     final prefs = await SharedPreferences.getInstance();
 
@@ -185,23 +157,12 @@ class CycleProvider with ChangeNotifier {
       }
 
       final statusResponseData = responses[0];
-      final summaryResponseData = responses[1];
 
       // Prioritize status response for isOnCycle
       if (statusResponseData != null) {
         _isOnCycle = statusResponseData['is_on_cycle'] ?? false;
         statusResponseData['is_on_cycle'] = _isOnCycle;
         _cycleStatus = CycleStatus.fromJson(statusResponseData);
-      }
-
-      // Then update with summary data if available
-      if (summaryResponseData != null) {
-        final runningDaysValue =
-            summaryResponseData['active_cycle_running_days'];
-        _activeCycleRunningDays = (runningDaysValue is num)
-            ? runningDaysValue.toInt()
-            : null;
-        _notificationFlags = summaryResponseData['notification_flags'] ?? {};
       } else {
         // Fallback to local storage if no summary data
         _isOnCycle = prefs.getBool('isOnCycle') ?? _isOnCycle;
@@ -212,10 +173,6 @@ class CycleProvider with ChangeNotifier {
     } catch (e) {
       _hasNetworkError = true;
       await _handleError(prefs);
-
-      if (context != null && context.mounted) {
-        await _showNetworkErrorAlert(context);
-      }
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -265,7 +222,9 @@ class CycleProvider with ChangeNotifier {
       return 'Anda sudah dalam siklus menstruasi. Tidak bisa memulai siklus baru.';
     }
 
-    // Check internet connection
+    print(_isOnCycle);
+
+    // Check internet connection - Hanya untuk operasi POST
     final hasConnection = await _checkInternetConnection();
     if (!hasConnection) {
       await _showNetworkErrorAlert(context);
@@ -281,6 +240,7 @@ class CycleProvider with ChangeNotifier {
       if (token == null || token.isEmpty || apiUrl == null || apiUrl.isEmpty) {
         throw Exception('Authentication or configuration error');
       }
+      print('hit API');
 
       final formattedDate = startDate.toLocalIso8601String();
       final response = await http.post(
@@ -293,11 +253,19 @@ class CycleProvider with ChangeNotifier {
         body: json.encode({'start_date': formattedDate, 'is_on_cycle': true}),
       );
 
+      print('Response status: ${response.statusCode}');
+
       if (response.statusCode == 201 || response.statusCode == 200) {
         await synchronizeState(context: context); // This will update isOnCycle
         final responseData = json.decode(response.body);
         return responseData['message']?.toString() ??
             'Siklus berhasil dimulai.';
+      }
+      if (response.statusCode == 409) {
+        final responseData = json.decode(response.body);
+        throw Exception(
+          responseData['message']?.toString() ?? 'Siklus sudah dimulai.',
+        );
       } else {
         final responseData = json.decode(response.body);
         throw Exception(
@@ -312,7 +280,7 @@ class CycleProvider with ChangeNotifier {
   }
 
   Future<String> endCycle(DateTime finishDate, BuildContext context) async {
-    // Check internet connection
+    // Check internet connection - Hanya untuk operasi POST
     final hasConnection = await _checkInternetConnection();
     if (!hasConnection) {
       await _showNetworkErrorAlert(context);

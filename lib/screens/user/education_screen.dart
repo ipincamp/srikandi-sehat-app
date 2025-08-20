@@ -1,35 +1,83 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:srikandi_sehat_app/provider/recommendation_provider.dart';
 import 'package:srikandi_sehat_app/widgets/accordion_list.dart';
+import 'package:srikandi_sehat_app/widgets/recommendation_widget.dart';
 
 class EducationScreen extends StatelessWidget {
   const EducationScreen({super.key});
-
-  EdgeInsets get paddingEdgeInsets => const EdgeInsets.all(16);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          backgroundColor: Colors.pink,
-          title: const Text(
-            'Edukasi',
-            style: TextStyle(color: Colors.white),
-          )),
-      body: const SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: SingleChildScrollView(
-            physics: BouncingScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(height: 8),
-                KebersihanDiriWidget(),
-                SizedBox(height: 24),
-                // Add more widgets here if needed
-              ],
-            ),
-          ),
+        backgroundColor: Colors.pink,
+        title: const Text('Edukasi', style: TextStyle(color: Colors.white)),
+      ),
+      body: ChangeNotifierProvider(
+        create: (context) => RecommendationProvider(),
+        child: const EducationContent(),
+      ),
+    );
+  }
+}
+
+class EducationContent extends StatefulWidget {
+  const EducationContent({super.key});
+
+  @override
+  State<EducationContent> createState() => _EducationContentState();
+}
+
+class _EducationContentState extends State<EducationContent> {
+  @override
+  void initState() {
+    super.initState();
+    // Delay fetching to avoid build conflict
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<RecommendationProvider>(
+        context,
+        listen: false,
+      );
+      if (!provider.hasFetched) {
+        provider.fetchRecommendations();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final recommendationProvider = Provider.of<RecommendationProvider>(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 8),
+            if (recommendationProvider.isLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (recommendationProvider.errorMessage.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  recommendationProvider.errorMessage,
+                  style: const TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
+                ),
+              )
+            else if (recommendationProvider.hasRecommendations)
+              RecommendationWidget(
+                recommendations: recommendationProvider.recommendations,
+              ),
+            const SizedBox(height: 24),
+            const KebersihanDiriWidget(),
+          ],
         ),
       ),
     );
