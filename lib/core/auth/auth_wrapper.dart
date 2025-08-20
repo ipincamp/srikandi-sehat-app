@@ -35,7 +35,6 @@ class AuthWrapper extends StatelessWidget {
         // Check role dari initial state atau provider
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final role = authProvider.role;
-        print("AuthWrapper role: $role");
 
         if (role == 'admin') return adminChild;
         if (role == 'user') return userChild;

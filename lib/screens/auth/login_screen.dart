@@ -43,7 +43,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (success) {
       final role = loginProvider.role;
-      print("Final role: $role");
 
       if (!mounted) return;
 

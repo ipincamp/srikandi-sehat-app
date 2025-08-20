@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:srikandi_sehat_app/provider/cycle_tracking_provider.dart';
 
 class AuthProvider with ChangeNotifier {
   String? _authToken;
@@ -464,6 +466,10 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<bool> logout(BuildContext context) async {
+    final cycleProvider = Provider.of<CycleTrackingProvider>(
+      context,
+      listen: false,
+    );
     // Check internet connection
     final hasConnection = await _checkInternetConnection();
     if (!hasConnection) {
@@ -504,6 +510,7 @@ class AuthProvider with ChangeNotifier {
 
       if (response.statusCode == 200) {
         notifyListeners();
+        cycleProvider.resetState();
         return true;
       } else if (response.statusCode == 401) {
         notifyListeners();

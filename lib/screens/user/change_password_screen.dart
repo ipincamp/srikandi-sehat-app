@@ -73,7 +73,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.clear(); // ← tambahkan ini
 
-        Navigator.pushReplacementNamed(context, '/login');
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
     } else {
       CustomAlert.show(

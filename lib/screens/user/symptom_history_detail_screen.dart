@@ -92,7 +92,7 @@ class _DateCard extends StatelessWidget {
 
   String _formatDate(String dateString) {
     try {
-      final date = DateTime.parse(dateString);
+      final date = DateTime.parse(dateString).toLocal();
       final months = [
         'Januari',
         'Februari',

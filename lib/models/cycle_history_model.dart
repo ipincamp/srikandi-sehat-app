@@ -66,8 +66,8 @@ class CycleData {
   factory CycleData.fromJson(Map<String, dynamic> json) {
     return CycleData(
       id: json['id'].toString(),
-      startDate: DateTime.parse(json['start_date']),
-      finishDate: DateTime.parse(json['finish_date']),
+      startDate: DateTime.parse(json['start_date']).toLocal(),
+      finishDate: DateTime.parse(json['finish_date']).toLocal(),
       periodLength: json['period_length'] as int,
       cycleLength: json['cycle_length'] as int?,
     );

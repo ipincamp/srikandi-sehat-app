@@ -90,4 +90,14 @@ class CycleTrackingProvider with ChangeNotifier {
     _error = null;
     notifyListeners();
   }
+
+  void resetState() {
+    _cycleHistory.clear();
+    _currentPage = 1;
+    _hasMore = true;
+    _isLoading = false;
+    _error = null;
+    _emptyMessage = null;
+    notifyListeners();
+  }
 }

@@ -306,7 +306,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final cycleProvider = context.watch<CycleProvider>();
     final isOnCycle = cycleProvider.isOnCycle;
-    print('Is on cycle: $isOnCycle');
 
     return Scaffold(
       appBar: AppBar(
