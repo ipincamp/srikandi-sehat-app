@@ -529,6 +529,33 @@ class _SymptomHistoryScreenState extends State<SymptomHistoryScreen> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Icon(
+                                Icons.timer,
+                                color: Colors.pink,
+                                size: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              DateFormat('HH:mm').format(item.logDate),
+
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.pink.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
                                 Icons.medical_services,
                                 color: Colors.pink,
                                 size: 16,

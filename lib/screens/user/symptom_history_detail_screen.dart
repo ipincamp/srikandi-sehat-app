@@ -107,7 +107,16 @@ class _DateCard extends StatelessWidget {
         'November',
         'Desember',
       ];
-      return '${date.day} ${months[date.month - 1]} ${date.year}';
+
+      twoDigits(int n) => n.toString().padLeft(2, '0');
+
+      final day = date.day;
+      final month = months[date.month - 1];
+      final year = date.year;
+      final hour = twoDigits(date.hour);
+      final minute = twoDigits(date.minute);
+
+      return '$day $month $year • $hour:$minute';
     } catch (e) {
       return dateString;
     }

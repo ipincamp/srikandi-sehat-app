@@ -42,11 +42,10 @@ class _LoginScreenState extends State<LoginScreen> {
     final success = await loginProvider.login(email, password, context);
 
     if (success) {
-      // Tunggu sampai state provider terupdate
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      // Ambil role DARI PROVIDER, bukan shared preferences
       final role = loginProvider.role;
+      print("Final role: $role");
+
+      if (!mounted) return;
 
       CustomAlert.show(context, 'Login berhasil!', type: AlertType.success);
 

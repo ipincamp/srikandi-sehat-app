@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:srikandi_sehat_app/provider/user_detail_provider.dart';
@@ -407,12 +408,12 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
           _buildInfoItem(
             context,
             'Mulai',
-            DateFormatter.format(cycle.startDate),
+            DateFormat('dd MMMM yyyy HH:mm').format(cycle.startDate),
           ),
           _buildInfoItem(
             context,
             'Selesai',
-            DateFormatter.format(cycle.finishDate),
+            DateFormat('dd MMMM yyyy HH:mm').format(cycle.finishDate),
           ),
           _buildInfoItem(context, 'Durasi', '${cycle.periodLengthDays} hari'),
           if (cycle.cycleLengthDays != null)
