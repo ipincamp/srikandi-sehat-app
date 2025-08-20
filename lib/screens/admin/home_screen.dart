@@ -13,8 +13,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<UserDataStatsProvider>(context, listen: false)
-          .fetchUserStats(context);
+      Provider.of<UserDataStatsProvider>(
+        context,
+        listen: false,
+      ).fetchUserStats(context);
     });
   }
 
@@ -29,12 +31,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        backgroundColor: Colors.pink,
         title: const Text(
           'Srikandi Sehat',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
       ),
       body: SingleChildScrollView(
@@ -48,10 +48,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // Stats Overview Cards
             _buildStatsOverview(
-                totalUsers: totalUsers,
-                activeUsers: activeUsers,
-                urbanCount: urbanCount,
-                ruralCount: ruralCount),
+              totalUsers: totalUsers,
+              activeUsers: activeUsers,
+              urbanCount: urbanCount,
+              ruralCount: ruralCount,
+            ),
             const SizedBox(height: 24),
 
             // Recent Activity
@@ -67,10 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Text(
           'Selamat Datang Kembali,',
-          style: TextStyle(
-            fontSize: 18,
-            color: Colors.grey[600],
-          ),
+          style: TextStyle(fontSize: 18, color: Colors.grey[600]),
         ),
         const Text(
           'Admin Srikandi!',
@@ -83,10 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 8),
         Text(
           'Apa yang ingin Anda lakukan hari ini?',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey[600],
-          ),
+          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
         ),
       ],
     );
@@ -153,13 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Icon(icon, size: 28, color: color),
           const SizedBox(height: 8),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[700],
-            ),
-          ),
+          Text(title, style: TextStyle(fontSize: 14, color: Colors.grey[700])),
           Text(
             value,
             style: TextStyle(
@@ -172,5 +161,4 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
 }

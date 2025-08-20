@@ -43,9 +43,10 @@ class _UserDataScreenState extends State<UserDataScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.pink,
         title: const Text(
           'Dashboard',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         centerTitle: false,
         actions: [

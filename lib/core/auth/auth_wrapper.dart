@@ -24,7 +24,8 @@ class AuthWrapper extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-              body: Center(child: CircularProgressIndicator()));
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
 
         final isValidSession = snapshot.data ?? false;
@@ -33,7 +34,8 @@ class AuthWrapper extends StatelessWidget {
 
         // Check role dari initial state atau provider
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        final role = initialAuthState.role ?? authProvider.role;
+        final role = authProvider.role;
+        print("AuthWrapper role: $role");
 
         if (role == 'admin') return adminChild;
         if (role == 'user') return userChild;
