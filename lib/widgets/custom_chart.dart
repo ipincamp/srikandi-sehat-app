@@ -154,6 +154,23 @@ class CustomChart extends StatelessWidget {
   }
 
   List<PieChartSectionData> _buildSections(double radius, double fontSize) {
+    final total = urbanCount + ruralCount;
+    // Jika tidak ada data, tampilkan chart abu-abu penuh
+    if (total == 0) {
+      return [
+        PieChartSectionData(
+          value: 100, // Nilai 100 untuk menampilkan lingkaran penuh
+          color: Colors.grey[300], // Warna abu-abu
+          title: '0',
+          radius: radius,
+          titleStyle: TextStyle(
+            fontSize: fontSize,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey[600],
+          ),
+        ),
+      ];
+    }
     return [
       PieChartSectionData(
         value: urbanCount.toDouble(),
@@ -222,10 +239,7 @@ class CustomChart extends StatelessWidget {
             children: [
               Text(
                 'Total Pengguna:',
-                style: TextStyle(
-                  fontSize: fontSize,
-                  color: Colors.blueGrey,
-                ),
+                style: TextStyle(fontSize: fontSize, color: Colors.blueGrey),
               ),
               Text(
                 total.toString(),
@@ -285,18 +299,12 @@ class CustomChart extends StatelessWidget {
             Container(
               width: 14,
               height: 14,
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
             const SizedBox(width: 8),
             Text(
               label,
-              style: TextStyle(
-                fontSize: fontSize,
-                color: Colors.blueGrey,
-              ),
+              style: TextStyle(fontSize: fontSize, color: Colors.blueGrey),
             ),
           ],
         ),
@@ -304,16 +312,10 @@ class CustomChart extends StatelessWidget {
           padding: const EdgeInsets.only(left: 22),
           child: Text(
             value,
-            style: TextStyle(
-              fontSize: fontSize,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold),
           ),
         ),
       ],
     );
   }
-  
 }
-
-

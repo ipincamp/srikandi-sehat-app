@@ -43,23 +43,38 @@ class UserDataProvider with ChangeNotifier {
       final response = await HttpClient.get(context, endpoint, body: {});
 
       final jsonData = jsonDecode(response.body);
-      final List<dynamic> userList = jsonData['data']['data'];
-
-      _allUsers = userList.map((json) => UserModel.fromJson(json)).toList();
-      _currentPage = jsonData['data']['meta']['current_page'];
-      _totalPages = jsonData['data']['meta']['total_pages'];
-
+      // Handle case when data is null
+      if (jsonData['data']['data'] == null) {
+        _allUsers = []; // Set empty list instead of null
+        _currentPage = 1;
+        _totalPages = 1;
+      } else {
+        final List<dynamic> userList = jsonData['data']['data'];
+        _allUsers = userList.map((json) => UserModel.fromJson(json)).toList();
+        _currentPage = jsonData['data']['meta']['current_page'] ?? 1;
+        _totalPages = jsonData['data']['meta']['total_pages'] ?? 1;
+      }
       _isLoading = false;
       notifyListeners();
     } catch (e) {
       _isLoading = false;
-      print('Error fetching stats: $e');
-      CustomAlert.show(
-        context,
-        'Tidak ada Koneksi Internet\nTidak Bisa Mendapatkan Data User',
-        type: AlertType.warning,
-        duration: Duration(seconds: 2),
-      );
+      // Set empty data instead of showing error for null data
+      _allUsers = [];
+      _currentPage = 1;
+      _totalPages = 1;
+
+      // Only show error for actual connection issues, not for empty data
+      if (e.toString().contains('Connection') ||
+          e.toString().contains('Socket')) {
+        CustomAlert.show(
+          context,
+          'Tidak ada Koneksi Internet\nTidak Bisa Mendapatkan Data User',
+          type: AlertType.warning,
+          duration: Duration(seconds: 2),
+        );
+      }
+
+      notifyListeners();
     }
   }
 
