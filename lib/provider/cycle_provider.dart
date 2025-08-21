@@ -240,7 +240,6 @@ class CycleProvider with ChangeNotifier {
       if (token == null || token.isEmpty || apiUrl == null || apiUrl.isEmpty) {
         throw Exception('Authentication or configuration error');
       }
-      print('hit API');
 
       final formattedDate = startDate.toLocalIso8601String();
       final response = await http.post(
@@ -252,8 +251,6 @@ class CycleProvider with ChangeNotifier {
         },
         body: json.encode({'start_date': formattedDate, 'is_on_cycle': true}),
       );
-
-      print('Response status: ${response.statusCode}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         await synchronizeState(context: context); // This will update isOnCycle

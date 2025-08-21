@@ -93,14 +93,14 @@ class UserProfile {
 class CycleHistory {
   final int id;
   final DateTime startDate;
-  final DateTime finishDate;
+  final DateTime? finishDate;
   final int periodLengthDays;
   final int? cycleLengthDays;
 
   CycleHistory({
     required this.id,
     required this.startDate,
-    required this.finishDate,
+    this.finishDate,
     required this.periodLengthDays,
     this.cycleLengthDays,
   });
@@ -108,8 +108,10 @@ class CycleHistory {
   factory CycleHistory.fromJson(Map<String, dynamic> json) {
     return CycleHistory(
       id: json['id'] ?? 0,
-      startDate: DateTime.parse(json['start_date'] ?? ''),
-      finishDate: DateTime.parse(json['finish_date'] ?? ''),
+      startDate: DateTime.parse(json['start_date']).toLocal(),
+      finishDate: json['finish_date'] != null
+          ? DateTime.parse(json['finish_date']).toLocal()
+          : null, // Handle null case
       periodLengthDays: json['period_length_days'] ?? 0,
       cycleLengthDays: json['cycle_length_days'],
     );

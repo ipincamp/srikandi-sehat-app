@@ -49,7 +49,6 @@ class UserDataStatsProvider with ChangeNotifier {
         print('Failed to load stats: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error fetching stats: $e');
       CustomAlert.show(
         context,
         'Tidak ada Koneksi Internet\nTidak Bisa Mendapatkan Statistik',

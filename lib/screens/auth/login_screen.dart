@@ -26,6 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     final loginProvider = Provider.of<AuthProvider>(context, listen: false);
+    final prefs = await SharedPreferences.getInstance();
 
     final email = _emailController.text.trim();
     final password = _passwordController.text;
@@ -52,6 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // Navigasi berdasarkan role
       if (role == 'user') {
+        await prefs.setBool('showLoginModal', true);
         Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
       } else if (role == 'admin') {
         Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);

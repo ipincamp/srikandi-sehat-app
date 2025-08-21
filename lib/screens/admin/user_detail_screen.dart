@@ -410,11 +410,19 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
             'Mulai',
             DateFormat('dd MMMM yyyy HH:mm').format(cycle.startDate),
           ),
-          _buildInfoItem(
-            context,
-            'Selesai',
-            DateFormat('dd MMMM yyyy HH:mm').format(cycle.finishDate),
-          ),
+          if (cycle.finishDate != null) // Only show finish date if it exists
+            _buildInfoItem(
+              context,
+              'Selesai',
+              DateFormat('dd MMMM yyyy HH:mm').format(cycle.finishDate!),
+            )
+          else
+            _buildInfoItem(
+              context,
+              'Status',
+              'Masih berlangsung',
+              valueColor: Colors.orange,
+            ),
           _buildInfoItem(context, 'Durasi', '${cycle.periodLengthDays} hari'),
           if (cycle.cycleLengthDays != null)
             _buildInfoItem(

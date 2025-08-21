@@ -52,6 +52,7 @@ class _UserDataScreenState extends State<UserDataScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
+            color: Colors.white,
             onPressed: () => userProvider.refreshData(context),
           ),
         ],

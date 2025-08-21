@@ -14,7 +14,7 @@ class UserDetailProvider with ChangeNotifier {
 
   Future<void> fetchUserDetail(String userId, BuildContext context) async {
     _isLoading = true;
-    _errorMessage = '';
+    _errorMessage = ''; // Reset error message
     notifyListeners();
 
     try {
@@ -25,9 +25,9 @@ class UserDetailProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         final jsonBody = json.decode(response.body);
         _userDetail = UserDetail.fromJson(jsonBody['data']);
+        _errorMessage = ''; // Pastikan error message kosong saat success
       } else {
-        _errorMessage =
-            'Gagal mengambil data pengguna. Status code: ${response.statusCode}';
+        _errorMessage = 'Gagal mengambil data. Status: ${response.statusCode}';
       }
     } catch (e) {
       _errorMessage = 'Terjadi kesalahan: $e';
