@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/models/symptom_detail_model.dart';
-import 'package:srikandi_sehat_app/provider/symptom_log_get_detail.dart';
+import 'package:srikandi_sehat_app/provider/symptom_history_detail_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SymptomDetailScreen extends StatefulWidget {
@@ -23,8 +23,10 @@ class _SymptomDetailScreenState extends State<SymptomDetailScreen> {
   }
 
   Future<void> _loadData() async {
-    await Provider.of<SymptomDetailProvider>(context, listen: false)
-        .fetchDetail(widget.symptomId);
+    await Provider.of<SymptomDetailProvider>(
+      context,
+      listen: false,
+    ).fetchDetail(widget.symptomId);
   }
 
   @override
@@ -43,17 +45,11 @@ class _SymptomDetailScreenState extends State<SymptomDetailScreen> {
           }
 
           if (provider.error != null) {
-            return _ErrorView(
-              error: provider.error!,
-              onRetry: _loadData,
-            );
+            return _ErrorView(error: provider.error!, onRetry: _loadData);
           }
 
           if (provider.detail == null) {
-            return _ErrorView(
-              error: 'Data tidak tersedia',
-              onRetry: _loadData,
-            );
+            return _ErrorView(error: 'Data tidak tersedia', onRetry: _loadData);
           }
 
           return _ContentDetailView(detail: provider.detail!);
@@ -76,13 +72,13 @@ class _ContentDetailView extends StatelessWidget {
         children: [
           _DateCard(logDate: detail.logDate),
           const SizedBox(height: 20),
-          _SymptomsList(symptoms: detail.loggedSymptoms),
+          if (detail.note != null && detail.note!.isNotEmpty) ...[
+            _NotesSection(notes: detail.note!),
+            const SizedBox(height: 20),
+          ],
+          _SymptomsList(details: detail.details),
           const SizedBox(height: 20),
           _RecommendationsList(recommendations: detail.recommendations),
-          if (detail.notes?.isNotEmpty ?? false) ...[
-            const SizedBox(height: 20),
-            _NotesSection(notes: detail.notes!),
-          ],
         ],
       ),
     );
@@ -96,7 +92,7 @@ class _DateCard extends StatelessWidget {
 
   String _formatDate(String dateString) {
     try {
-      final date = DateTime.parse(dateString);
+      final date = DateTime.parse(dateString).toLocal();
       final months = [
         'Januari',
         'Februari',
@@ -109,9 +105,18 @@ class _DateCard extends StatelessWidget {
         'September',
         'Oktober',
         'November',
-        'Desember'
+        'Desember',
       ];
-      return '${date.day} ${months[date.month - 1]} ${date.year}';
+
+      twoDigits(int n) => n.toString().padLeft(2, '0');
+
+      final day = date.day;
+      final month = months[date.month - 1];
+      final year = date.year;
+      final hour = twoDigits(date.hour);
+      final minute = twoDigits(date.minute);
+
+      return '$day $month $year • $hour:$minute';
     } catch (e) {
       return dateString;
     }
@@ -152,13 +157,13 @@ class _DateCard extends StatelessWidget {
 }
 
 class _SymptomsList extends StatelessWidget {
-  final List<String> symptoms;
+  final List<SymptomItem> details;
 
-  const _SymptomsList({required this.symptoms});
+  const _SymptomsList({required this.details});
 
   IconData _getSymptomIcon(String name) {
     final lower = name.toLowerCase();
-    if (lower.contains('dismenorea')) return Icons.healing;
+    if (lower.contains('dismenore')) return Icons.healing;
     if (lower.contains('mood')) return Icons.mood;
     if (lower.contains('5l')) return Icons.water_drop;
     if (lower.contains('kram')) return Icons.sick;
@@ -167,7 +172,7 @@ class _SymptomsList extends StatelessWidget {
 
   Color _getSymptomColor(String name) {
     final lower = name.toLowerCase();
-    if (lower.contains('dismenorea')) return Colors.pink;
+    if (lower.contains('dismenore')) return Colors.pink;
     if (lower.contains('mood')) return Colors.purple;
     if (lower.contains('5l')) return Colors.blue;
     if (lower.contains('kram')) return Colors.orange;
@@ -184,37 +189,42 @@ class _SymptomsList extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            const Text(
-              'Gejala yang Dialami',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+              const Text(
+                'Gejala yang Dialami',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: symptoms
-                  .map((symptom) => Chip(
-                        backgroundColor:
-                            _getSymptomColor(symptom).withOpacity(0.1),
-                        label: Text(symptom),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: details
+                    .map(
+                      (item) => Chip(
+                        backgroundColor: _getSymptomColor(
+                          item.symptomName,
+                        ).withOpacity(0.1),
+                        label: item.selectedOption != null
+                            ? Text(
+                                '${item.symptomName} (${item.selectedOption})',
+                              )
+                            : Text(item.symptomName),
                         labelStyle: TextStyle(
-                          color: _getSymptomColor(symptom),
+                          color: _getSymptomColor(item.symptomName),
                           fontWeight: FontWeight.w600,
                         ),
                         avatar: Icon(
-                          _getSymptomIcon(symptom),
-                          color: _getSymptomColor(symptom),
+                          _getSymptomIcon(item.symptomName),
+                          color: _getSymptomColor(item.symptomName),
                         ),
-                      ))
-                  .toList(),
-            ),
-          ],
+                      ),
+                    )
+                    .toList(),
+              ),
+            ],
+          ),
         ),
       ),
-    ));
+    );
   }
 }
 
@@ -233,14 +243,12 @@ class _RecommendationsList extends StatelessWidget {
           children: [
             const Text(
               'Rekomendasi Penanganan',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-            ...recommendations
-                .map((rec) => _RecommendationItem(recommendation: rec)),
+            ...recommendations.map(
+              (rec) => _RecommendationItem(recommendation: rec),
+            ),
           ],
         ),
       ),
@@ -266,24 +274,28 @@ class _RecommendationItem extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            recommendation.symptomName,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(recommendation.recommendationText),
-          if (recommendation.recommendationUrls.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            const Text(
-              'Video Rekomendasi:',
-              style: TextStyle(fontWeight: FontWeight.w600),
+          if (recommendation.forSymptom.isNotEmpty) ...[
+            Text(
+              recommendation.forSymptom,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            ...recommendation.recommendationUrls
-                .map((url) => _YouTubeVideoButton(url: url)),
+          ],
+          Text(
+            recommendation.title,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          if (recommendation.description.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(recommendation.description),
+          ],
+          if (recommendation.videoUrl != null &&
+              recommendation.videoUrl!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _YouTubeVideoButton(
+              url: recommendation.videoUrl!,
+              title: recommendation.title,
+            ),
           ],
         ],
       ),
@@ -292,26 +304,24 @@ class _RecommendationItem extends StatelessWidget {
 }
 
 class _YouTubeVideoButton extends StatelessWidget {
-  final RecommendationUrl url;
+  final String url;
+  final String title;
 
-  const _YouTubeVideoButton({required this.url});
+  const _YouTubeVideoButton({required this.url, required this.title});
 
   Future<void> _launchYouTube(BuildContext context) async {
     try {
-      if (await canLaunchUrl(Uri.parse(url.videoUrl))) {
-        await launchUrl(
-          Uri.parse(url.videoUrl),
-          mode: LaunchMode.externalApplication,
-        );
+      if (await canLaunchUrl(Uri.parse(url))) {
+        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Tidak dapat membuka YouTube')),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
     }
   }
 
@@ -332,7 +342,7 @@ class _YouTubeVideoButton extends StatelessWidget {
           children: [
             const Icon(Icons.play_circle_outline, color: Colors.red),
             const SizedBox(width: 12),
-            Expanded(child: Text(url.action)),
+            Expanded(child: Text(title)),
             const Icon(Icons.arrow_forward_ios, size: 16),
           ],
         ),
@@ -358,10 +368,7 @@ class _NotesSection extends StatelessWidget {
             children: [
               const Text(
                 'Catatan Pengguna',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
               Text(notes),
@@ -387,10 +394,7 @@ class _ErrorView extends StatelessWidget {
         children: [
           const Icon(Icons.error_outline, size: 48, color: Colors.pink),
           const SizedBox(height: 16),
-          Text(
-            error,
-            style: const TextStyle(fontSize: 16),
-          ),
+          Text(error, style: const TextStyle(fontSize: 16)),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: onRetry,

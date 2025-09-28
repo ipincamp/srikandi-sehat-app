@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/provider/user_profile_provider.dart';
+import 'package:srikandi_sehat_app/provider/auth_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/logout_tile.dart';
 import 'package:srikandi_sehat_app/widgets/profile_tile.dart';
@@ -15,35 +15,29 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   String? _name;
   String? _email;
-  String? _role;
-  bool _isLoading = false;
-  bool _notificationsEnabled = true;
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(_loadProfile);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadProfile();
+    });
   }
 
   Future<void> _loadProfile() async {
-    setState(() => _isLoading = true);
-    final userProvider =
-        Provider.of<UserProfileProvider>(context, listen: false);
+    final userProvider = Provider.of<AuthProvider>(context, listen: false);
 
     try {
-      await userProvider.loadProfile(context);
+      await userProvider.loadUserData();
       if (mounted) {
         setState(() {
           _name = userProvider.name;
           _email = userProvider.email;
-          _role = userProvider.role;
         });
       }
     } catch (e) {
-      CustomAlert.show(context, 'Gagal memuat profil', type: AlertType.error);
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+      CustomAlert.show(context, 'Gagral memuat profil', type: AlertType.error);
+    } finally {}
   }
 
   Widget buildListTile({
@@ -70,11 +64,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.pink,
-        title: const Text('Profile',
-            style: TextStyle(
-                fontSize: 24,
-                color: Colors.white,
-                fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Profile',
+          style: TextStyle(
+            fontSize: 24,
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         automaticallyImplyLeading: false,
       ),
       body: Column(
@@ -90,15 +87,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
             padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text('Profile',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(
+                'Profile',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ),
           buildListTile(
-            icon: Icons.history,
+            icon: Icons.book,
             label: 'Riwayat Gejala',
-            color: Colors.pinkAccent,
+            color: Colors.red,
             onTap: () => {Navigator.pushNamed(context, '/symptom-history')},
+          ),
+          buildListTile(
+            icon: Icons.history,
+            label: 'Riwayat Menstruasi',
+            color: Colors.pinkAccent,
+            onTap: () => {Navigator.pushNamed(context, '/menstrual-history')},
           ),
           buildListTile(
             icon: Icons.person,
@@ -126,7 +131,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const Padding(
             padding: EdgeInsets.only(bottom: 16),
             child: Text('App ver 1.0', style: TextStyle(color: Colors.grey)),
-          )
+          ),
         ],
       ),
     );

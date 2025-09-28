@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:srikandi_sehat_app/core/network/http_client.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 
 class UserDataStatsProvider with ChangeNotifier {
   int _totalUsers = 0;
@@ -14,30 +17,44 @@ class UserDataStatsProvider with ChangeNotifier {
   int get ruralCount => _ruralCount;
 
   Future<void> fetchUserStats(BuildContext context) async {
+    final baseUrl = dotenv.env['API_URL'];
+    final url = '$baseUrl/admin/users/statistics';
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
     try {
-      String endpoint = 'users/stats';
-      final response = await HttpClient.get(
-        context,
-        endpoint,
-        body: {},
+      // String endpoint = 'admin/users/statistics';
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': 'Bearer ${token}',
+        },
       );
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
         final stats = jsonData['data'];
 
-        _totalUsers = stats['total_user'] ?? 0;
-        _activeUsers = stats['active_user'] ?? 0;
-        _urbanCount = stats['urban_user'] ?? 0;
-        _ruralCount = stats['rural_user'] ?? 0;
+        _totalUsers = stats['total_users'] ?? 0;
+        _activeUsers = stats['total_active_users'] ?? 0;
+        _urbanCount = stats['total_urban_users'] ?? 0;
+        _ruralCount = stats['total_rural_users'] ?? 0;
 
         notifyListeners();
+      } else if (response.statusCode == 401) {
+        // Don't redirect here - HttpClient already handles it
+        print('Unauthorized access to stats');
       } else {
-        throw Exception('Failed to load stats');
+        print('Failed to load stats: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error fetching stats: $e');
-      // You might want to handle errors differently
+      CustomAlert.show(
+        context,
+        'Tidak ada Koneksi Internet\nTidak Bisa Mendapatkan Statistik',
+        type: AlertType.warning,
+        duration: Duration(seconds: 2),
+      );
     }
   }
 }

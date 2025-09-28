@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/village_model.dart';
 
-
 class VillageProvider with ChangeNotifier {
   List<Village> _villages = [];
   bool _isLoading = false;
@@ -20,7 +19,7 @@ class VillageProvider with ChangeNotifier {
     notifyListeners();
 
     final baseUrl = dotenv.env['API_URL'];
-    final url = '$baseUrl/locations/districts/$districtCode/villages';
+    final url = '$baseUrl/regions/villages?district_code=$districtCode';
 
     try {
       final response = await http.get(Uri.parse(url));

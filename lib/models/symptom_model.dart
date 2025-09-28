@@ -1,31 +1,26 @@
 class Symptom {
   final int id;
   final String name;
-  final String category;
-  final String? recommendation;
+  final String type;
+  final List? options;
 
   Symptom({
     required this.id,
     required this.name,
-    required this.category,
-    this.recommendation,
+    required this.type,
+    this.options,
   });
 
   factory Symptom.fromJson(Map<String, dynamic> json) {
     return Symptom(
       id: json['id'],
       name: json['name'],
-      category: json['category'],
-      recommendation: json['recommendation'],
+      type: json['type'],
+      options: json['options'],
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'category': category,
-      'recommendation': recommendation,
-    };
+    return {'id': id, 'name': name, 'type': type, 'options': options};
   }
 }

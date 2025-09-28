@@ -1,9 +1,9 @@
-// models/user_detail_model.dart
 class UserDetail {
   final String id;
   final String name;
   final String email;
   final String role;
+  final bool profileComplete;
   final UserProfile profile;
   final int? currentCycleNumber;
   final List<CycleHistory> cycleHistory;
@@ -15,6 +15,7 @@ class UserDetail {
     required this.name,
     required this.email,
     required this.role,
+    required this.profileComplete,
     required this.profile,
     this.currentCycleNumber,
     required this.cycleHistory,
@@ -24,16 +25,20 @@ class UserDetail {
 
   factory UserDetail.fromJson(Map<String, dynamic> json) {
     return UserDetail(
-      id: json['id'],
-      name: json['name'],
-      email: json['email'],
-      role: json['role'],
-      profile: UserProfile.fromJson(json['profile']),
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+      role: json['role'] ?? 'user',
+      profileComplete: json['profile_complete'] ?? false,
+      profile: UserProfile.fromJson(json['profile'] ?? {}),
       currentCycleNumber: json['current_cycle_number'],
-      cycleHistory: List<CycleHistory>.from(
-          json['cycle_history'].map((x) => CycleHistory.fromJson(x))),
-      createdAt: json['created_at'],
-      updatedAt: json['updated_at'],
+      cycleHistory: json['cycle_history'] != null
+          ? List<CycleHistory>.from(
+              json['cycle_history'].map((x) => CycleHistory.fromJson(x ?? {})),
+            )
+          : <CycleHistory>[],
+      createdAt: json['created_at'] ?? '',
+      updatedAt: json['updated_at'] ?? '',
     );
   }
 }
@@ -42,7 +47,7 @@ class UserProfile {
   final String phone;
   final String birthdate;
   final int heightCm;
-  final String weightKg;
+  final int weightKg;
   final double bmi;
   final String lastEducation;
   final String lastParentEducation;
@@ -69,44 +74,46 @@ class UserProfile {
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
-      phone: json['phone'],
-      birthdate: json['birthdate'],
-      heightCm: json['height_cm'],
-      weightKg: json['weight_kg'],
-      bmi: json['bmi'].toDouble(),
-      lastEducation: json['last_education'],
-      lastParentEducation: json['last_parent_education'],
-      lastParentJob: json['last_parent_job'],
-      internetAccess: json['internet_access'],
-      firstMenstruation: json['first_menstruation'],
-      address: json['address'],
-      updatedAt: json['updated_at'],
+      phone: json['phone'] ?? '-',
+      birthdate: json['birthdate'] ?? '',
+      heightCm: json['tb_cm'] ?? 0,
+      weightKg: json['bb_kg'] ?? 0,
+      bmi: (json['bmi'] ?? 0).toDouble(),
+      lastEducation: json['edu_now'] ?? '-',
+      lastParentEducation: json['edu_parent'] ?? '-',
+      lastParentJob: json['job_parent'] ?? '-',
+      internetAccess: json['inet_access'] ?? '-',
+      firstMenstruation: json['first_haid'] ?? 0,
+      address: json['address'] ?? '-',
+      updatedAt: json['updated_at'] ?? '',
     );
   }
 }
 
 class CycleHistory {
   final int id;
-  final String startDate;
-  final String finishDate;
+  final DateTime startDate;
+  final DateTime? finishDate;
   final int periodLengthDays;
-  final double? cycleLengthDays;
+  final int? cycleLengthDays;
 
   CycleHistory({
     required this.id,
     required this.startDate,
-    required this.finishDate,
+    this.finishDate,
     required this.periodLengthDays,
     this.cycleLengthDays,
   });
 
   factory CycleHistory.fromJson(Map<String, dynamic> json) {
     return CycleHistory(
-      id: json['id'],
-      startDate: json['start_date'],
-      finishDate: json['finish_date'],
-      periodLengthDays: json['period_length_days'],
-      cycleLengthDays: json['cycle_length_days']?.toDouble(),
+      id: json['id'] ?? 0,
+      startDate: DateTime.parse(json['start_date']).toLocal(),
+      finishDate: json['finish_date'] != null
+          ? DateTime.parse(json['finish_date']).toLocal()
+          : null, // Handle null case
+      periodLengthDays: json['period_length_days'] ?? 0,
+      cycleLengthDays: json['cycle_length_days'],
     );
   }
 }

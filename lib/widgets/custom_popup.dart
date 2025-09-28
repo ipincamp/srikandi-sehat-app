@@ -9,7 +9,8 @@ class CustomConfirmationPopup {
     String cancelText = 'Batal',
     Color confirmColor = Colors.red,
     IconData? icon,
-    bool singleButton = false, // ← Tambahkan ini
+    bool singleButton = false,
+    Widget? additionalWidget, // Add this parameter
   }) async {
     return showDialog<bool>(
       context: context,
@@ -45,6 +46,10 @@ class CustomConfirmationPopup {
                 style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 textAlign: TextAlign.center,
               ),
+              if (additionalWidget != null) ...[
+                const SizedBox(height: 12),
+                additionalWidget,
+              ],
               const SizedBox(height: 24),
               singleButton
                   ? SizedBox(

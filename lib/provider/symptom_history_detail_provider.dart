@@ -25,7 +25,7 @@ class SymptomDetailProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? '';
       final baseUrl = dotenv.env['API_URL'] ?? '';
-      final url = '$baseUrl/cycles/symptoms/$id';
+      final url = '$baseUrl/menstrual/symptoms/log/$id';
 
       final response = await http.get(
         Uri.parse(url),

@@ -26,6 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     final loginProvider = Provider.of<AuthProvider>(context, listen: false);
+    final prefs = await SharedPreferences.getInstance();
 
     final email = _emailController.text.trim();
     final password = _passwordController.text;
@@ -39,26 +40,33 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    final success = await loginProvider.login(email, password);
-    final prefs = await SharedPreferences.getInstance();
-    final role = prefs.getString('role');
-    await prefs.setBool('showLoginModal', true);
+    final success = await loginProvider.login(email, password, context);
 
     if (success) {
-      if (role == 'admin') {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          '/admin',
-          (route) => false,
-        );
-      } else {
+      final role = loginProvider.role;
+
+      if (!mounted) return;
+
+      CustomAlert.show(context, 'Login berhasil!', type: AlertType.success);
+
+      await Future.delayed(const Duration(seconds: 1));
+
+      // Navigasi berdasarkan role
+      if (role == 'user') {
+        await prefs.setBool('showLoginModal', true);
         Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
+      } else if (role == 'admin') {
+        Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
+      } else {
+        // Fallback jika role tidak dikenali
+        CustomAlert.show(
+          context,
+          'Role tidak dikenali: $role',
+          type: AlertType.error,
+        );
+        // Redirect ke halaman default atau logout
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
-      CustomAlert.show(
-        context,
-        'Login berhasil!',
-        type: AlertType.success,
-      );
     } else {
       CustomAlert.show(
         context,
@@ -97,22 +105,24 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 20),
               const Text(
-                'Cerdas Memahami Menstruasi,',
+                'Menjadi remaja sehat dan cerdas,',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                    height: 1.2,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Colors.pinkAccent),
+                  height: 1.2,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.pinkAccent,
+                ),
               ),
               const Text(
-                'Bersama Srikandi',
+                'dalam memahami menstruasi',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                    height: 1.2,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Colors.pinkAccent),
+                  height: 1.2,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.pinkAccent,
+                ),
               ),
               const SizedBox(height: 50),
               CustomFormField(
@@ -147,10 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   Text(
                     'Belum punya akun? ',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
                   ),
                   GestureDetector(
                     child: TextButton(

@@ -13,8 +13,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<UserDataStatsProvider>(context, listen: false)
-          .fetchUserStats(context);
+      Provider.of<UserDataStatsProvider>(
+        context,
+        listen: false,
+      ).fetchUserStats(context);
     });
   }
 
@@ -29,12 +31,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        backgroundColor: Colors.pink,
         title: const Text(
-          'SriKandi Sehat',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-          ),
+          'Srikandi Sehat',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
       ),
       body: SingleChildScrollView(
@@ -48,10 +48,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // Stats Overview Cards
             _buildStatsOverview(
-                totalUsers: totalUsers,
-                activeUsers: activeUsers,
-                urbanCount: urbanCount,
-                ruralCount: ruralCount),
+              totalUsers: totalUsers,
+              activeUsers: activeUsers,
+              urbanCount: urbanCount,
+              ruralCount: ruralCount,
+            ),
             const SizedBox(height: 24),
 
             // Recent Activity
@@ -67,13 +68,10 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Text(
           'Selamat Datang Kembali,',
-          style: TextStyle(
-            fontSize: 18,
-            color: Colors.grey[600],
-          ),
+          style: TextStyle(fontSize: 18, color: Colors.grey[600]),
         ),
         const Text(
-          'Admin SriKandi!',
+          'Admin Srikandi!',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -83,10 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 8),
         Text(
           'Apa yang ingin Anda lakukan hari ini?',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey[600],
-          ),
+          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
         ),
       ],
     );
@@ -153,72 +148,13 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Icon(icon, size: 28, color: color),
           const SizedBox(height: 8),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[700],
-            ),
-          ),
+          Text(title, style: TextStyle(fontSize: 14, color: Colors.grey[700])),
           Text(
             value,
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
               color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActivityItem({
-    required IconData icon,
-    required String title,
-    required String description,
-    required String time,
-    required Color color,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 20, color: color),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  description,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            time,
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.grey[500],
             ),
           ),
         ],

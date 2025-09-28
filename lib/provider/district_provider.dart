@@ -20,7 +20,7 @@ class DistrictProvider with ChangeNotifier {
     notifyListeners();
 
     final baseUrl = dotenv.env['API_URL'];
-    final url = '$baseUrl/locations/regencies/$regencyCode/districts';
+    final url = '$baseUrl/regions/districts?regency_code=$regencyCode';
 
     try {
       final response = await http.get(Uri.parse(url));

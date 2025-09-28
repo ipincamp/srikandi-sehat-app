@@ -12,7 +12,10 @@ class PasswordProvider with ChangeNotifier {
   String get errorMessage => _errorMessage;
 
   Future<bool> changePassword(
-      String oldPassword, String newPassword, String confirmPassword) async {
+    String oldPassword,
+    String newPassword,
+    String confirmPassword,
+  ) async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
@@ -23,7 +26,7 @@ class PasswordProvider with ChangeNotifier {
     final url = '$baseUrl/me/password';
 
     try {
-      final response = await http.post(
+      final response = await http.patch(
         Uri.parse(url),
         headers: {
           'Authorization': 'Bearer $token',

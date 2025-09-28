@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/provider/csv_download_provider.dart';
 import 'package:srikandi_sehat_app/provider/user_data_provider.dart';
+import 'package:srikandi_sehat_app/provider/user_data_stats_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_chart.dart';
 import 'package:srikandi_sehat_app/widgets/custom_table.dart';
 
@@ -13,8 +14,7 @@ class UserDataScreen extends StatefulWidget {
 }
 
 class _UserDataScreenState extends State<UserDataScreen> {
-  int? selectedScope;
-  final ScrollController _scrollController = ScrollController();
+  // final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -34,18 +34,25 @@ class _UserDataScreenState extends State<UserDataScreen> {
     final userProvider = Provider.of<UserDataProvider>(context);
     final allUsers = userProvider.allUsers;
     final currentPage = userProvider.currentPage;
-    final pageCount = userProvider.lastPage;
-    final urbanCount = userProvider.urbanCount;
-    final ruralCount = userProvider.ruralCount;
+    final totalPages = userProvider.totalPages;
+    final selectedClassification = userProvider.selectedClassification;
+
+    final statsProvider = Provider.of<UserDataStatsProvider>(context);
+    final urbanCount = statsProvider.urbanCount;
+    final ruralCount = statsProvider.ruralCount;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.pink,
+        title: const Text(
+          'Dashboard',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
         centerTitle: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
+            color: Colors.white,
             onPressed: () => userProvider.refreshData(context),
           ),
         ],
@@ -55,7 +62,7 @@ class _UserDataScreenState extends State<UserDataScreen> {
           : RefreshIndicator(
               onRefresh: () => userProvider.refreshData(context),
               child: SingleChildScrollView(
-                controller: _scrollController,
+                // controller: _scrollController,
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
@@ -64,37 +71,42 @@ class _UserDataScreenState extends State<UserDataScreen> {
                       ruralCount: ruralCount,
                       onDownloadPressed: () {
                         final provider = Provider.of<CsvDownloadProvider>(
-                            context,
-                            listen: false);
+                          context,
+                          listen: false,
+                        );
                         provider.downloadUserCsv(context);
                       },
                     ),
                     const SizedBox(height: 20),
-                    _buildScopeFilter(context, userProvider),
+                    _buildClassificationFilter(context, userProvider),
                     const SizedBox(height: 20),
                     CustomTable(
                       users: allUsers
-                          .map((u) => {
-                                'id': u.id,
-                                'name': u.name,
-                                'region': u.scope == 1 ? 'Kota' : 'Desa',
-                              })
+                          .map(
+                            (u) => {
+                              'id': u.id,
+                              'name': u.name,
+                              'region': selectedClassification == 1
+                                  ? 'Kota'
+                                  : 'Desa',
+                            },
+                          )
                           .toList(),
                       currentPage: currentPage - 1,
                       itemsPerPage: 10,
-                      pageCount: pageCount,
-                      scope: selectedScope,
+                      pageCount: totalPages,
+                      classification: selectedClassification,
                       onPageChanged: (index) {
                         userProvider.fetchUsers(
                           context,
                           page: index + 1,
-                          scope: selectedScope,
+                          classification: selectedClassification,
                         );
-                        _scrollController.animateTo(
-                          0,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOut,
-                        );
+                        // _scrollController.animateTo(
+                        //   0,
+                        //   duration: const Duration(milliseconds: 300),
+                        //   curve: Curves.easeOut,
+                        // );
                       },
                     ),
                   ],
@@ -104,7 +116,12 @@ class _UserDataScreenState extends State<UserDataScreen> {
     );
   }
 
-  Widget _buildScopeFilter(BuildContext context, UserDataProvider provider) {
+  Widget _buildClassificationFilter(
+    BuildContext context,
+    UserDataProvider provider,
+  ) {
+    final selectedClassification = provider.selectedClassification;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey[100],
@@ -114,26 +131,25 @@ class _UserDataScreenState extends State<UserDataScreen> {
         children: [
           Expanded(
             child: InkWell(
-              onTap: () {
-                setState(() => selectedScope = 1);
-                provider.fetchUsers(context, scope: 1);
-              },
+              onTap: () => provider.setClassificationFilter(context, 1),
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: selectedScope == 1 ? Colors.white : Colors.transparent,
+                  color: selectedClassification == 1
+                      ? Colors.white
+                      : Colors.transparent,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(10),
                     bottomLeft: Radius.circular(10),
                   ),
-                  boxShadow: selectedScope == 1
+                  boxShadow: selectedClassification == 1
                       ? [
                           BoxShadow(
                             color: Colors.grey.withOpacity(0.2),
                             spreadRadius: 1,
                             blurRadius: 3,
                             offset: const Offset(0, 1),
-                          )
+                          ),
                         ]
                       : null,
                 ),
@@ -142,8 +158,9 @@ class _UserDataScreenState extends State<UserDataScreen> {
                     'Perkotaan',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color:
-                          selectedScope == 1 ? Colors.blue : Colors.grey[600],
+                      color: selectedClassification == 1
+                          ? Colors.blue
+                          : Colors.grey[600],
                     ),
                   ),
                 ),
@@ -152,26 +169,25 @@ class _UserDataScreenState extends State<UserDataScreen> {
           ),
           Expanded(
             child: InkWell(
-              onTap: () {
-                setState(() => selectedScope = 2);
-                provider.fetchUsers(context, scope: 2);
-              },
+              onTap: () => provider.setClassificationFilter(context, 2),
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: selectedScope == 2 ? Colors.white : Colors.transparent,
+                  color: selectedClassification == 2
+                      ? Colors.white
+                      : Colors.transparent,
                   borderRadius: const BorderRadius.only(
                     topRight: Radius.circular(10),
                     bottomRight: Radius.circular(10),
                   ),
-                  boxShadow: selectedScope == 2
+                  boxShadow: selectedClassification == 2
                       ? [
                           BoxShadow(
                             color: Colors.grey.withOpacity(0.2),
                             spreadRadius: 1,
                             blurRadius: 3,
                             offset: const Offset(0, 1),
-                          )
+                          ),
                         ]
                       : null,
                 ),
@@ -180,8 +196,9 @@ class _UserDataScreenState extends State<UserDataScreen> {
                     'Pedesaan',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color:
-                          selectedScope == 2 ? Colors.green : Colors.grey[600],
+                      color: selectedClassification == 2
+                          ? Colors.green
+                          : Colors.grey[600],
                     ),
                   ),
                 ),
@@ -193,9 +210,9 @@ class _UserDataScreenState extends State<UserDataScreen> {
     );
   }
 
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
+  // @override
+  // void dispose() {
+  //   _scrollController.dispose();
+  //   super.dispose();
+  // }
 }
