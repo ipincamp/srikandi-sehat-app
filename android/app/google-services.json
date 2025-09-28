@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "413117789548",
+    "project_id": "srikandi-sehat-app",
+    "storage_bucket": "srikandi-sehat-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:413117789548:android:dce828aee26cb668c16f49",
+        "android_client_info": {
+          "package_name": "com.example.srikandi_sehat_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAs0c1-b1K-ooE6loN6kx9yfh16IR0W_EU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
