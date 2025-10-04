@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/models/menstural_history_detail_model.dart';
-import 'package:srikandi_sehat_app/provider/menstrual_history_detail_provider.dart';
+import 'package:srikandisehat/models/menstural_history_detail_model.dart';
+import 'package:srikandisehat/provider/menstrual_history_detail_provider.dart';
 
 class MenstrualHistoryDetailScreen extends StatefulWidget {
   final int cycleId;

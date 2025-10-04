@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path/path.dart' as path;
-import 'package:srikandi_sehat_app/core/network/http_client.dart';
+import 'package:srikandisehat/core/network/http_client.dart';
 
 class CsvDownloadProvider with ChangeNotifier {
   bool _isDownloading = false;

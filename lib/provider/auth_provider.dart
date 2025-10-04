@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:srikandi_sehat_app/provider/cycle_tracking_provider.dart';
+import 'package:srikandisehat/provider/cycle_tracking_provider.dart';
 
 class AuthProvider with ChangeNotifier {
   String? _authToken;

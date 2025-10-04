@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/provider/auth_provider.dart';
-import 'package:srikandi_sehat_app/provider/user_profile_provider.dart';
-import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
-import 'package:srikandi_sehat_app/widgets/custom_popup.dart';
+import 'package:srikandisehat/provider/auth_provider.dart';
+import 'package:srikandisehat/provider/user_profile_provider.dart';
+import 'package:srikandisehat/widgets/custom_alert.dart';
+import 'package:srikandisehat/widgets/custom_popup.dart';
 
 class LogoutTile extends StatelessWidget {
   const LogoutTile({super.key});

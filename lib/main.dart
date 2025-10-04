@@ -1,53 +1,53 @@
 import 'package:device_preview/device_preview.dart';
-import 'package:firebase_core/firebase_core.dart';
+// import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:srikandi_sehat_app/firebase_options.dart';
-import 'package:srikandi_sehat_app/provider/auth_provider.dart';
-import 'package:srikandi_sehat_app/provider/csv_download_provider.dart';
-import 'package:srikandi_sehat_app/provider/cycle_tracking_provider.dart';
-import 'package:srikandi_sehat_app/provider/cycle_provider.dart';
-import 'package:srikandi_sehat_app/provider/district_provider.dart';
-import 'package:srikandi_sehat_app/provider/menstrual_history_detail_provider.dart';
-import 'package:srikandi_sehat_app/provider/menstrual_history_provider.dart';
-import 'package:srikandi_sehat_app/provider/password_provider.dart';
-import 'package:srikandi_sehat_app/provider/profile_change_provider.dart';
-import 'package:srikandi_sehat_app/provider/symptom_history_provider.dart';
-import 'package:srikandi_sehat_app/provider/symptom_history_detail_provider.dart';
-import 'package:srikandi_sehat_app/provider/symptom_log_post_provider.dart';
-import 'package:srikandi_sehat_app/provider/symptom_log_get_provider.dart';
-import 'package:srikandi_sehat_app/provider/user_data_provider.dart';
-import 'package:srikandi_sehat_app/provider/user_data_stats_provider.dart';
-import 'package:srikandi_sehat_app/provider/user_detail_provider.dart';
-import 'package:srikandi_sehat_app/provider/user_profile_provider.dart';
-import 'package:srikandi_sehat_app/provider/village_provider.dart';
+// import 'package:srikandisehat/firebase_options.dart';
+import 'package:srikandisehat/provider/auth_provider.dart';
+import 'package:srikandisehat/provider/csv_download_provider.dart';
+import 'package:srikandisehat/provider/cycle_tracking_provider.dart';
+import 'package:srikandisehat/provider/cycle_provider.dart';
+import 'package:srikandisehat/provider/district_provider.dart';
+import 'package:srikandisehat/provider/menstrual_history_detail_provider.dart';
+import 'package:srikandisehat/provider/menstrual_history_provider.dart';
+import 'package:srikandisehat/provider/password_provider.dart';
+import 'package:srikandisehat/provider/profile_change_provider.dart';
+import 'package:srikandisehat/provider/symptom_history_provider.dart';
+import 'package:srikandisehat/provider/symptom_history_detail_provider.dart';
+import 'package:srikandisehat/provider/symptom_log_post_provider.dart';
+import 'package:srikandisehat/provider/symptom_log_get_provider.dart';
+import 'package:srikandisehat/provider/user_data_provider.dart';
+import 'package:srikandisehat/provider/user_data_stats_provider.dart';
+import 'package:srikandisehat/provider/user_detail_provider.dart';
+import 'package:srikandisehat/provider/user_profile_provider.dart';
+import 'package:srikandisehat/provider/village_provider.dart';
 
-import 'package:srikandi_sehat_app/screens/auth/login_screen.dart';
-import 'package:srikandi_sehat_app/screens/auth/register_screen.dart';
-import 'package:srikandi_sehat_app/screens/user/change_password_screen.dart'
+import 'package:srikandisehat/screens/auth/login_screen.dart';
+import 'package:srikandisehat/screens/auth/register_screen.dart';
+import 'package:srikandisehat/screens/user/change_password_screen.dart'
     as user;
-import 'package:srikandi_sehat_app/screens/user/edit_profile_screen.dart'
+import 'package:srikandisehat/screens/user/edit_profile_screen.dart'
     as user;
-import 'package:srikandi_sehat_app/screens/user/home_screen.dart' as user;
-import 'package:srikandi_sehat_app/screens/user/main_screen.dart' as user;
-import 'package:srikandi_sehat_app/screens/user/profile_screen.dart' as user;
-import 'package:srikandi_sehat_app/screens/user/profile_detail_screen.dart'
+import 'package:srikandisehat/screens/user/home_screen.dart' as user;
+import 'package:srikandisehat/screens/user/main_screen.dart' as user;
+import 'package:srikandisehat/screens/user/profile_screen.dart' as user;
+import 'package:srikandisehat/screens/user/profile_detail_screen.dart'
     as user;
-import 'package:srikandi_sehat_app/screens/user/symptom_history_screen.dart'
+import 'package:srikandisehat/screens/user/symptom_history_screen.dart'
     as user;
-import 'package:srikandi_sehat_app/screens/user/menstrual_history_screen.dart'
+import 'package:srikandisehat/screens/user/menstrual_history_screen.dart'
     as user;
-import 'package:srikandi_sehat_app/screens/admin/home_screen.dart' as admin;
-import 'package:srikandi_sehat_app/screens/admin/main_screen.dart' as admin;
-import 'package:srikandi_sehat_app/screens/admin/profile_screen.dart' as admin;
-import 'package:srikandi_sehat_app/screens/admin/user_data_screen.dart'
+import 'package:srikandisehat/screens/admin/home_screen.dart' as admin;
+import 'package:srikandisehat/screens/admin/main_screen.dart' as admin;
+import 'package:srikandisehat/screens/admin/profile_screen.dart' as admin;
+import 'package:srikandisehat/screens/admin/user_data_screen.dart'
     as admin;
-import 'package:srikandi_sehat_app/core/auth/route_observer.dart';
-import 'package:srikandi_sehat_app/core/auth/auth_wrapper.dart';
-import 'package:srikandi_sehat_app/core/auth/auth_guard.dart';
-import 'package:srikandi_sehat_app/core/auth/notification_service.dart';
+import 'package:srikandisehat/core/auth/route_observer.dart';
+import 'package:srikandisehat/core/auth/auth_wrapper.dart';
+import 'package:srikandisehat/core/auth/auth_guard.dart';
+// import 'package:srikandisehat/core/auth/notification_service.dart';
 import 'package:flutter/foundation.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -57,9 +57,9 @@ void main() async {
   await dotenv.load(fileName: ".env");
   // debugPrint('App started');
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  await NotificationService().initialize(navigatorKey);
+  // await NotificationService().initialize(navigatorKey);
 
   runApp(
     DevicePreview(

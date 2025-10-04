@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:srikandi_sehat_app/provider/cycle_provider.dart';
-import 'package:srikandi_sehat_app/provider/symptom_log_get_provider.dart';
-import 'package:srikandi_sehat_app/screens/user/cycle_status_card.dart';
-import 'package:srikandi_sehat_app/widgets/anomaly_recommendation_card.dart';
-import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
-import 'package:srikandi_sehat_app/widgets/custom_popup.dart';
-import 'package:srikandi_sehat_app/widgets/cycle_action_button.dart';
-import 'package:srikandi_sehat_app/widgets/log_symptom_button.dart';
-import 'package:srikandi_sehat_app/widgets/reminder_tile.dart';
-import 'package:srikandi_sehat_app/widgets/tips_education_list.dart';
+import 'package:srikandisehat/provider/cycle_provider.dart';
+import 'package:srikandisehat/provider/symptom_log_get_provider.dart';
+import 'package:srikandisehat/screens/user/cycle_status_card.dart';
+import 'package:srikandisehat/widgets/anomaly_recommendation_card.dart';
+import 'package:srikandisehat/widgets/custom_alert.dart';
+import 'package:srikandisehat/widgets/custom_popup.dart';
+import 'package:srikandisehat/widgets/cycle_action_button.dart';
+import 'package:srikandisehat/widgets/log_symptom_button.dart';
+import 'package:srikandisehat/widgets/reminder_tile.dart';
+import 'package:srikandisehat/widgets/tips_education_list.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

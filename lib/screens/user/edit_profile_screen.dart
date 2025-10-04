@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/models/district_model.dart';
-import 'package:srikandi_sehat_app/models/village_model.dart';
-import 'package:srikandi_sehat_app/provider/auth_provider.dart';
-import 'package:srikandi_sehat_app/provider/profile_change_provider.dart';
-import 'package:srikandi_sehat_app/provider/district_provider.dart';
-import 'package:srikandi_sehat_app/provider/user_profile_provider.dart';
-import 'package:srikandi_sehat_app/provider/village_provider.dart';
-import 'package:srikandi_sehat_app/screens/user/profile_detail_screen.dart';
-import 'package:srikandi_sehat_app/utils/string_extentions.dart';
-import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
-import 'package:srikandi_sehat_app/widgets/custom_button.dart';
-import 'package:srikandi_sehat_app/widgets/custom_form.dart' hide DropdownItem;
-import 'package:srikandi_sehat_app/widgets/custom_popup.dart';
-import 'package:srikandi_sehat_app/utils/user_calc.dart';
-import 'package:srikandi_sehat_app/widgets/searchable_dropdown_field.dart';
-import 'package:srikandi_sehat_app/widgets/title_section_divider.dart';
+import 'package:srikandisehat/models/district_model.dart';
+import 'package:srikandisehat/models/village_model.dart';
+import 'package:srikandisehat/provider/auth_provider.dart';
+import 'package:srikandisehat/provider/profile_change_provider.dart';
+import 'package:srikandisehat/provider/district_provider.dart';
+import 'package:srikandisehat/provider/user_profile_provider.dart';
+import 'package:srikandisehat/provider/village_provider.dart';
+import 'package:srikandisehat/screens/user/profile_detail_screen.dart';
+import 'package:srikandisehat/utils/string_extentions.dart';
+import 'package:srikandisehat/widgets/custom_alert.dart';
+import 'package:srikandisehat/widgets/custom_button.dart';
+import 'package:srikandisehat/widgets/custom_form.dart' hide DropdownItem;
+import 'package:srikandisehat/widgets/custom_popup.dart';
+import 'package:srikandisehat/utils/user_calc.dart';
+import 'package:srikandisehat/widgets/searchable_dropdown_field.dart';
+import 'package:srikandisehat/widgets/title_section_divider.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});

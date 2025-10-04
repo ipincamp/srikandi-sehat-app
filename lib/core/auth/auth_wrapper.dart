@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/core/auth/auth_guard.dart';
-import 'package:srikandi_sehat_app/provider/auth_provider.dart';
+import 'package:srikandisehat/core/auth/auth_guard.dart';
+import 'package:srikandisehat/provider/auth_provider.dart';
 
 class AuthWrapper extends StatelessWidget {
   final dynamic initialAuthState;

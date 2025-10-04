@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:srikandi_sehat_app/models/menstural_history_model.dart';
-import 'package:srikandi_sehat_app/provider/menstrual_history_provider.dart';
-import 'package:srikandi_sehat_app/screens/user/menstrual_history_detail_screen.dart';
-import 'package:srikandi_sehat_app/widgets/connection_error_card.dart';
+import 'package:srikandisehat/models/menstural_history_model.dart';
+import 'package:srikandisehat/provider/menstrual_history_provider.dart';
+import 'package:srikandisehat/screens/user/menstrual_history_detail_screen.dart';
+import 'package:srikandisehat/widgets/connection_error_card.dart';
 
 class MenstrualHistoryScreen extends StatefulWidget {
   const MenstrualHistoryScreen({super.key});

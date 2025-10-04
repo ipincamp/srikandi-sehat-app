@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:srikandi_sehat_app/screens/admin/user_data_screen.dart';
-import 'package:srikandi_sehat_app/screens/admin/home_screen.dart';
-import 'package:srikandi_sehat_app/screens/admin/profile_screen.dart';
-import 'package:srikandi_sehat_app/widgets/navbar_button.dart'; // Import reusable NavBarButton
+import 'package:srikandisehat/screens/admin/user_data_screen.dart';
+import 'package:srikandisehat/screens/admin/home_screen.dart';
+import 'package:srikandisehat/screens/admin/profile_screen.dart';
+import 'package:srikandisehat/widgets/navbar_button.dart'; // Import reusable NavBarButton
 
 class User {
   final String id;

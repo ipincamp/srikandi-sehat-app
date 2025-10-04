@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/models/cycle_status_model.dart';
-import 'package:srikandi_sehat_app/provider/cycle_provider.dart';
+import 'package:srikandisehat/models/cycle_status_model.dart';
+import 'package:srikandisehat/provider/cycle_provider.dart';
 
 class AnomalyRecommendationCard extends StatefulWidget {
   const AnomalyRecommendationCard({super.key});

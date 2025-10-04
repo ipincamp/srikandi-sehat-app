@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/provider/recommendation_provider.dart';
-import 'package:srikandi_sehat_app/widgets/accordion_list.dart';
-import 'package:srikandi_sehat_app/widgets/recommendation_widget.dart';
+import 'package:srikandisehat/provider/recommendation_provider.dart';
+import 'package:srikandisehat/widgets/accordion_list.dart';
+import 'package:srikandisehat/widgets/recommendation_widget.dart';
 
 class EducationScreen extends StatelessWidget {
   const EducationScreen({super.key});

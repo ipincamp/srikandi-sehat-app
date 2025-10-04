@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/provider/profile_change_provider.dart';
-import 'package:srikandi_sehat_app/utils/user_calc.dart';
-import 'package:srikandi_sehat_app/widgets/connection_error_card.dart';
+import 'package:srikandisehat/provider/profile_change_provider.dart';
+import 'package:srikandisehat/utils/user_calc.dart';
+import 'package:srikandisehat/widgets/connection_error_card.dart';
 
 class DetailProfileScreen extends StatefulWidget {
   const DetailProfileScreen({super.key});

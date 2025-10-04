@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/models/symptom_model.dart';
-import 'package:srikandi_sehat_app/provider/symptom_history_detail_provider.dart';
-import 'package:srikandi_sehat_app/provider/symptom_log_get_provider.dart';
-import 'package:srikandi_sehat_app/provider/symptom_log_post_provider.dart';
-import 'package:srikandi_sehat_app/screens/user/symptom_history_detail_screen.dart';
-import 'package:srikandi_sehat_app/utils/date_format.dart';
-import 'package:srikandi_sehat_app/widgets/action_button.dart';
-import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
-import 'package:srikandi_sehat_app/widgets/custom_form.dart';
+import 'package:srikandisehat/models/symptom_model.dart';
+import 'package:srikandisehat/provider/symptom_history_detail_provider.dart';
+import 'package:srikandisehat/provider/symptom_log_get_provider.dart';
+import 'package:srikandisehat/provider/symptom_log_post_provider.dart';
+import 'package:srikandisehat/screens/user/symptom_history_detail_screen.dart';
+import 'package:srikandisehat/utils/date_format.dart';
+import 'package:srikandisehat/widgets/action_button.dart';
+import 'package:srikandisehat/widgets/custom_alert.dart';
+import 'package:srikandisehat/widgets/custom_form.dart';
 
 class SymptomLogButton extends StatelessWidget {
   const SymptomLogButton({super.key});

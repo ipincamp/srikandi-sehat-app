@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:srikandi_sehat_app/core/network/http_client.dart';
-import 'package:srikandi_sehat_app/models/user_model.dart';
-import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
+import 'package:srikandisehat/core/network/http_client.dart';
+import 'package:srikandisehat/models/user_model.dart';
+import 'package:srikandisehat/widgets/custom_alert.dart';
 
 class UserDataProvider with ChangeNotifier {
   List<UserModel> _allUsers = [];

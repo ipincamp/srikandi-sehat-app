@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/models/cycle_history_model.dart';
-import 'package:srikandi_sehat_app/provider/cycle_tracking_provider.dart';
+import 'package:srikandisehat/models/cycle_history_model.dart';
+import 'package:srikandisehat/provider/cycle_tracking_provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 
