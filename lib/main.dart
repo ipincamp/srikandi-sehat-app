@@ -1,10 +1,11 @@
 import 'package:device_preview/device_preview.dart';
-// import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-// import 'package:srikandisehat/firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
 import 'package:srikandisehat/provider/auth_provider.dart';
 import 'package:srikandisehat/provider/csv_download_provider.dart';
 import 'package:srikandisehat/provider/cycle_tracking_provider.dart';
@@ -47,7 +48,7 @@ import 'package:srikandisehat/screens/admin/user_data_screen.dart'
 import 'package:srikandisehat/core/auth/route_observer.dart';
 import 'package:srikandisehat/core/auth/auth_wrapper.dart';
 import 'package:srikandisehat/core/auth/auth_guard.dart';
-// import 'package:srikandisehat/core/auth/notification_service.dart';
+import 'package:srikandisehat/core/auth/notification_service.dart';
 import 'package:flutter/foundation.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -57,9 +58,8 @@ void main() async {
   await dotenv.load(fileName: ".env");
   // debugPrint('App started');
 
-  // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // await NotificationService().initialize(navigatorKey);
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await NotificationService().initialize(navigatorKey);
 
   runApp(
     DevicePreview(
