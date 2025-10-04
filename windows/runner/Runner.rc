@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "srikandi_sehat_app" "\0"
+            VALUE "CompanyName", "com.ipincamp" "\0"
+            VALUE "FileDescription", "srikandisehat" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "srikandi_sehat_app" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "srikandi_sehat_app.exe" "\0"
-            VALUE "ProductName", "srikandi_sehat_app" "\0"
+            VALUE "InternalName", "srikandisehat" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2025 com.ipincamp. All rights reserved." "\0"
+            VALUE "OriginalFilename", "srikandisehat.exe" "\0"
+            VALUE "ProductName", "srikandisehat" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
