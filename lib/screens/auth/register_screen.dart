@@ -5,6 +5,7 @@ import 'package:srikandisehat/provider/auth_provider.dart';
 import 'package:srikandisehat/widgets/custom_alert.dart';
 import 'package:srikandisehat/widgets/custom_button.dart';
 import 'package:srikandisehat/widgets/custom_form.dart'; // Updated import
+import 'package:url_launcher/url_launcher.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -222,7 +223,58 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
+
+                // Terms of Service & Privacy Policy Notice (responsive)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                  Text(
+                    'Dengan mendaftar, Anda menyetujui',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                    textAlign: TextAlign.center,
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                    GestureDetector(
+                      onTap: () {
+                      launchUrl(Uri.parse('https://github.com/ipincamp/srikandi-sehat-app/blob/v1/terms-of-service.md'));
+                      },
+                      child: Text(
+                      'Terms of Service',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.pink,
+                        decoration: TextDecoration.underline,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      ),
+                    ),
+                    Text(
+                      ' dan ',
+                      style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                      textAlign: TextAlign.center,
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                      launchUrl(Uri.parse('https://github.com/ipincamp/srikandi-sehat-app/blob/v1/privacy-policy.md'));
+                      },
+                      child: Text(
+                      'Privacy Policy',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.pink,
+                        decoration: TextDecoration.underline,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      ),
+                    ),
+                    ],
+                  ),
+                  ],
+                ),
+                const SizedBox(height: 16),
 
                 // Register Button
                 _isLoading
