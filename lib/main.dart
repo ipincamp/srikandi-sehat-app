@@ -141,7 +141,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Sri Kandi Sehat',
+      title: 'Srikandi Sehat',
       debugShowCheckedModeBanner: false,
       navigatorObservers: [_routeObserver],
       theme: ThemeData(
