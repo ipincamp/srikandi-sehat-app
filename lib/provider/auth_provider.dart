@@ -9,6 +9,7 @@ import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:srikandi_sehat_app/provider/cycle_tracking_provider.dart';
 import 'package:srikandi_sehat_app/core/auth/notification_service.dart';
+import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 
 class AuthProvider with ChangeNotifier {
   String? _authToken;
@@ -389,49 +390,61 @@ class AuthProvider with ChangeNotifier {
         notifyListeners();
 
         if (context.mounted) {
-          await showDialog(
-            context: context,
-            barrierDismissible: false, // User harus tekan tombol
-            builder: (ctx) => AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.0),
-              ),
-              title: const Text(
-                'Pendaftaran Diproses',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              content: Text(
-                _errorMessage,
-                style: const TextStyle(fontSize: 14),
-                textAlign: TextAlign.center,
-              ),
-              actionsAlignment: MainAxisAlignment.center,
-              actions: [
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    minimumSize: const Size(120, 40),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text(
-                    'Mengerti',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-              contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-              actionsPadding: const EdgeInsets.only(bottom: 16),
-            ),
+          CustomAlert.show(
+            context,
+            _errorMessage,
+            type: AlertType.info,
+            duration: const Duration(seconds: 4),
           );
+          // Langsung navigasi setelah menampilkan alert
+          Navigator.pushReplacementNamed(context, '/login');
         }
         return true;
+
+        // if (context.mounted) {
+        //   await showDialog(
+        //     context: context,
+        //     barrierDismissible: false, // User harus tekan tombol
+        //     builder: (ctx) => AlertDialog(
+        //       shape: RoundedRectangleBorder(
+        //         borderRadius: BorderRadius.circular(12.0),
+        //       ),
+        //       title: const Text(
+        //         'Pendaftaran Diproses',
+        //         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        //         textAlign: TextAlign.center,
+        //       ),
+        //       content: Text(
+        //         _errorMessage,
+        //         style: const TextStyle(fontSize: 14),
+        //         textAlign: TextAlign.center,
+        //       ),
+        //       actionsAlignment: MainAxisAlignment.center,
+        //       actions: [
+        //         ElevatedButton(
+        //           style: ElevatedButton.styleFrom(
+        //             backgroundColor: Colors.blue,
+        //             minimumSize: const Size(120, 40),
+        //             shape: RoundedRectangleBorder(
+        //               borderRadius: BorderRadius.circular(8),
+        //             ),
+        //           ),
+        //           onPressed: () => Navigator.of(ctx).pop(),
+        //           child: const Text(
+        //             'Mengerti',
+        //             style: TextStyle(
+        //               color: Colors.white,
+        //               fontWeight: FontWeight.w500,
+        //             ),
+        //           ),
+        //         ),
+        //       ],
+        //       contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+        //       actionsPadding: const EdgeInsets.only(bottom: 16),
+        //     ),
+        //   );
+        // }
+        // return true;
       }
 
       // Handle error cases

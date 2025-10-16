@@ -161,23 +161,43 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: AuthWrapper(
-        initialAuthState: initialAuthState,
-        adminChild: const admin.MainScreen(),
-        userChild: const user.MainScreen(),
-        guestChild: const LoginScreen(),
-      ),
-      onGenerateRoute: (RouteSettings settings) {
-        return MaterialPageRoute(
-          builder: (context) => AuthWrapper(
+      routes: {
+        '/': (context) => AuthWrapper(
             initialAuthState: initialAuthState,
-            adminChild: _buildAdminScreen(settings.name),
-            userChild: _buildUserScreen(settings.name),
-            guestChild: _buildGuestScreen(settings.name),
+            adminChild: const admin.MainScreen(),
+            userChild: const user.MainScreen(),
+            guestChild: const LoginScreen(),
           ),
-          settings: settings, // Penting untuk mempertahankan settings
-        );
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
+        '/main': (context) => const user.MainScreen(), // Rute untuk user
+        '/admin': (context) => const admin.MainScreen(), // Rute untuk admin
+        // Tambahkan rute detail lainnya di sini jika perlu
+        '/notification-history': (context) => const user.NotificationHistoryScreen(),
+        '/change-password': (context) => const user.ChangePasswordScreen(),
+        '/edit-profile': (context) => const user.EditProfileScreen(),
+        '/detail-profile': (context) => const user.DetailProfileScreen(),
+        '/symptom-history': (context) => const user.SymptomHistoryScreen(),
+        '/menstrual-history': (context) => const user.MenstrualHistoryScreen(),
       },
+      // home: AuthWrapper(
+      //   initialAuthState: initialAuthState,
+      //   adminChild: const admin.MainScreen(),
+      //   userChild: const user.MainScreen(),
+      //   guestChild: const LoginScreen(),
+      // ),
+      initialRoute: '/',
+      // onGenerateRoute: (RouteSettings settings) {
+      //   return MaterialPageRoute(
+      //     builder: (context) => AuthWrapper(
+      //       initialAuthState: initialAuthState,
+      //       adminChild: _buildAdminScreen(settings.name),
+      //       userChild: _buildUserScreen(settings.name),
+      //       guestChild: _buildGuestScreen(settings.name),
+      //     ),
+      //     settings: settings, // Penting untuk mempertahankan settings
+      //   );
+      // },
       // Hapus routes: {} jika ada
     );
   }

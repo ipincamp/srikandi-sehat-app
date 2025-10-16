@@ -15,11 +15,15 @@ class NotificationModel {
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
     return NotificationModel(
-      id: json['id'],
-      title: json['title'] ?? 'Tidak ada judul',
-      body: json['body'] ?? 'Tidak ada konten',
-      createdAt: DateTime.parse(json['created_at']).toLocal(),
-      isRead: json['is_read'] ?? false,
+      id: json['id'] as int? ?? 0,
+      title: json['title'] as String? ?? 'Tidak ada judul',
+      body: json['body'] as String? ?? 'Tidak ada konten',
+      
+      createdAt: json['created_at'] != null
+        ? DateTime.parse(json['created_at'] as String).toLocal()
+        : DateTime.now(),
+
+      isRead: json['is_read'] as bool? ?? false,
     );
   }
 }
