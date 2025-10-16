@@ -57,7 +57,10 @@ class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 onTap: () {
-                  // Tambahkan logika untuk menandai sebagai sudah dibaca
+                  if (!notif.isRead) {
+                    Provider.of<NotificationProvider>(context, listen: false)
+                      .markAsRead(notif.id);
+                  }
                 },
               );
             },

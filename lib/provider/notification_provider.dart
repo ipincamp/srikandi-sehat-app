@@ -47,5 +47,43 @@ class NotificationProvider with ChangeNotifier {
     }
   }
   
-  // Anda bisa menambahkan fungsi untuk menandai notifikasi sebagai "sudah dibaca" di sini
+  Future<void> markAsRead(int notificationId) async {
+    // Cari notifikasi di list lokal
+    final int index = _notifications.indexWhere((n) => n.id == notificationId);
+    if (index == -1 || _notifications[index].isRead) {
+      // Jika tidak ditemukan atau sudah dibaca, tidak perlu lakukan apa-apa
+      return;
+    }
+
+    // Update state di UI secara optimis agar responsif
+    _notifications[index].isRead = true;
+    notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      final baseUrl = dotenv.env['API_URL'];
+      final url = '$baseUrl/notifications/$notificationId/read';
+
+      final response = await http.patch(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode != 200) {
+        // Jika gagal, kembalikan state ke semula (belum dibaca)
+        _notifications[index].isRead = false;
+        notifyListeners();
+        // Anda bisa menambahkan notifikasi error di sini jika perlu
+      }
+    } catch (e) {
+      // Jika terjadi error, kembalikan juga state-nya
+      _notifications[index].isRead = false;
+      notifyListeners();
+      print('Failed to mark notification as read: $e');
+    }
+  }
 }
