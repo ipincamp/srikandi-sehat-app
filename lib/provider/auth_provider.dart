@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:srikandi_sehat_app/provider/cycle_tracking_provider.dart';
+import 'package:srikandi_sehat_app/core/auth/notification_service.dart';
 
 class AuthProvider with ChangeNotifier {
   String? _authToken;
@@ -606,6 +607,35 @@ class AuthProvider with ChangeNotifier {
       }
       notifyListeners();
       return false;
+    }
+  }
+
+  Future<void> updateFcmToken() async {
+    try {
+      final notificationService = NotificationService();
+      final fcmToken = await notificationService.getFCMToken();
+
+      if (fcmToken == null) {
+        print("FCM token not available, skipping update.");
+        return;
+      }
+      
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      final baseUrl = dotenv.env['API_URL'];
+      final url = '$baseUrl/me/fcm-token';
+
+      await http.patch(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'fcm_token': fcmToken}),
+      );
+      print("FCM Token updated successfully.");
+    } catch (e) {
+      print("Failed to update FCM token: $e");
     }
   }
 

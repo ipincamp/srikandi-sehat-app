@@ -43,6 +43,8 @@ class _LoginScreenState extends State<LoginScreen> {
     final success = await loginProvider.login(email, password, context);
 
     if (success) {
+      await loginProvider.updateFcmToken();
+
       final role = loginProvider.role;
 
       if (!mounted) return;

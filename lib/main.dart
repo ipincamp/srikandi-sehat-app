@@ -49,6 +49,8 @@ import 'package:srikandi_sehat_app/core/auth/auth_wrapper.dart';
 import 'package:srikandi_sehat_app/core/auth/auth_guard.dart';
 import 'package:srikandi_sehat_app/core/auth/notification_service.dart';
 import 'package:flutter/foundation.dart';
+import 'package:srikandi_sehat_app/provider/notification_provider.dart';
+import 'package:srikandi_sehat_app/screens/user/notification_history_screen.dart' as user;
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -95,6 +97,7 @@ class AppProviders extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => VillageProvider()),
         ChangeNotifierProvider(create: (_) => ProfileChangeProvider()),
         ChangeNotifierProvider(create: (_) => CsvDownloadProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
       ],
       child: FutureBuilder(
         future: _checkInitialAuthState(),
@@ -237,6 +240,8 @@ class MyApp extends StatelessWidget {
             return const user.SymptomHistoryScreen();
           case '/menstrual-history':
             return const user.MenstrualHistoryScreen();
+          case '/notification-history':
+            return const user.NotificationHistoryScreen();
           default:
             return const user.MainScreen();
         }
