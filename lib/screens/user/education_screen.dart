@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/provider/recommendation_provider.dart';
 import 'package:srikandi_sehat_app/widgets/accordion_list.dart';
+import 'package:srikandi_sehat_app/widgets/notification_icon_button.dart';
 import 'package:srikandi_sehat_app/widgets/recommendation_widget.dart';
 
 class EducationScreen extends StatelessWidget {
@@ -13,6 +14,7 @@ class EducationScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.pink,
         title: const Text('Edukasi', style: TextStyle(color: Colors.white)),
+        actions: [NotificationIconButton()],
       ),
       body: ChangeNotifierProvider(
         create: (context) => RecommendationProvider(),

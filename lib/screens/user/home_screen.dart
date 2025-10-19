@@ -10,6 +10,7 @@ import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/custom_popup.dart';
 import 'package:srikandi_sehat_app/widgets/cycle_action_button.dart';
 import 'package:srikandi_sehat_app/widgets/log_symptom_button.dart';
+import 'package:srikandi_sehat_app/widgets/notification_icon_button.dart';
 import 'package:srikandi_sehat_app/widgets/reminder_tile.dart';
 import 'package:srikandi_sehat_app/widgets/tips_education_list.dart';
 
@@ -316,12 +317,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         backgroundColor: Colors.pink,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-            onPressed: () {
-              Navigator.pushNamed(context, '/notification-history');
-            },
-          ),
+         const NotificationIconButton(),
         ],
       ),
       body: SingleChildScrollView(

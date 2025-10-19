@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/provider/auth_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/logout_tile.dart';
+import 'package:srikandi_sehat_app/widgets/notification_icon_button.dart';
 import 'package:srikandi_sehat_app/widgets/profile_tile.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -64,6 +65,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.pink,
+        actions: [NotificationIconButton()],
         title: const Text(
           'Profile',
           style: TextStyle(
@@ -127,6 +129,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
           //   ),
           // ),
           const Spacer(),
+          // ✅ Checkbox Persetujuan
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Center(
+              child: Wrap(
+                alignment:
+                    WrapAlignment.center, // penting agar Wrap juga center
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pushNamed(context, '/tos'),
+                    child: const Text(
+                      'Syarat Ketentuan',
+                      style: TextStyle(
+                        color: Colors.pink,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const Text(' dan '),
+                  GestureDetector(
+                    onTap: () => Navigator.pushNamed(context, '/privacy'),
+                    child: const Text(
+                      'Kebijakan Privasi',
+                      style: TextStyle(
+                        color: Colors.pink,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
           const LogoutTile(),
           const Padding(
             padding: EdgeInsets.only(bottom: 16),

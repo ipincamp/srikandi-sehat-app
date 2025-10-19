@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/core/auth/auth_guard.dart';
 import 'package:srikandi_sehat_app/provider/auth_provider.dart';
+import 'package:srikandi_sehat_app/provider/health_provider.dart';
+import 'package:srikandi_sehat_app/screens/splash/maintenance_screen.dart';
+import 'package:srikandi_sehat_app/widgets/markdown_screen.dart';
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   final dynamic initialAuthState;
   final Widget adminChild;
   final Widget userChild;
@@ -18,14 +21,16 @@ class AuthWrapper extends StatelessWidget {
   });
 
   @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> with RouteAware {
+  @override
   Widget build(BuildContext context) {
-    final route = ModalRoute.of(context)?.settings.name ?? '';
+    final healthProvider = Provider.of<HealthProvider>(context);
 
-    // daftar route publik
-    const publicRoutes = ['/tos', '/privacy'];
-
-    if (publicRoutes.contains(route)) {
-      return guestChild; // atau langsung ke screen Markdown
+    if (healthProvider.isMaintenance) {
+      return const MaintenanceScreen();
     }
 
     return FutureBuilder(
@@ -38,15 +43,15 @@ class AuthWrapper extends StatelessWidget {
         }
 
         final isValidSession = snapshot.data ?? false;
-        if (!isValidSession) return guestChild;
+        if (!isValidSession) return widget.guestChild;
 
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final role = authProvider.role;
 
-        if (role == 'admin') return adminChild;
-        if (role == 'user') return userChild;
+        if (role == 'admin') return widget.adminChild;
+        if (role == 'user') return widget.userChild;
 
-        return guestChild;
+        return widget.guestChild;
       },
     );
   }

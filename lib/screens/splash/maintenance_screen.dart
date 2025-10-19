@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:srikandi_sehat_app/provider/health_provider.dart';
 
@@ -35,8 +36,32 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
     super.dispose();
   }
 
-  void _logout() {
-    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+  void _exitApp() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Keluar Aplikasi'),
+          content: const Text('Apakah Anda yakin ingin keluar dari aplikasi?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Tutup dialog
+              },
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Tutup dialog dulu
+                // Keluar dari aplikasi
+                SystemNavigator.pop();
+              },
+              child: const Text('Keluar', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -52,7 +77,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.construction, size: 100, color: Colors.orange),
+                const Icon(Icons.construction, size: 100, color: Colors.pink),
                 const SizedBox(height: 24),
                 const Text(
                   'Sistem Sedang Maintenance',
@@ -71,10 +96,24 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 const SizedBox(height: 32),
+
+                // Tombol Cek Status Kembali
                 ElevatedButton.icon(
-                  onPressed: _logout,
-                  icon: const Icon(Icons.logout),
-                  label: const Text('Keluar ke Login'),
+                  onPressed: () => provider.checkHealth(),
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Cek Status Kembali'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.pink,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Tombol Keluar Aplikasi
+                ElevatedButton.icon(
+                  onPressed: _exitApp,
+                  icon: const Icon(Icons.exit_to_app),
+                  label: const Text('Keluar Aplikasi'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
                     foregroundColor: Colors.white,
