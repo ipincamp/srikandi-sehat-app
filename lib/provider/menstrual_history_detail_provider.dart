@@ -54,6 +54,43 @@ class MenstrualHistoryDetailProvider with ChangeNotifier {
     }
   }
 
+  Future<void> deleteCycleDetail(int cycleId, String reason) async {
+    if (_isLoading) return;
+
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+      final baseUrl = dotenv.env['API_URL'] ?? '';
+      final url = '$baseUrl/menstrual/cycles/$cycleId';
+
+      final response = await http.delete(
+        Uri.parse(url),
+        body: jsonEncode({'reason': reason}),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        _detail = null;
+        message:
+        'Siklus berhasil dihapus';
+      } else {
+        _error = 'Gagal Menghapus Siklus';
+      }
+    } catch (e) {
+      _error = 'Error: ${e.toString()}';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   void clear() {
     _detail = null;
     _isLoading = false;

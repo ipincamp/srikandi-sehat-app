@@ -7,6 +7,7 @@ class CustomTable extends StatelessWidget {
   final int currentPage;
   final int itemsPerPage;
   final int pageCount;
+  final int total;
   final Function(int) onPageChanged;
   final int? classification; // 1 for urban, 2 for rural
 
@@ -17,17 +18,28 @@ class CustomTable extends StatelessWidget {
     required this.itemsPerPage,
     required this.pageCount,
     required this.onPageChanged,
+    required this.total,
     this.classification,
   });
 
   @override
   Widget build(BuildContext context) {
     // Determine colors based on classification
-    final primaryColor = classification == 2 ? Colors.green : Colors.blue;
-    final lightColor = classification == 2 ? Colors.green[50] : Colors.blue[50];
-    final darkColor = classification == 2
+    final primaryColor = classification == 1
+        ? Colors.blue
+        : classification == 2
+        ? Colors.green
+        : Colors.orange;
+    final lightColor = classification == 1
+        ? Colors.blue[50]
+        : classification == 2
+        ? Colors.green[50]
+        : Colors.orange[50];
+    final darkColor = classification == 1
+        ? Colors.blue[800]
+        : classification == 2
         ? Colors.green[800]
-        : Colors.blue[800];
+        : Colors.orange[800];
 
     return Column(
       children: [
@@ -73,17 +85,18 @@ class CustomTable extends StatelessWidget {
                   ),
                 ),
               ),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  'Wilayah',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: darkColor,
-                  ),
-                ),
-              ),
+              // if (classification != 3)
+              //   Expanded(
+              //     flex: 2,
+              //     child: Text(
+              //       'Wilayah',
+              //       style: TextStyle(
+              //         fontWeight: FontWeight.bold,
+              //         fontSize: 14,
+              //         color: darkColor,
+              //       ),
+              //     ),
+              //   ),
               Expanded(
                 flex: 2,
                 child: Text(
@@ -154,13 +167,15 @@ class CustomTable extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        user['region']!,
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                    ),
+
+                    // if (classification != 3)
+                    //   Expanded(
+                    //     flex: 2,
+                    //     child: Text(
+                    //       user['region']!,
+                    //       style: const TextStyle(fontSize: 13),
+                    //     ),
+                    //   ),
                     Expanded(
                       flex: 2,
                       child: CustomButton(
@@ -219,6 +234,14 @@ class CustomTable extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          Container(
+            alignment: Alignment.center,
+            child: Text(
+              'Hal. ${currentPage + 1} / $pageCount',
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
+            ),
+          ),
+          const SizedBox(width: 8),
           // Previous Button
           Container(
             width: 36,
@@ -330,6 +353,15 @@ class CustomTable extends StatelessWidget {
                 color: currentPage < pageCount - 1 ? darkColor : Colors.grey,
               ),
               padding: EdgeInsets.zero,
+            ),
+          ),
+
+          const SizedBox(width: 8),
+          Container(
+            alignment: Alignment.center,
+            child: Text(
+              'total $total',
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
             ),
           ),
         ],

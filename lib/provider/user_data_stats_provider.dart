@@ -28,7 +28,7 @@ class UserDataStatsProvider with ChangeNotifier {
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/json; charset=UTF-8',
-          'Authorization': 'Bearer ${token}',
+          'Authorization': 'Bearer $token',
         },
       );
 

@@ -4,7 +4,7 @@ import 'package:srikandi_sehat_app/core/auth/notification_service.dart';
 import 'package:srikandi_sehat_app/provider/auth_provider.dart';
 import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
 import 'package:srikandi_sehat_app/widgets/custom_button.dart';
-import 'package:srikandi_sehat_app/widgets/custom_form.dart'; // Updated import
+import 'package:srikandi_sehat_app/widgets/custom_form.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -20,10 +20,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
+  bool _isAggreeToTerms = false;
   bool _isLoading = false;
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (!_isAggreeToTerms) {
+      CustomAlert.show(
+        context,
+        'Anda harus menyetujui Terms of Service dan Privacy Policy terlebih dahulu.',
+        type: AlertType.warning,
+      );
       return;
     }
 
@@ -222,7 +232,54 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
+
+                // ✅ Checkbox Persetujuan
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Checkbox(
+                      value: _isAggreeToTerms,
+                      activeColor: Colors.pink,
+                      onChanged: (value) {
+                        setState(() {
+                          _isAggreeToTerms = value ?? false;
+                        });
+                      },
+                    ),
+                    Expanded(
+                      child: Wrap(
+                        children: [
+                          const Text('Saya menyetujui '),
+                          GestureDetector(
+                            onTap: () => Navigator.pushNamed(context, '/tos'),
+                            child: const Text(
+                              'Syarat Ketentuan',
+                              style: TextStyle(
+                                color: Colors.pink,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const Text(' dan '),
+                          GestureDetector(
+                            onTap: () =>
+                                Navigator.pushNamed(context, '/privacy'),
+                            child: const Text(
+                              'Kebijakan Privasi',
+                              style: TextStyle(
+                                color: Colors.pink,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
 
                 // Register Button
                 _isLoading

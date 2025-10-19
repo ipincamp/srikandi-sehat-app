@@ -19,6 +19,15 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final route = ModalRoute.of(context)?.settings.name ?? '';
+
+    // daftar route publik
+    const publicRoutes = ['/tos', '/privacy'];
+
+    if (publicRoutes.contains(route)) {
+      return guestChild; // atau langsung ke screen Markdown
+    }
+
     return FutureBuilder(
       future: AuthGuard.isValidSession(),
       builder: (context, snapshot) {
@@ -29,10 +38,8 @@ class AuthWrapper extends StatelessWidget {
         }
 
         final isValidSession = snapshot.data ?? false;
-
         if (!isValidSession) return guestChild;
 
-        // Check role dari initial state atau provider
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final role = authProvider.role;
 

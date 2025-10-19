@@ -243,6 +243,13 @@ class AuthProvider with ChangeNotifier {
     final baseUrl = dotenv.env['API_URL'];
     final url = '$baseUrl/auth/login';
 
+    print('--- LOGIN REQUEST ---');
+    print('URL: $url');
+    print('Headers: ${{'Content-Type': 'application/json; charset=UTF-8'}}');
+    print(
+      'Body: ${jsonEncode(<String, String>{'email': email, 'password': password})}',
+    );
+
     try {
       final response = await http
           .post(
@@ -253,8 +260,12 @@ class AuthProvider with ChangeNotifier {
               'password': password,
             }),
           )
-          .timeout(const Duration(seconds: 30));
+          .timeout(const Duration(seconds: 10));
 
+      print('--- LOGIN RESPONSE ---');
+      print('Status Code: ${response.statusCode}');
+      print('Headers: ${response.headers}');
+      print('Body: ${response.body}');
       final responseData = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
@@ -309,7 +320,7 @@ class AuthProvider with ChangeNotifier {
 
         notifyListeners();
         return true;
-      } else if (response.statusCode == 401) {
+      } else if (response.statusCode == 401 || response.statusCode == 400) {
         _errorMessage = "Email atau Kata sandi salah";
         notifyListeners();
         return false;
@@ -327,7 +338,7 @@ class AuthProvider with ChangeNotifier {
       if (error is http.ClientException ||
           error.toString().contains('SocketException')) {
         _errorMessage = 'Network error. Please check your internet connection.';
-        await _showNoInternetAlert(context);
+        // await _showNoInternetAlert(context);
       } else if (error is TimeoutException) {
         _errorMessage = 'Request timed out. Please try again.';
         await _showErrorAlert(context, _errorMessage);
@@ -632,7 +643,7 @@ class AuthProvider with ChangeNotifier {
         print("FCM token not available, skipping update.");
         return;
       }
-      
+
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
       final baseUrl = dotenv.env['API_URL'];

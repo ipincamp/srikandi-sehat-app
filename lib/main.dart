@@ -26,6 +26,7 @@ import 'package:srikandi_sehat_app/provider/village_provider.dart';
 
 import 'package:srikandi_sehat_app/screens/auth/login_screen.dart';
 import 'package:srikandi_sehat_app/screens/auth/register_screen.dart';
+import 'package:srikandi_sehat_app/screens/splash/splash_screen.dart';
 import 'package:srikandi_sehat_app/screens/user/change_password_screen.dart'
     as user;
 import 'package:srikandi_sehat_app/screens/user/edit_profile_screen.dart'
@@ -50,7 +51,8 @@ import 'package:srikandi_sehat_app/core/auth/auth_guard.dart';
 import 'package:srikandi_sehat_app/core/auth/notification_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:srikandi_sehat_app/provider/notification_provider.dart';
-import 'package:srikandi_sehat_app/screens/user/notification_history_screen.dart' as user;
+import 'package:srikandi_sehat_app/screens/user/notification_history_screen.dart'
+    as user;
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -103,8 +105,9 @@ class AppProviders extends StatelessWidget {
         future: _checkInitialAuthState(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const MaterialApp(
-              home: Scaffold(body: Center(child: CircularProgressIndicator())),
+            return MaterialApp(
+              debugShowCheckedModeBanner: false,
+              home: SplashScreen(onInitializationComplete: () {}),
             );
           }
           return MyApp(
@@ -118,6 +121,9 @@ class AppProviders extends StatelessWidget {
 
   Future<AuthState> _checkInitialAuthState() async {
     final prefs = await SharedPreferences.getInstance();
+    await Future.delayed(
+      const Duration(seconds: 3),
+    ); // Simulasi delay untuk splash screen
     return AuthState(
       isLoggedIn: prefs.getBool('isLoggedIn') ?? false,
       role: prefs.getString('role'),
@@ -163,17 +169,18 @@ class MyApp extends StatelessWidget {
       ),
       routes: {
         '/': (context) => AuthWrapper(
-            initialAuthState: initialAuthState,
-            adminChild: const admin.MainScreen(),
-            userChild: const user.MainScreen(),
-            guestChild: const LoginScreen(),
-          ),
+          initialAuthState: initialAuthState,
+          adminChild: const admin.MainScreen(),
+          userChild: const user.MainScreen(),
+          guestChild: const LoginScreen(),
+        ),
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/main': (context) => const user.MainScreen(), // Rute untuk user
         '/admin': (context) => const admin.MainScreen(), // Rute untuk admin
         // Tambahkan rute detail lainnya di sini jika perlu
-        '/notification-history': (context) => const user.NotificationHistoryScreen(),
+        '/notification-history': (context) =>
+            const user.NotificationHistoryScreen(),
         '/change-password': (context) => const user.ChangePasswordScreen(),
         '/edit-profile': (context) => const user.EditProfileScreen(),
         '/detail-profile': (context) => const user.DetailProfileScreen(),

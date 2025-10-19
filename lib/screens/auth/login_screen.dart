@@ -113,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   height: 1.2,
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
-                  color: Colors.pinkAccent,
+                  color: Color(0xFFFF4081),
                 ),
               ),
               const Text(

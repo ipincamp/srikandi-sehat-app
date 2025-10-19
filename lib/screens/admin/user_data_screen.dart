@@ -26,7 +26,7 @@ class _UserDataScreenState extends State<UserDataScreen> {
 
   Future<void> _loadInitialData() async {
     final provider = Provider.of<UserDataProvider>(context, listen: false);
-    await provider.fetchUsers(context);
+    await provider.fetchUsers(context, classification: 3);
   }
 
   @override
@@ -86,7 +86,7 @@ class _UserDataScreenState extends State<UserDataScreen> {
                             (u) => {
                               'id': u.id,
                               'name': u.name,
-                              'region': selectedClassification == 1
+                              'region': selectedClassification == 3
                                   ? 'Kota'
                                   : 'Desa',
                             },
@@ -94,6 +94,7 @@ class _UserDataScreenState extends State<UserDataScreen> {
                           .toList(),
                       currentPage: currentPage - 1,
                       itemsPerPage: 10,
+                      total: allUsers.length,
                       pageCount: totalPages,
                       classification: selectedClassification,
                       onPageChanged: (index) {
@@ -177,8 +178,8 @@ class _UserDataScreenState extends State<UserDataScreen> {
                       ? Colors.white
                       : Colors.transparent,
                   borderRadius: const BorderRadius.only(
-                    topRight: Radius.circular(10),
-                    bottomRight: Radius.circular(10),
+                    topRight: Radius.circular(0),
+                    bottomRight: Radius.circular(0),
                   ),
                   boxShadow: selectedClassification == 2
                       ? [
@@ -198,6 +199,44 @@ class _UserDataScreenState extends State<UserDataScreen> {
                       fontWeight: FontWeight.bold,
                       color: selectedClassification == 2
                           ? Colors.green
+                          : Colors.grey[600],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: InkWell(
+              onTap: () => provider.setClassificationFilter(context, 3),
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: selectedClassification == 3
+                      ? Colors.white
+                      : Colors.transparent,
+                  borderRadius: const BorderRadius.only(
+                    topRight: Radius.circular(10),
+                    bottomRight: Radius.circular(10),
+                  ),
+                  boxShadow: selectedClassification == 3
+                      ? [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 1,
+                            blurRadius: 3,
+                            offset: const Offset(0, 1),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Center(
+                  child: Text(
+                    'Semua',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: selectedClassification == 3
+                          ? Colors.orange
                           : Colors.grey[600],
                     ),
                   ),
