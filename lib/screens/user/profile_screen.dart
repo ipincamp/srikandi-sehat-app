@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/provider/auth_provider.dart';
-import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
-import 'package:srikandi_sehat_app/widgets/logout_tile.dart';
-import 'package:srikandi_sehat_app/widgets/notification_icon_button.dart';
-import 'package:srikandi_sehat_app/widgets/profile_tile.dart';
+import 'package:app/provider/auth_provider.dart';
+import 'package:app/widgets/custom_alert.dart';
+import 'package:app/widgets/logout_tile.dart';
+import 'package:app/widgets/notification_icon_button.dart';
+import 'package:app/widgets/profile_tile.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});

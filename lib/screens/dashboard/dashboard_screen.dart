@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:srikandi_sehat_app/widgets/custom_table.dart';
-import 'package:srikandi_sehat_app/widgets/custom_chart.dart';
+import 'package:app/widgets/custom_table.dart';
+import 'package:app/widgets/custom_chart.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});

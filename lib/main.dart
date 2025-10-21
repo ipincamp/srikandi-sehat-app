@@ -6,58 +6,58 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:srikandi_sehat_app/firebase_options.dart';
-import 'package:srikandi_sehat_app/provider/auth_provider.dart';
-import 'package:srikandi_sehat_app/provider/csv_download_provider.dart';
-import 'package:srikandi_sehat_app/provider/cycle_tracking_provider.dart';
-import 'package:srikandi_sehat_app/provider/cycle_provider.dart';
-import 'package:srikandi_sehat_app/provider/district_provider.dart';
-import 'package:srikandi_sehat_app/provider/health_provider.dart';
-import 'package:srikandi_sehat_app/provider/menstrual_history_detail_provider.dart';
-import 'package:srikandi_sehat_app/provider/menstrual_history_provider.dart';
-import 'package:srikandi_sehat_app/provider/password_provider.dart';
-import 'package:srikandi_sehat_app/provider/profile_change_provider.dart';
-import 'package:srikandi_sehat_app/provider/symptom_history_provider.dart';
-import 'package:srikandi_sehat_app/provider/symptom_history_detail_provider.dart';
-import 'package:srikandi_sehat_app/provider/symptom_log_post_provider.dart';
-import 'package:srikandi_sehat_app/provider/symptom_log_get_provider.dart';
-import 'package:srikandi_sehat_app/provider/user_data_provider.dart';
-import 'package:srikandi_sehat_app/provider/user_data_stats_provider.dart';
-import 'package:srikandi_sehat_app/provider/user_detail_provider.dart';
-import 'package:srikandi_sehat_app/provider/user_profile_provider.dart';
-import 'package:srikandi_sehat_app/provider/village_provider.dart';
+import 'package:app/firebase_options.dart';
+import 'package:app/provider/auth_provider.dart';
+import 'package:app/provider/csv_download_provider.dart';
+import 'package:app/provider/cycle_tracking_provider.dart';
+import 'package:app/provider/cycle_provider.dart';
+import 'package:app/provider/district_provider.dart';
+import 'package:app/provider/health_provider.dart';
+import 'package:app/provider/menstrual_history_detail_provider.dart';
+import 'package:app/provider/menstrual_history_provider.dart';
+import 'package:app/provider/password_provider.dart';
+import 'package:app/provider/profile_change_provider.dart';
+import 'package:app/provider/symptom_history_provider.dart';
+import 'package:app/provider/symptom_history_detail_provider.dart';
+import 'package:app/provider/symptom_log_post_provider.dart';
+import 'package:app/provider/symptom_log_get_provider.dart';
+import 'package:app/provider/user_data_provider.dart';
+import 'package:app/provider/user_data_stats_provider.dart';
+import 'package:app/provider/user_detail_provider.dart';
+import 'package:app/provider/user_profile_provider.dart';
+import 'package:app/provider/village_provider.dart';
 
-import 'package:srikandi_sehat_app/screens/auth/login_screen.dart';
-import 'package:srikandi_sehat_app/screens/auth/register_screen.dart';
-import 'package:srikandi_sehat_app/screens/splash/maintenance_screen.dart';
-import 'package:srikandi_sehat_app/screens/splash/splash_screen.dart';
-import 'package:srikandi_sehat_app/screens/user/change_password_screen.dart'
+import 'package:app/screens/auth/login_screen.dart';
+import 'package:app/screens/auth/register_screen.dart';
+import 'package:app/screens/splash/maintenance_screen.dart';
+import 'package:app/screens/splash/splash_screen.dart';
+import 'package:app/screens/user/change_password_screen.dart'
     as user;
-import 'package:srikandi_sehat_app/screens/user/edit_profile_screen.dart'
+import 'package:app/screens/user/edit_profile_screen.dart'
     as user;
-import 'package:srikandi_sehat_app/screens/user/home_screen.dart' as user;
-import 'package:srikandi_sehat_app/screens/user/main_screen.dart' as user;
-import 'package:srikandi_sehat_app/screens/user/profile_screen.dart' as user;
-import 'package:srikandi_sehat_app/screens/user/profile_detail_screen.dart'
+import 'package:app/screens/user/home_screen.dart' as user;
+import 'package:app/screens/user/main_screen.dart' as user;
+import 'package:app/screens/user/profile_screen.dart' as user;
+import 'package:app/screens/user/profile_detail_screen.dart'
     as user;
-import 'package:srikandi_sehat_app/screens/user/symptom_history_screen.dart'
+import 'package:app/screens/user/symptom_history_screen.dart'
     as user;
-import 'package:srikandi_sehat_app/screens/user/menstrual_history_screen.dart'
+import 'package:app/screens/user/menstrual_history_screen.dart'
     as user;
-import 'package:srikandi_sehat_app/screens/admin/home_screen.dart' as admin;
-import 'package:srikandi_sehat_app/screens/admin/main_screen.dart' as admin;
-import 'package:srikandi_sehat_app/screens/admin/profile_screen.dart' as admin;
-import 'package:srikandi_sehat_app/screens/admin/user_data_screen.dart'
+import 'package:app/screens/admin/home_screen.dart' as admin;
+import 'package:app/screens/admin/main_screen.dart' as admin;
+import 'package:app/screens/admin/profile_screen.dart' as admin;
+import 'package:app/screens/admin/user_data_screen.dart'
     as admin;
-import 'package:srikandi_sehat_app/core/auth/route_observer.dart';
-import 'package:srikandi_sehat_app/core/auth/auth_wrapper.dart';
-import 'package:srikandi_sehat_app/core/auth/auth_guard.dart';
-import 'package:srikandi_sehat_app/core/auth/notification_service.dart';
+import 'package:app/core/auth/route_observer.dart';
+import 'package:app/core/auth/auth_wrapper.dart';
+import 'package:app/core/auth/auth_guard.dart';
+import 'package:app/core/auth/notification_service.dart';
 import 'package:flutter/foundation.dart';
-import 'package:srikandi_sehat_app/provider/notification_provider.dart';
-import 'package:srikandi_sehat_app/screens/user/notification_history_screen.dart'
+import 'package:app/provider/notification_provider.dart';
+import 'package:app/screens/user/notification_history_screen.dart'
     as user;
-import 'package:srikandi_sehat_app/widgets/markdown_screen.dart';
+import 'package:app/widgets/markdown_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:srikandi_sehat_app/screens/admin/user_detail_screen.dart';
-import 'package:srikandi_sehat_app/widgets/custom_button.dart';
+import 'package:app/screens/admin/user_detail_screen.dart';
+import 'package:app/widgets/custom_button.dart';
 
 class CustomTable extends StatelessWidget {
   final List<Map<String, dynamic>> users;

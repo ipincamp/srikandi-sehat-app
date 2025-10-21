@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/provider/csv_download_provider.dart';
-import 'package:srikandi_sehat_app/provider/user_data_provider.dart';
-import 'package:srikandi_sehat_app/provider/user_data_stats_provider.dart';
-import 'package:srikandi_sehat_app/widgets/custom_chart.dart';
-import 'package:srikandi_sehat_app/widgets/custom_table.dart';
+import 'package:app/provider/csv_download_provider.dart';
+import 'package:app/provider/user_data_provider.dart';
+import 'package:app/provider/user_data_stats_provider.dart';
+import 'package:app/widgets/custom_chart.dart';
+import 'package:app/widgets/custom_table.dart';
 
 class UserDataScreen extends StatefulWidget {
   const UserDataScreen({super.key});

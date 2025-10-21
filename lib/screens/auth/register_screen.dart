@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/core/auth/notification_service.dart';
-import 'package:srikandi_sehat_app/provider/auth_provider.dart';
-import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
-import 'package:srikandi_sehat_app/widgets/custom_button.dart';
-import 'package:srikandi_sehat_app/widgets/custom_form.dart';
+import 'package:app/core/auth/notification_service.dart';
+import 'package:app/provider/auth_provider.dart';
+import 'package:app/widgets/custom_alert.dart';
+import 'package:app/widgets/custom_button.dart';
+import 'package:app/widgets/custom_form.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});

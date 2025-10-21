@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:srikandi_sehat_app/models/recommendation_model.dart';
+import 'package:app/models/recommendation_model.dart';
 
 class RecommendationProvider with ChangeNotifier {
   List<Recommendation> _recommendations = [];

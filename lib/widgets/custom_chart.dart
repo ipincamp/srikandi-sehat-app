@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/provider/csv_download_provider.dart';
+import 'package:app/provider/csv_download_provider.dart';
 
 class CustomChart extends StatelessWidget {
   final int urbanCount;

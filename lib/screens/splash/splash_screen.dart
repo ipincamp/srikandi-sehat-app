@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/provider/health_provider.dart';
+import 'package:app/provider/health_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   final VoidCallback onInitializationComplete;

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:srikandi_sehat_app/models/education_model.dart';
+import 'package:app/models/education_model.dart';
 
 class EducationData {
   static final List<EducationItem> allEducationItems = [

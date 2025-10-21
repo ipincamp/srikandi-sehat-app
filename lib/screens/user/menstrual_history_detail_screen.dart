@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/models/menstural_history_detail_model.dart';
-import 'package:srikandi_sehat_app/provider/menstrual_history_detail_provider.dart';
-import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
-import 'package:srikandi_sehat_app/widgets/custom_popup.dart';
+import 'package:app/models/menstural_history_detail_model.dart';
+import 'package:app/provider/menstrual_history_detail_provider.dart';
+import 'package:app/widgets/custom_alert.dart';
+import 'package:app/widgets/custom_popup.dart';
 
 class MenstrualHistoryDetailScreen extends StatefulWidget {
   final int cycleId;

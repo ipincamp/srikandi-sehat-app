@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/provider/notification_provider.dart';
+import 'package:app/provider/notification_provider.dart';
 
 class NotificationIconButton extends StatefulWidget {
   const NotificationIconButton({super.key});

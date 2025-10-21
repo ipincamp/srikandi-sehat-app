@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/core/auth/auth_guard.dart';
-import 'package:srikandi_sehat_app/provider/auth_provider.dart';
-import 'package:srikandi_sehat_app/provider/health_provider.dart';
-import 'package:srikandi_sehat_app/screens/splash/maintenance_screen.dart';
-import 'package:srikandi_sehat_app/widgets/markdown_screen.dart';
+import 'package:app/core/auth/auth_guard.dart';
+import 'package:app/provider/auth_provider.dart';
+import 'package:app/provider/health_provider.dart';
+import 'package:app/screens/splash/maintenance_screen.dart';
 
 class AuthWrapper extends StatefulWidget {
   final dynamic initialAuthState;

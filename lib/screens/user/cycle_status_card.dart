@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/models/cycle_status_model.dart';
-import 'package:srikandi_sehat_app/provider/cycle_provider.dart';
+import 'package:app/models/cycle_status_model.dart';
+import 'package:app/provider/cycle_provider.dart';
 
 class CycleStatusCard extends StatelessWidget {
   const CycleStatusCard({super.key});

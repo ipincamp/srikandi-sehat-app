@@ -5,9 +5,10 @@ import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:permission_handler/permission_handler.dart';
-import 'package:srikandi_sehat_app/core/network/http_client.dart';
-import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
+import 'package:app/core/network/http_client.dart';
+import 'package:app/widgets/custom_alert.dart';
 
+// TODO: Redirect with download link instead
 class CsvDownloadProvider with ChangeNotifier {
   bool _isDownloading = false;
   String _downloadStatus = '';
