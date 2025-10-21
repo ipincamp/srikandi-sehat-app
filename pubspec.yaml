@@ -1,16 +1,15 @@
-name: srikandi_sehat_app
-description: "A new Flutter project."
-publish_to: "none" # Remove this line if you wish to publish to pub.dev
+name: app
+description: "Menjadi remaja sehat dan cerdas, dalam memahami menstruasi"
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.8.1
+  sdk: ^3.9.2
 
 dependencies:
   flutter:
     sdk: flutter
-
   cupertino_icons: ^1.0.8
   http: ^1.5.0
   flutter_dotenv: ^5.2.1

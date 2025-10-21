@@ -1,6 +1,6 @@
-# srikandi_sehat_app
+# Srikandi Sehat
 
-A new Flutter project.
+Menjadi remaja sehat dan cerdas, dalam memahami menstruasi
 
 ## Getting Started
 
