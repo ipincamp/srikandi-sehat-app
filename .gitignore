@@ -54,3 +54,6 @@ firebase.json
 firebase_options.dart
 google-services.json
 GoogleService-Info.plist
+
+# Generated service worker for Firebase Messaging
+firebase-messaging-sw.js
