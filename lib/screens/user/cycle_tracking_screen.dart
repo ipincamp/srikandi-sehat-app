@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/models/cycle_history_model.dart';
-import 'package:srikandi_sehat_app/provider/cycle_tracking_provider.dart';
+import 'package:app/models/cycle_history_model.dart';
+import 'package:app/provider/cycle_tracking_provider.dart';
+import 'package:app/widgets/notification_icon_button.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 
@@ -60,6 +61,7 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
         actions: [
+          NotificationIconButton(),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => context

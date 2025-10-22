@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/models/symptom_detail_model.dart';
-import 'package:srikandi_sehat_app/provider/symptom_history_detail_provider.dart';
+import 'package:app/models/symptom_detail_model.dart';
+import 'package:app/provider/symptom_history_detail_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SymptomDetailScreen extends StatefulWidget {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
-import 'package:srikandi_sehat_app/data/education_data.dart';
-import 'package:srikandi_sehat_app/models/education_model.dart';
+import 'package:app/data/education_data.dart';
+import 'package:app/models/education_model.dart';
 
 class TipsEducationList extends StatefulWidget {
   const TipsEducationList({super.key});

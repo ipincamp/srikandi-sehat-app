@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:srikandi_sehat_app/core/network/http_client.dart';
-import 'package:srikandi_sehat_app/models/user_detail_model.dart';
+import 'package:app/core/network/http_client.dart';
+import 'package:app/models/user_detail_model.dart';
 
 class UserDetailProvider with ChangeNotifier {
   UserDetail? _userDetail;

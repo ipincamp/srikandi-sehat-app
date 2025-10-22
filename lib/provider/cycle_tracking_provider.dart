@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:srikandi_sehat_app/models/cycle_history_model.dart';
+import 'package:app/models/cycle_history_model.dart';
 
 class CycleTrackingProvider with ChangeNotifier {
   List<CycleData> _cycleHistory = [];

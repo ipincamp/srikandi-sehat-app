@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
+import 'package:app/widgets/custom_alert.dart';
 
 class UserDataStatsProvider with ChangeNotifier {
   int _totalUsers = 0;
@@ -28,7 +28,7 @@ class UserDataStatsProvider with ChangeNotifier {
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/json; charset=UTF-8',
-          'Authorization': 'Bearer ${token}',
+          'Authorization': 'Bearer $token',
         },
       );
 

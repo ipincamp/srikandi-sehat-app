@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:srikandi_sehat_app/provider/auth_provider.dart';
-import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
-import 'package:srikandi_sehat_app/widgets/custom_button.dart';
-import 'package:srikandi_sehat_app/widgets/custom_form.dart';
+import 'package:app/provider/auth_provider.dart';
+import 'package:app/widgets/custom_alert.dart';
+import 'package:app/widgets/custom_button.dart';
+import 'package:app/widgets/custom_form.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -113,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   height: 1.2,
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
-                  color: Colors.pinkAccent,
+                  color: Color(0xFFFF4081),
                 ),
               ),
               const Text(

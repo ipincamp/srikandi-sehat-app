@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:srikandi_sehat_app/models/menstural_history_detail_model.dart';
-import 'package:srikandi_sehat_app/provider/menstrual_history_detail_provider.dart';
+import 'package:app/models/menstural_history_detail_model.dart';
+import 'package:app/provider/menstrual_history_detail_provider.dart';
+import 'package:app/widgets/custom_alert.dart';
+import 'package:app/widgets/custom_popup.dart';
 
 class MenstrualHistoryDetailScreen extends StatefulWidget {
   final int cycleId;
@@ -42,7 +44,69 @@ class _MenstrualHistoryDetailScreenState
         title: const Text('Detail Siklus Menstruasi'),
         backgroundColor: Colors.pink,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: () async {
+              final TextEditingController reasonController =
+                  TextEditingController();
+
+              final confirm = await CustomConfirmationPopup.show(
+                context,
+                title: 'Hapus Siklus',
+                message:
+                    'Berikan alasan mengapa kamu ingin menghapus siklus ini:',
+                confirmText: 'Hapus',
+                cancelText: 'Batal',
+                confirmColor: Colors.pink,
+                icon: Icons.delete_forever,
+                additionalWidget: TextField(
+                  controller: reasonController,
+                  decoration: const InputDecoration(
+                    hintText: 'Tulis alasan di sini...',
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                  ),
+                  maxLines: 2,
+                ),
+              );
+
+              if (confirm == true) {
+                final reason = reasonController.text.trim().isEmpty
+                    ? 'Tidak ada alasan diberikan'
+                    : reasonController.text.trim();
+
+                final provider = Provider.of<MenstrualHistoryDetailProvider>(
+                  context,
+                  listen: false,
+                );
+
+                await provider.deleteCycleDetail(widget.cycleId, reason);
+
+                if (provider.error == null) {
+                  CustomAlert.show(
+                    context,
+                    'Siklus berhasil dihapus',
+                    type: AlertType.success,
+                  );
+                  Navigator.pop(context, true);
+                  return;
+                } else {
+                  CustomAlert.show(
+                    context,
+                    provider.error!,
+                    type: AlertType.error,
+                  );
+                }
+              }
+            },
+          ),
+        ],
       ),
+
       body: Consumer<MenstrualHistoryDetailProvider>(
         builder: (context, provider, _) {
           if (provider.isLoading) {

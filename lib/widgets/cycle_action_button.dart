@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:srikandi_sehat_app/widgets/action_button.dart';
+import 'package:app/widgets/action_button.dart';
 
 class CycleActionButtons extends StatelessWidget {
   final VoidCallback? onStart;

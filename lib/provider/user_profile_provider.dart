@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:srikandi_sehat_app/core/network/http_client.dart';
+import 'package:app/core/network/http_client.dart';
 
 extension StringCasingExtension on String {
   String toTitleCase() {

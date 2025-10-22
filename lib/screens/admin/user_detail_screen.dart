@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:srikandi_sehat_app/provider/user_detail_provider.dart';
-import 'package:srikandi_sehat_app/models/user_detail_model.dart';
-import 'package:srikandi_sehat_app/utils/date_format.dart';
-import 'package:srikandi_sehat_app/utils/string_extentions.dart';
-import 'package:srikandi_sehat_app/utils/user_calc.dart';
-import 'package:srikandi_sehat_app/widgets/connection_error_card.dart';
+import 'package:app/provider/user_detail_provider.dart';
+import 'package:app/models/user_detail_model.dart';
+import 'package:app/utils/date_format.dart';
+import 'package:app/utils/string_extentions.dart';
+import 'package:app/utils/user_calc.dart';
+import 'package:app/widgets/connection_error_card.dart';
 
 class UserDetailScreen extends StatefulWidget {
   final String userId;

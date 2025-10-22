@@ -1,20 +1,22 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:srikandi_sehat_app/core/network/http_client.dart';
-import 'package:srikandi_sehat_app/models/user_model.dart';
-import 'package:srikandi_sehat_app/widgets/custom_alert.dart';
+import 'package:app/core/network/http_client.dart';
+import 'package:app/models/user_model.dart';
+import 'package:app/widgets/custom_alert.dart';
 
 class UserDataProvider with ChangeNotifier {
   List<UserModel> _allUsers = [];
   bool _isLoading = false;
   int _currentPage = 1;
   int _totalPages = 1;
-  int? _selectedClassification; // 1 for urban, 2 for rural
+  int _totalUser = 0;
+  int? _selectedClassification = 3; // 1 for urban, 2 for rural
 
   List<UserModel> get allUsers => _allUsers;
   bool get isLoading => _isLoading;
   int get currentPage => _currentPage;
   int get totalPages => _totalPages;
+  int get totalUser => _totalUser;
   int? get selectedClassification => _selectedClassification;
 
   Future<void> fetchUsers(
@@ -31,7 +33,7 @@ class UserDataProvider with ChangeNotifier {
       final queryParams = {
         'page': page.toString(),
         'limit': '10',
-        if (classification != null)
+        if (classification != null && classification != 3)
           'classification': classification == 1 ? 'urban' : 'rural',
       };
 

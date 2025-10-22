@@ -5,9 +5,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:srikandi_sehat_app/core/auth/auth_guard.dart';
-import 'package:srikandi_sehat_app/core/network/api_exceptions.dart';
-import 'package:srikandi_sehat_app/provider/auth_provider.dart';
+import 'package:app/core/auth/auth_guard.dart';
+import 'package:app/core/network/api_exceptions.dart';
+import 'package:app/provider/auth_provider.dart';
 
 class HttpClient {
   static Future<http.Response> get(

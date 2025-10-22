@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
+import 'package:app/provider/csv_download_provider.dart';
 
 class CustomChart extends StatelessWidget {
   final int urbanCount;
@@ -20,7 +22,6 @@ class CustomChart extends StatelessWidget {
     final ruralPercentage = total > 0 ? (ruralCount / total * 100).round() : 0;
     final screenWidth = MediaQuery.of(context).size.width;
 
-    // Adjust layout based on screen width
     final bool isSmallScreen = screenWidth < 600;
     final double chartSize = isSmallScreen ? 150 : 180;
     final double centerSpaceRadius = isSmallScreen ? 40 : 50;
@@ -55,9 +56,9 @@ class CustomChart extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // Responsive layout - switches between row and column
           isSmallScreen
               ? _buildSmallLayout(
+                  context,
                   chartSize,
                   centerSpaceRadius,
                   sectionRadius,
@@ -67,6 +68,7 @@ class CustomChart extends StatelessWidget {
                   total,
                 )
               : _buildLargeLayout(
+                  context,
                   chartSize,
                   centerSpaceRadius,
                   sectionRadius,
@@ -81,6 +83,7 @@ class CustomChart extends StatelessWidget {
   }
 
   Widget _buildSmallLayout(
+    BuildContext context,
     double chartSize,
     double centerSpaceRadius,
     double sectionRadius,
@@ -105,6 +108,7 @@ class CustomChart extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _buildLegendAndInfo(
+          context,
           fontSize,
           urbanPercentage,
           ruralPercentage,
@@ -116,6 +120,7 @@ class CustomChart extends StatelessWidget {
   }
 
   Widget _buildLargeLayout(
+    BuildContext context,
     double chartSize,
     double centerSpaceRadius,
     double sectionRadius,
@@ -142,6 +147,7 @@ class CustomChart extends StatelessWidget {
         const SizedBox(width: 16),
         Expanded(
           child: _buildLegendAndInfo(
+            context,
             fontSize,
             urbanPercentage,
             ruralPercentage,
@@ -155,12 +161,11 @@ class CustomChart extends StatelessWidget {
 
   List<PieChartSectionData> _buildSections(double radius, double fontSize) {
     final total = urbanCount + ruralCount;
-    // Jika tidak ada data, tampilkan chart abu-abu penuh
     if (total == 0) {
       return [
         PieChartSectionData(
-          value: 100, // Nilai 100 untuk menampilkan lingkaran penuh
-          color: Colors.grey[300], // Warna abu-abu
+          value: 100,
+          color: Colors.grey[300],
           title: '0',
           radius: radius,
           titleStyle: TextStyle(
@@ -198,90 +203,123 @@ class CustomChart extends StatelessWidget {
   }
 
   Widget _buildLegendAndInfo(
+    BuildContext context,
     double fontSize,
     int urbanPercentage,
     int ruralPercentage,
     int total, {
     required bool isSmallScreen,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: isSmallScreen
-              ? MainAxisAlignment.spaceAround
-              : MainAxisAlignment.start,
+    return Consumer<CsvDownloadProvider>(
+      builder: (context, csv, _) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildLegendItem(
-              color: Colors.blue,
-              label: 'Perkotaan',
-              value: '$urbanCount ($urbanPercentage%)',
-              fontSize: fontSize,
-            ),
-            if (!isSmallScreen) const SizedBox(width: 24),
-            _buildLegendItem(
-              color: Colors.green,
-              label: 'Pedesaan',
-              value: '$ruralCount ($ruralPercentage%)',
-              fontSize: fontSize,
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Total Pengguna:',
-                style: TextStyle(fontSize: fontSize, color: Colors.blueGrey),
-              ),
-              Text(
-                total.toString(),
-                style: TextStyle(
-                  fontSize: fontSize + 2,
-                  fontWeight: FontWeight.bold,
+            Row(
+              mainAxisAlignment: isSmallScreen
+                  ? MainAxisAlignment.spaceAround
+                  : MainAxisAlignment.start,
+              children: [
+                _buildLegendItem(
                   color: Colors.blue,
+                  label: 'Perkotaan',
+                  value: '$urbanCount ($urbanPercentage%)',
+                  fontSize: fontSize,
                 ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        Align(
-          alignment: isSmallScreen ? Alignment.center : Alignment.centerRight,
-          child: ElevatedButton.icon(
-            onPressed: onDownloadPressed,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.teal,
-              shape: RoundedRectangleBorder(
+                if (!isSmallScreen) const SizedBox(width: 24),
+                _buildLegendItem(
+                  color: Colors.green,
+                  label: 'Pedesaan',
+                  value: '$ruralCount ($ruralPercentage%)',
+                  fontSize: fontSize,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
                 borderRadius: BorderRadius.circular(8),
               ),
-              padding: EdgeInsets.symmetric(
-                horizontal: isSmallScreen ? 8 : 12,
-                vertical: 8,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Total Pengguna:',
+                    style: TextStyle(
+                      fontSize: fontSize,
+                      color: Colors.blueGrey,
+                    ),
+                  ),
+                  Text(
+                    total.toString(),
+                    style: TextStyle(
+                      fontSize: fontSize + 2,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    ),
+                  ),
+                ],
               ),
             ),
-            icon: Icon(
-              Icons.download,
-              size: isSmallScreen ? 14 : 16,
-              color: Colors.white,
-            ),
-            label: Text(
-              'Download Data',
-              style: TextStyle(
-                fontSize: isSmallScreen ? 12 : 14,
-                color: Colors.white,
+            const SizedBox(height: 12),
+            Align(
+              alignment: isSmallScreen
+                  ? Alignment.center
+                  : Alignment.centerRight,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: csv.isDownloading ? null : onDownloadPressed,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: csv.isDownloading
+                          ? Colors.grey
+                          : Colors.teal,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isSmallScreen ? 8 : 12,
+                        vertical: 8,
+                      ),
+                    ),
+                    icon: Icon(
+                      csv.isDownloading ? Icons.downloading : Icons.download,
+                      size: isSmallScreen ? 14 : 16,
+                      color: Colors.white,
+                    ),
+                    label: Text(
+                      csv.isDownloading ? 'Mengunduh...' : 'Download Data',
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 12 : 14,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  if (csv.isDownloading) ...[
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(value: csv.downloadProgress),
+                  ],
+                  if (csv.downloadStatus.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      csv.downloadStatus,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: csv.errorMessage.isNotEmpty
+                            ? Colors.red
+                            : Colors.blueGrey,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 

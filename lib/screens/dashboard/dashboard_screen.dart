@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:srikandi_sehat_app/widgets/custom_table.dart';
-import 'package:srikandi_sehat_app/widgets/custom_chart.dart';
+import 'package:app/widgets/custom_table.dart';
+import 'package:app/widgets/custom_chart.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -21,12 +21,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   int currentPage = 0;
   final int itemsPerPage = 10;
   bool showUrban = true;
+  int get totalUser => allUsers.length;
 
   @override
   Widget build(BuildContext context) {
     final filteredUsers = allUsers
-        .where((user) =>
-            showUrban ? user['region'] == 'Kota' : user['region'] == 'Desa')
+        .where(
+          (user) =>
+              showUrban ? user['region'] == 'Kota' : user['region'] == 'Desa',
+        )
         .toList();
 
     final pageCount = (filteredUsers.length / itemsPerPage).ceil();
@@ -40,8 +43,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Dashboard',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: false,
       ),
       body: Padding(
@@ -103,6 +108,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               currentPage: currentPage,
               itemsPerPage: itemsPerPage,
               pageCount: pageCount,
+              total: urbanCount + ruralCount,
               onPageChanged: (index) => setState(() => currentPage = index),
             ),
           ],

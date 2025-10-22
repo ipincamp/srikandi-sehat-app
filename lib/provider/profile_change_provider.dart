@@ -206,9 +206,26 @@ class ProfileChangeProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         try {
           final responseData = jsonDecode(response.body);
-          _updateLocalProfile(cleanedData);
+          final serverData = responseData is Map && responseData['data'] != null
+              ? responseData['data'] as Map<String, dynamic>
+              : (responseData is Map<String, dynamic> ? responseData : null);
+
+          if (serverData != null) {
+            // Parse full user/profile data from server if available
+            _parseProfileData(serverData);
+            _updateLocalProfile(serverData);
+          } else {
+            // Fallback: update local profile from the cleaned request data
+            _updateLocalProfile(cleanedData);
+          }
+
+          // Mark profile complete locally and in prefs
+          _profileComplete = true;
           await _prefs?.setBool('profile_complete', true);
-          await _prefs?.setString('name', _name ?? '');
+          if (_name != null && _name!.isNotEmpty) {
+            await _prefs?.setString('name', _name!);
+          }
+
           return true;
         } catch (e) {
           _errorMessage = 'Failed to process server response';

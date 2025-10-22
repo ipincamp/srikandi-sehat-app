@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:srikandi_sehat_app/models/symptom_history_model.dart';
-import 'package:srikandi_sehat_app/provider/symptom_history_provider.dart';
-import 'package:srikandi_sehat_app/screens/user/symptom_history_detail_screen.dart';
-import 'package:srikandi_sehat_app/widgets/connection_error_card.dart';
+import 'package:app/models/symptom_history_model.dart';
+import 'package:app/provider/symptom_history_provider.dart';
+import 'package:app/screens/user/symptom_history_detail_screen.dart';
+import 'package:app/widgets/connection_error_card.dart';
 
 class SymptomHistoryScreen extends StatefulWidget {
   const SymptomHistoryScreen({super.key});

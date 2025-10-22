@@ -1,11 +1,11 @@
 {
-    "name": "srikandi_sehat_app",
-    "short_name": "srikandi_sehat_app",
+    "name": "app",
+    "short_name": "app",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Menjadi remaja sehat dan cerdas, dalam memahami menstruasi",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
