@@ -1,8 +1,11 @@
+import 'package:app/provider/auth_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:app/widgets/custom_alert.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -33,7 +36,7 @@ class NotificationService {
   }
 
   Future<void> initialize(GlobalKey<NavigatorState> navigatorKey) async {
-    await _firebaseMessaging.requestPermission();
+    await FirebaseMessaging.instance.requestPermission();
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
     // Handler for when a message is received while the app is in the foreground
@@ -84,6 +87,34 @@ class NotificationService {
           '/login',
           (route) => false,
         );
+      }
+    });
+
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+      print(
+        ">>>>> FCM Token Refreshed by Firebase: $newToken <<<<<",
+      ); // Debugging
+      // Pastikan ada konteks yang valid untuk mengakses AuthProvider
+      // Menggunakan navigatorKey adalah cara yang umum
+      final context = navigatorKey.currentState?.context;
+      if (context != null) {
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        // Hanya update jika pengguna sedang login
+        final prefs = await SharedPreferences.getInstance();
+        if (prefs.getBool('isLoggedIn') == true) {
+          print(
+            "Mencoba update token FCM yang di-refresh ke backend...",
+          ); // Debugging
+          await authProvider.updateFcmToken(
+            newToken: newToken,
+          ); // Kirim token baru
+        } else {
+          print("Pengguna tidak login, token refresh diabaikan."); // Debugging
+        }
+      } else {
+        print(
+          "Konteks tidak tersedia untuk update token refresh.",
+        ); // Debugging
       }
     });
   }
