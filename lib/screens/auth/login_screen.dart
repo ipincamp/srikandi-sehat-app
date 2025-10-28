@@ -141,6 +141,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 type: CustomFormFieldType.password,
                 isPassword: true,
                 validatePasswordComplexity: false,
+                textInputAction:
+                    TextInputAction.done,
+                onFieldSubmitted: (_) {
+                  if (!loginProvider.isLoading) {
+                    // Cek agar tidak submit saat loading
+                    _login();
+                  }
+                },
               ),
               const SizedBox(height: 20),
               loginProvider.isLoading

@@ -51,6 +51,9 @@ class CustomFormField extends StatefulWidget {
 
   final bool isMandatory;
 
+  // onFieldSubmitted
+  final Function(String)? onFieldSubmitted;
+
   const CustomFormField({
     super.key,
     required this.label,
@@ -87,6 +90,9 @@ class CustomFormField extends StatefulWidget {
     this.items,
     this.isMandatory = true,
     this.validatePasswordComplexity = true,
+
+    // onFieldSubmitted
+    this.onFieldSubmitted,
   });
 
   @override
@@ -199,6 +205,7 @@ class _CustomFormFieldState extends State<CustomFormField> {
           enabled: widget.enabled,
           maxLines: widget.maxLines,
           textInputAction: widget.textInputAction,
+          onFieldSubmitted: widget.onFieldSubmitted,
           keyboardType: _getKeyboardType(),
           inputFormatters: _getInputFormatters(),
           decoration: _getInputDecoration(),
