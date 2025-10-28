@@ -10,6 +10,14 @@ import 'package:app/core/network/api_exceptions.dart';
 import 'package:app/provider/auth_provider.dart';
 
 class HttpClient {
+  static Future<http.Response> post(
+    BuildContext context,
+    String endpoint, {
+    Map<String, dynamic>? body,
+  }) async {
+    return _makeRequest(context, 'POST', endpoint, body: body);
+  }
+
   static Future<http.Response> get(
     BuildContext context,
     String endpoint, {
@@ -63,6 +71,7 @@ class HttpClient {
       final headers = {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       };
 
       http.Response response;
@@ -71,7 +80,7 @@ class HttpClient {
           response = await http.post(
             uri,
             headers: headers,
-            body: jsonEncode(body),
+            body: body != null ? jsonEncode(body) : null,
           );
           break;
         case 'PUT':

@@ -1,131 +1,126 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:open_file/open_file.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
-import 'package:permission_handler/permission_handler.dart';
 import 'package:app/core/network/http_client.dart';
 import 'package:app/widgets/custom_alert.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-// TODO: Redirect with download link instead
 class CsvDownloadProvider with ChangeNotifier {
   bool _isDownloading = false;
   String _downloadStatus = '';
   String _errorMessage = '';
-  double _downloadProgress = 0;
 
   bool get isDownloading => _isDownloading;
   String get downloadStatus => _downloadStatus;
   String get errorMessage => _errorMessage;
-  double get downloadProgress => _downloadProgress;
 
   Future<void> downloadUserCsv(BuildContext context) async {
     _isDownloading = true;
-    _downloadProgress = 0;
-    _downloadStatus = 'Mempersiapkan unduhan...';
+    _downloadStatus = 'Meminta link unduhan...';
     _errorMessage = '';
     notifyListeners();
 
+    if (kDebugMode) {
+      print('🚀 [CSV Download] Requesting download link via POST...');
+    }
+
     CustomAlert.show(
       context,
-      '📦 Mempersiapkan unduhan...',
-      duration: Duration(seconds: 2),
+      '📦 Meminta link unduhan...',
+      duration: const Duration(seconds: 2),
     );
 
     try {
-      // 🔒 Minta izin penyimpanan
-      if (Platform.isAndroid) {
-        final status = await Permission.storage.request();
-        if (!status.isGranted) {
-          throw Exception('Izin penyimpanan tidak diberikan');
-        }
-      }
+      const endpoint = 'admin/reports/generate-csv-link';
 
-      const endpoint = 'admin/reports/csv';
       final response = await Future.any([
-        HttpClient.get(context, endpoint, body: {}),
-        Future.delayed(const Duration(seconds: 15), () {
-          throw TimeoutException('Waktu koneksi habis. Coba lagi nanti.');
+        HttpClient.post(context, endpoint), // Making the POST request
+        Future.delayed(const Duration(seconds: 20), () {
+          throw TimeoutException('Waktu tunggu habis saat meminta link unduhan.');
         }),
       ]);
 
+      if (kDebugMode) {
+        print('✅ [CSV Download] Response Status Code: ${response.statusCode}');
+        print('✅ [CSV Download] Response Body: ${response.body}');
+      }
+
       if (response.statusCode == 200) {
-        if (kDebugMode) {
-          print('✅ CSV downloaded successfully.');
-        }
-        final contentType = response.headers['content-type'] ?? '';
-        if (!contentType.contains('csv')) {
-          throw Exception('Respons bukan file CSV yang valid');
-        }
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
 
-        _downloadStatus = 'Menyimpan file...';
-        notifyListeners();
+        // Check the 'status' field first
+        if (responseData['status'] == true &&
+            responseData['data'] is Map && // Ensure 'data' is a map
+            responseData['data']['download_url'] != null && // Check for the URL
+            responseData['data']['download_url'] is String) { // Ensure URL is a string
 
-        CustomAlert.show(
-          context,
-          '💾 Menyimpan file ke folder Download...',
-          duration: Duration(seconds: 2),
-        );
+          final downloadUrl = responseData['data']['download_url'] as String;
+          // final expiresAt = responseData['data']['expires_at'] as String?; // Optional: get expiry time
 
-        // 📁 Tentukan lokasi penyimpanan
-        Directory? directory;
-        if (Platform.isAndroid) {
-          directory = Directory('/storage/emulated/0/Download');
-          if (!await directory.exists()) {
-            directory = await getExternalStorageDirectory();
+          if (kDebugMode) {
+            print('✅ [CSV Download] Download URL received: $downloadUrl');
+            // if (expiresAt != null) print('✅ [CSV Download] Link expires at: $expiresAt');
           }
-        } else {
-          directory = await getDownloadsDirectory();
-        }
 
-        if (directory == null) {
-          throw Exception('Tidak dapat mengakses folder unduhan');
-        }
+          _downloadStatus = 'Membuka link unduhan...';
+          notifyListeners();
 
-        // 🕓 Buat nama file unik
-        final timestamp = DateTime.now().toIso8601String().replaceAll(
-          RegExp(r'[^0-9]'),
-          '',
-        );
-        final fileName = 'laporan_pengguna_$timestamp.csv';
-        final filePath = path.join(directory.path, fileName);
-
-        // 💾 Simpan file
-        final file = File(filePath);
-        await file.writeAsBytes(response.bodyBytes);
-
-        if (!await file.exists()) {
-          throw Exception('Gagal menyimpan file');
-        }
-
-        _downloadStatus = 'File berhasil diunduh!';
-        _downloadProgress = 1.0;
-        notifyListeners();
-
-        CustomAlert.show(
-          context,
-          '✅ File berhasil diunduh ke $filePath',
-          type: AlertType.success,
-          duration: const Duration(seconds: 3),
-        );
-
-        // 📂 Buka file otomatis
-        final openResult = await OpenFile.open(filePath);
-        if (openResult.type != ResultType.done) {
           CustomAlert.show(
             context,
-            'File diunduh, tetapi gagal membuka file secara otomatis.',
-            type: AlertType.info,
-            duration: const Duration(seconds: 3),
+            '🔗 Membuka link unduhan di browser...',
+            duration: const Duration(seconds: 2),
           );
+
+          final Uri url = Uri.parse(downloadUrl);
+          if (await canLaunchUrl(url)) {
+            await launchUrl(url, mode: LaunchMode.externalApplication);
+            _downloadStatus = 'Link unduhan telah dibuka di browser.';
+            if (kDebugMode) {
+              print('✅ [CSV Download] Link opened successfully.');
+            }
+          } else {
+            if (kDebugMode) {
+               print('❌ [CSV Download] Could not launch URL: $downloadUrl');
+            }
+            throw Exception('Tidak dapat membuka URL: $downloadUrl');
+          }
+
+        } else {
+          // Handle cases where 'status' is false or data structure is incorrect
+          final message = responseData['message'] as String? ?? 'Format respons tidak valid atau URL tidak ditemukan.';
+           if (kDebugMode) {
+             print('❌ [CSV Download] Invalid response structure or missing URL. Message: $message');
+           }
+          throw Exception(message);
         }
-      } else {
-        throw Exception('Gagal mengunduh. Status: ${response.statusCode}');
+
+      } else if (response.statusCode == 401) {
+           _errorMessage = 'Sesi habis, silakan login kembali.';
+           if (kDebugMode) {
+            print('❌ [CSV Download] Unauthorized (401). HttpClient should handle redirect.');
+          }
+      }
+      else {
+        // Handle other error status codes
+        String errorMsg = 'Gagal mendapatkan link unduhan.';
+        try {
+            final errorData = jsonDecode(response.body);
+            errorMsg = errorData['message'] ?? '$errorMsg Status: ${response.statusCode}';
+        } catch(_) {
+            errorMsg = '$errorMsg Status: ${response.statusCode}';
+        }
+         if (kDebugMode) {
+          print('❌ [CSV Download] Failed with status ${response.statusCode}: ${response.body}');
+        }
+        throw Exception(errorMsg);
       }
     } on TimeoutException catch (e) {
       _errorMessage = e.message ?? 'Koneksi terlalu lama, silakan coba lagi.';
+      if (kDebugMode) {
+        print('❌ [CSV Download] Timeout: $_errorMessage');
+      }
       CustomAlert.show(
         context,
         _errorMessage,
@@ -134,6 +129,9 @@ class CsvDownloadProvider with ChangeNotifier {
       );
     } on SocketException {
       _errorMessage = 'Tidak ada koneksi internet.';
+       if (kDebugMode) {
+        print('❌ [CSV Download] SocketException: $_errorMessage');
+      }
       CustomAlert.show(
         context,
         _errorMessage,
@@ -141,7 +139,10 @@ class CsvDownloadProvider with ChangeNotifier {
         duration: const Duration(seconds: 3),
       );
     } on HttpException {
-      _errorMessage = 'Gagal mengunduh dari server.';
+      _errorMessage = 'Gagal terhubung ke server.';
+       if (kDebugMode) {
+        print('❌ [CSV Download] HttpException: $_errorMessage');
+      }
       CustomAlert.show(
         context,
         _errorMessage,
@@ -149,13 +150,18 @@ class CsvDownloadProvider with ChangeNotifier {
         duration: const Duration(seconds: 3),
       );
     } on Exception catch (e) {
-      _errorMessage = e.toString();
-      CustomAlert.show(
-        context,
-        _errorMessage,
-        type: AlertType.error,
-        duration: const Duration(seconds: 3),
-      );
+      _errorMessage = e.toString().replaceFirst('Exception: ', '');
+       if (kDebugMode) {
+        print('❌ [CSV Download] Generic Exception: $_errorMessage');
+      }
+      if (!_errorMessage.contains('Sesi habis')) {
+            CustomAlert.show(
+            context,
+            _errorMessage,
+            type: AlertType.error,
+            duration: const Duration(seconds: 3),
+            );
+       }
     } finally {
       _isDownloading = false;
       notifyListeners();
@@ -165,7 +171,6 @@ class CsvDownloadProvider with ChangeNotifier {
   void resetStatus() {
     _downloadStatus = '';
     _errorMessage = '';
-    _downloadProgress = 0;
     notifyListeners();
   }
 }
