@@ -87,7 +87,7 @@ class NotificationProvider with ChangeNotifier {
       _notifications[index].isRead = false;
       notifyListeners();
       if (kDebugMode) {
-        print('Failed to mark notification as read: $e');
+        debugPrint('Failed to mark notification as read: $e');
       }
     }
   }

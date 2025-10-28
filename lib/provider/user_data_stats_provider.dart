@@ -46,11 +46,11 @@ class UserDataStatsProvider with ChangeNotifier {
       } else if (response.statusCode == 401) {
         // Don't redirect here - HttpClient already handles it
         if (kDebugMode) {
-          print('Unauthorized access to stats');
+          debugPrint('Unauthorized access to stats');
         }
       } else {
         if (kDebugMode) {
-          print('Failed to load stats: ${response.statusCode}');
+          debugPrint('Failed to load stats: ${response.statusCode}');
         }
       }
     } catch (e) {

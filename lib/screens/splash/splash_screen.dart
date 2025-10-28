@@ -41,16 +41,16 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
       if (kDebugMode) {
-        print('User granted permission');
+        debugPrint('User granted permission');
       }
     } else if (settings.authorizationStatus ==
         AuthorizationStatus.provisional) {
       if (kDebugMode) {
-        print('User granted provisional permission');
+        debugPrint('User granted provisional permission');
       }
     } else {
       if (kDebugMode) {
-        print('User declined or has not accepted permission');
+        debugPrint('User declined or has not accepted permission');
       }
     }
   }

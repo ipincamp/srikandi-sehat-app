@@ -42,7 +42,7 @@ class _AuthWrapperState extends State<AuthWrapper> with RouteAware {
     if (isLoggedIn && mounted) {
       // Pastikan user logged in dan widget masih ada
       if (kDebugMode) {
-        print("AuthWrapper: User logged in, checking FCM token sync...");
+        debugPrint("AuthWrapper: User logged in, checking FCM token sync...");
       }
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       await authProvider.updateFcmToken();

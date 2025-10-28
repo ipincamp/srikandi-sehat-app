@@ -245,10 +245,10 @@ class AuthProvider with ChangeNotifier {
     final url = '$baseUrl/auth/login';
 
     if (kDebugMode) {
-      print('--- LOGIN REQUEST ---');
-      print('URL: $url');
-      print('Headers: ${{'Content-Type': 'application/json; charset=UTF-8'}}');
-      print(
+      debugPrint('--- LOGIN REQUEST ---');
+      debugPrint('URL: $url');
+      debugPrint('Headers: ${{'Content-Type': 'application/json; charset=UTF-8'}}');
+      debugPrint(
         'Body: ${jsonEncode(<String, String>{'email': email, 'password': password})}',
       );
     }
@@ -266,10 +266,10 @@ class AuthProvider with ChangeNotifier {
           .timeout(const Duration(seconds: 10));
 
       if (kDebugMode) {
-        print('--- LOGIN RESPONSE ---');
-        print('Status Code: ${response.statusCode}');
-        print('Headers: ${response.headers}');
-        print('Body: ${response.body}');
+        debugPrint('--- LOGIN RESPONSE ---');
+        debugPrint('Status Code: ${response.statusCode}');
+        debugPrint('Headers: ${response.headers}');
+        debugPrint('Body: ${response.body}');
       }
       final responseData = jsonDecode(response.body);
 
@@ -405,7 +405,7 @@ class AuthProvider with ChangeNotifier {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('last_sent_fcm_token', fcmToken);
         if (kDebugMode) {
-          print("FCM Token dari registrasi disimpan lokal.");
+          debugPrint("FCM Token dari registrasi disimpan lokal.");
         }
 
         // Status 202 (Accepted) dianggap sukses
@@ -666,7 +666,7 @@ class AuthProvider with ChangeNotifier {
 
       if (currentFcmToken == null) {
         if (kDebugMode) {
-          print("FCM token saat ini tidak tersedia, lewati pembaruan.");
+          debugPrint("FCM token saat ini tidak tersedia, lewati pembaruan.");
         }
         return;
       }
@@ -677,7 +677,7 @@ class AuthProvider with ChangeNotifier {
       // Bandingkan token saat ini dengan token terakhir yang dikirim
       if (currentFcmToken != lastSentToken) {
         if (kDebugMode) {
-          print(
+          debugPrint(
             "Token FCM berubah atau belum pernah dikirim. Mengirim ke backend...",
           );
         }
@@ -685,7 +685,7 @@ class AuthProvider with ChangeNotifier {
         final token = prefs.getString('token'); // Auth token
         if (token == null) {
           if (kDebugMode) {
-            print("Auth token tidak ditemukan, tidak bisa update FCM token.");
+            debugPrint("Auth token tidak ditemukan, tidak bisa update FCM token.");
           }
           return; // Jangan lakukan update jika tidak ada auth token
         }
@@ -693,7 +693,7 @@ class AuthProvider with ChangeNotifier {
         final baseUrl = dotenv.env['API_URL'];
         if (baseUrl == null) {
           if (kDebugMode) {
-            print("API URL tidak ditemukan.");
+            debugPrint("API URL tidak ditemukan.");
           }
           return;
         }
@@ -714,11 +714,11 @@ class AuthProvider with ChangeNotifier {
         if (response.statusCode == 200 || response.statusCode == 204) {
           await prefs.setString('last_sent_fcm_token', currentFcmToken);
           if (kDebugMode) {
-            print("FCM Token berhasil diupdate di backend dan disimpan lokal.");
+            debugPrint("FCM Token berhasil diupdate di backend dan disimpan lokal.");
           }
         } else {
           if (kDebugMode) {
-            print(
+            debugPrint(
               "Gagal update FCM token di backend: ${response.statusCode} - ${response.body}",
             );
           }
@@ -726,14 +726,14 @@ class AuthProvider with ChangeNotifier {
         }
       } else {
         if (kDebugMode) {
-          print(
+          debugPrint(
             "Token FCM sama dengan yang terakhir dikirim, tidak perlu update.",
           );
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        print("Gagal update FCM token: $e");
+        debugPrint("Gagal update FCM token: $e");
       }
       // Pertimbangkan: apakah perlu retry atau menampilkan error ke user?
     }

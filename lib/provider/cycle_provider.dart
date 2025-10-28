@@ -224,7 +224,7 @@ class CycleProvider with ChangeNotifier {
     }
 
     if (kDebugMode) {
-      print(_isOnCycle);
+      debugPrint(_isOnCycle as String?);
     }
 
     // Check internet connection - Hanya untuk operasi POST

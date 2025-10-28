@@ -258,7 +258,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     );
                     if (kDebugMode) {
-                      print('Navigasi ke halaman Tentang Aplikasi');
+                      debugPrint('Navigasi ke halaman Tentang Aplikasi');
                     }
                   },
                 ),

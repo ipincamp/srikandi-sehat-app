@@ -17,7 +17,7 @@ class AuthGuard {
         final expiryDate = DateTime.parse(expiry);
         if (expiryDate.isBefore(DateTime.now())) {
           if (kDebugMode) {
-            print('Token expired');
+            debugPrint('Token expired');
           }
           return false;
         }
@@ -26,7 +26,7 @@ class AuthGuard {
       return true;
     } catch (e) {
       if (kDebugMode) {
-        print('Error validating session: $e');
+        debugPrint('Error validating session: $e');
       }
       return false;
     }

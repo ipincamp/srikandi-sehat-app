@@ -32,11 +32,11 @@ class _MarkdownScreenState extends State<MarkdownScreen> {
   Future<void> _loadMarkdown() async {
     try {
       if (kDebugMode) {
-        print('✅ Loading markdown from: ${widget.assetPath}');
+        debugPrint('✅ Loading markdown from: ${widget.assetPath}');
       }
       final data = await rootBundle.loadString(widget.assetPath);
       if (kDebugMode) {
-        print('✅ Markdown loaded successfully: ${data.length} characters');
+        debugPrint('✅ Markdown loaded successfully: ${data.length} characters');
       }
 
       if (mounted) {
@@ -47,7 +47,7 @@ class _MarkdownScreenState extends State<MarkdownScreen> {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error loading markdown: $e');
+        debugPrint('❌ Error loading markdown: $e');
       }
       if (mounted) {
         setState(() {
