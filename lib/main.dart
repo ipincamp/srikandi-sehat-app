@@ -175,13 +175,21 @@ class _MyAppState extends State<MyApp> {
             ),
             useMaterial3: true,
           ),
+          /*
           home: AuthWrapper(
             initialAuthState: widget.initialAuthState,
             adminChild: const admin.MainScreen(),
             userChild: const user.MainScreen(),
             guestChild: const LoginScreen(),
           ),
+          */
           routes: {
+            '/': (context) => AuthWrapper(
+              initialAuthState: widget.initialAuthState,
+              adminChild: const admin.MainScreen(),
+              userChild: const user.MainScreen(),
+              guestChild: const LoginScreen(),
+            ),
             '/login': (context) => const LoginScreen(),
             '/register': (context) => const RegisterScreen(),
             '/tos': (context) => const MarkdownScreen(
