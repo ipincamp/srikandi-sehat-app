@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
@@ -51,7 +52,9 @@ class CsvDownloadProvider with ChangeNotifier {
       ]);
 
       if (response.statusCode == 200) {
-        print('✅ CSV downloaded successfully.');
+        if (kDebugMode) {
+          print('✅ CSV downloaded successfully.');
+        }
         final contentType = response.headers['content-type'] ?? '';
         if (!contentType.contains('csv')) {
           throw Exception('Respons bukan file CSV yang valid');

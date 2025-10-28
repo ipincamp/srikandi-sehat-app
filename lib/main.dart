@@ -31,32 +31,19 @@ import 'package:app/screens/auth/login_screen.dart';
 import 'package:app/screens/auth/register_screen.dart';
 import 'package:app/screens/splash/maintenance_screen.dart';
 import 'package:app/screens/splash/splash_screen.dart';
-import 'package:app/screens/user/change_password_screen.dart'
-    as user;
-import 'package:app/screens/user/edit_profile_screen.dart'
-    as user;
-import 'package:app/screens/user/home_screen.dart' as user;
+import 'package:app/screens/user/change_password_screen.dart' as user;
+import 'package:app/screens/user/edit_profile_screen.dart' as user;
 import 'package:app/screens/user/main_screen.dart' as user;
-import 'package:app/screens/user/profile_screen.dart' as user;
-import 'package:app/screens/user/profile_detail_screen.dart'
-    as user;
-import 'package:app/screens/user/symptom_history_screen.dart'
-    as user;
-import 'package:app/screens/user/menstrual_history_screen.dart'
-    as user;
-import 'package:app/screens/admin/home_screen.dart' as admin;
+import 'package:app/screens/user/profile_detail_screen.dart' as user;
+import 'package:app/screens/user/symptom_history_screen.dart' as user;
+import 'package:app/screens/user/menstrual_history_screen.dart' as user;
 import 'package:app/screens/admin/main_screen.dart' as admin;
-import 'package:app/screens/admin/profile_screen.dart' as admin;
-import 'package:app/screens/admin/user_data_screen.dart'
-    as admin;
 import 'package:app/core/auth/route_observer.dart';
 import 'package:app/core/auth/auth_wrapper.dart';
-import 'package:app/core/auth/auth_guard.dart';
 import 'package:app/core/auth/notification_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:app/provider/notification_provider.dart';
-import 'package:app/screens/user/notification_history_screen.dart'
-    as user;
+import 'package:app/screens/user/notification_history_screen.dart' as user;
 import 'package:app/widgets/markdown_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -193,7 +180,6 @@ class _MyAppState extends State<MyApp> {
             adminChild: const admin.MainScreen(),
             userChild: const user.MainScreen(),
             guestChild: const LoginScreen(),
-            
           ),
           routes: {
             '/login': (context) => const LoginScreen(),

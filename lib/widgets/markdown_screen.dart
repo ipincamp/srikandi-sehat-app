@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -30,9 +31,13 @@ class _MarkdownScreenState extends State<MarkdownScreen> {
 
   Future<void> _loadMarkdown() async {
     try {
-      debugPrint('✅ Loading markdown from: ${widget.assetPath}');
+      if (kDebugMode) {
+        debugPrint('✅ Loading markdown from: ${widget.assetPath}');
+      }
       final data = await rootBundle.loadString(widget.assetPath);
-      debugPrint('✅ Markdown loaded successfully: ${data.length} characters');
+      if (kDebugMode) {
+        debugPrint('✅ Markdown loaded successfully: ${data.length} characters');
+      }
 
       if (mounted) {
         setState(() {
@@ -41,7 +46,9 @@ class _MarkdownScreenState extends State<MarkdownScreen> {
         });
       }
     } catch (e) {
-      debugPrint('❌ Error loading markdown: $e');
+      if (kDebugMode) {
+        debugPrint('❌ Error loading markdown: $e');
+      }
       if (mounted) {
         setState(() {
           _markdownData =

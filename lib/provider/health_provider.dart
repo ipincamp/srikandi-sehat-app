@@ -55,11 +55,15 @@ class HealthProvider with ChangeNotifier {
 
         if (status == 'OK') {
           _isMaintenance = false;
-          print('Server status: ONLINE');
+          if (kDebugMode) {
+            print('Server status: ONLINE');
+          }
         } else {
           // Jika status bukan 'OK', anggap maintenance
           _isMaintenance = true;
-          print('Server status: MAINTENANCE (Status: $status)');
+          if (kDebugMode) {
+            print('Server status: MAINTENANCE (Status: $status)');
+          }
         }
         _error = null;
       } else if (response.statusCode == 503) {
@@ -68,7 +72,9 @@ class HealthProvider with ChangeNotifier {
         final status = data['status'] as String?;
 
         _isMaintenance = true;
-        print('Server status: MAINTENANCE (503 - $status)');
+        if (kDebugMode) {
+          print('Server status: MAINTENANCE (503 - $status)');
+        }
         _error = null;
       } else {
         // Status code lainnya (404, 500, dll)
@@ -76,7 +82,9 @@ class HealthProvider with ChangeNotifier {
         _error = 'Gagal memeriksa status server (${response.statusCode})';
         _isMaintenance =
             false; // Pada error, biarkan user tetap bisa menggunakan app
-        print('Health check error: ${response.statusCode}');
+        if (kDebugMode) {
+          print('Health check error: ${response.statusCode}');
+        }
       }
     } catch (e) {
       _hasError = true;
@@ -84,7 +92,9 @@ class HealthProvider with ChangeNotifier {
       // Pada error koneksi, jangan set maintenance=true
       // agar user tetap bisa menggunakan app offline
       _isMaintenance = false;
-      print('Health check exception: $e');
+      if (kDebugMode) {
+        print('Health check exception: $e');
+      }
     } finally {
       _isLoading = false;
       notifyListeners();

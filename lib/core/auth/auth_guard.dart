@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 class AuthGuard {
   static Future<bool> isValidSession() async {
@@ -15,14 +16,18 @@ class AuthGuard {
       if (expiry != null) {
         final expiryDate = DateTime.parse(expiry);
         if (expiryDate.isBefore(DateTime.now())) {
-          // print('Token expired');
+          if (kDebugMode) {
+            print('Token expired');
+          }
           return false;
         }
       }
 
       return true;
     } catch (e) {
-      // print('Error validating session: $e');
+      if (kDebugMode) {
+        print('Error validating session: $e');
+      }
       return false;
     }
   }

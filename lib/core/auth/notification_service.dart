@@ -91,9 +91,11 @@ class NotificationService {
     });
 
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
-      print(
-        ">>>>> FCM Token Refreshed by Firebase: $newToken <<<<<",
-      ); // Debugging
+      if (kDebugMode) {
+        print(
+          ">>>>> FCM Token Refreshed by Firebase: $newToken <<<<<",
+        );
+      }
       // Pastikan ada konteks yang valid untuk mengakses AuthProvider
       // Menggunakan navigatorKey adalah cara yang umum
       final context = navigatorKey.currentState?.context;
@@ -102,19 +104,27 @@ class NotificationService {
         // Hanya update jika pengguna sedang login
         final prefs = await SharedPreferences.getInstance();
         if (prefs.getBool('isLoggedIn') == true) {
-          print(
-            "Mencoba update token FCM yang di-refresh ke backend...",
-          ); // Debugging
+          if (kDebugMode) {
+            print(
+              "Mencoba update token FCM yang di-refresh ke backend...",
+            );
+          }
           await authProvider.updateFcmToken(
             newToken: newToken,
           ); // Kirim token baru
         } else {
-          print("Pengguna tidak login, token refresh diabaikan."); // Debugging
+          if (kDebugMode) {
+            print(
+              "Pengguna tidak login, token refresh diabaikan.",
+            );
+          }
         }
       } else {
-        print(
-          "Konteks tidak tersedia untuk update token refresh.",
-        ); // Debugging
+        if (kDebugMode) {
+          print(
+            "Konteks tidak tersedia untuk update token refresh.",
+          );
+        }
       }
     });
   }

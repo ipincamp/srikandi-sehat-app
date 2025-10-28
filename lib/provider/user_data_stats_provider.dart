@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
@@ -44,9 +45,13 @@ class UserDataStatsProvider with ChangeNotifier {
         notifyListeners();
       } else if (response.statusCode == 401) {
         // Don't redirect here - HttpClient already handles it
-        print('Unauthorized access to stats');
+        if (kDebugMode) {
+          print('Unauthorized access to stats');
+        }
       } else {
-        print('Failed to load stats: ${response.statusCode}');
+        if (kDebugMode) {
+          print('Failed to load stats: ${response.statusCode}');
+        }
       }
     } catch (e) {
       CustomAlert.show(

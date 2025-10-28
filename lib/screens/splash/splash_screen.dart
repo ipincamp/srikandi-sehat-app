@@ -13,7 +13,7 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  bool _isChecking = true;
+  // bool _isChecking = true;
   String? _statusMessage;
 
   @override
@@ -39,7 +39,7 @@ class _SplashScreenState extends State<SplashScreen> {
           // Jika timeout, anggap server offline tapi lanjutkan ke app
           if (mounted) {
             setState(() {
-              _isChecking = false;
+              // _isChecking = false;
               _statusMessage =
                   'Tidak dapat terhubung ke server, melanjutkan ke aplikasi...';
             });
@@ -50,7 +50,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
       if (mounted) {
         setState(() {
-          _isChecking = false;
+          // _isChecking = false;
         });
 
         // Beri delay kecil sebelum navigasi
@@ -73,7 +73,7 @@ class _SplashScreenState extends State<SplashScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _isChecking = false;
+          // _isChecking = false;
           _statusMessage = 'Terjadi kesalahan, melanjutkan ke aplikasi...';
         });
 

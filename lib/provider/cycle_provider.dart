@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
@@ -222,7 +223,9 @@ class CycleProvider with ChangeNotifier {
       return 'Anda sudah dalam siklus menstruasi. Tidak bisa memulai siklus baru.';
     }
 
-    print(_isOnCycle);
+    if (kDebugMode) {
+      print(_isOnCycle);
+    }
 
     // Check internet connection - Hanya untuk operasi POST
     final hasConnection = await _checkInternetConnection();

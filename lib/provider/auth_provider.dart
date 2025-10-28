@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
@@ -243,12 +244,14 @@ class AuthProvider with ChangeNotifier {
     final baseUrl = dotenv.env['API_URL'];
     final url = '$baseUrl/auth/login';
 
-    print('--- LOGIN REQUEST ---');
-    print('URL: $url');
-    print('Headers: ${{'Content-Type': 'application/json; charset=UTF-8'}}');
-    print(
-      'Body: ${jsonEncode(<String, String>{'email': email, 'password': password})}',
-    );
+    if (kDebugMode) {
+      print('--- LOGIN REQUEST ---');
+      print('URL: $url');
+      print('Headers: ${{'Content-Type': 'application/json; charset=UTF-8'}}');
+      print(
+        'Body: ${jsonEncode(<String, String>{'email': email, 'password': password})}',
+      );
+    }
 
     try {
       final response = await http
@@ -262,10 +265,12 @@ class AuthProvider with ChangeNotifier {
           )
           .timeout(const Duration(seconds: 10));
 
-      print('--- LOGIN RESPONSE ---');
-      print('Status Code: ${response.statusCode}');
-      print('Headers: ${response.headers}');
-      print('Body: ${response.body}');
+      if (kDebugMode) {
+        print('--- LOGIN RESPONSE ---');
+        print('Status Code: ${response.statusCode}');
+        print('Headers: ${response.headers}');
+        print('Body: ${response.body}');
+      }
       final responseData = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
@@ -399,7 +404,9 @@ class AuthProvider with ChangeNotifier {
         // Simpan token FCM yang digunakan untuk registrasi
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('last_sent_fcm_token', fcmToken);
-        print("FCM Token dari registrasi disimpan lokal."); // Debugging
+        if (kDebugMode) {
+          print("FCM Token dari registrasi disimpan lokal.");
+        }
 
         // Status 202 (Accepted) dianggap sukses
         _errorMessage =
@@ -658,7 +665,9 @@ class AuthProvider with ChangeNotifier {
           newToken ?? await notificationService.getFCMToken();
 
       if (currentFcmToken == null) {
-        print("FCM token saat ini tidak tersedia, lewati pembaruan.");
+        if (kDebugMode) {
+          print("FCM token saat ini tidak tersedia, lewati pembaruan.");
+        }
         return;
       }
 
@@ -667,19 +676,25 @@ class AuthProvider with ChangeNotifier {
 
       // Bandingkan token saat ini dengan token terakhir yang dikirim
       if (currentFcmToken != lastSentToken) {
-        print(
-          "Token FCM berubah atau belum pernah dikirim. Mengirim ke backend...",
-        ); // Debugging
+        if (kDebugMode) {
+          print(
+            "Token FCM berubah atau belum pernah dikirim. Mengirim ke backend...",
+          );
+        }
 
         final token = prefs.getString('token'); // Auth token
         if (token == null) {
-          print("Auth token tidak ditemukan, tidak bisa update FCM token.");
+          if (kDebugMode) {
+            print("Auth token tidak ditemukan, tidak bisa update FCM token.");
+          }
           return; // Jangan lakukan update jika tidak ada auth token
         }
 
         final baseUrl = dotenv.env['API_URL'];
         if (baseUrl == null) {
-          print("API URL tidak ditemukan.");
+          if (kDebugMode) {
+            print("API URL tidak ditemukan.");
+          }
           return;
         }
         final url = '$baseUrl/me/fcm-token';
@@ -698,22 +713,28 @@ class AuthProvider with ChangeNotifier {
         // Jika berhasil, simpan token yang baru dikirim
         if (response.statusCode == 200 || response.statusCode == 204) {
           await prefs.setString('last_sent_fcm_token', currentFcmToken);
-          print(
-            "FCM Token berhasil diupdate di backend dan disimpan lokal.",
-          ); // Debugging
+          if (kDebugMode) {
+            print("FCM Token berhasil diupdate di backend dan disimpan lokal.");
+          }
         } else {
-          print(
-            "Gagal update FCM token di backend: ${response.statusCode} - ${response.body}",
-          ); // Debugging
+          if (kDebugMode) {
+            print(
+              "Gagal update FCM token di backend: ${response.statusCode} - ${response.body}",
+            );
+          }
           // Pertimbangkan: apakah perlu retry atau menampilkan error ke user?
         }
       } else {
-        print(
-          "Token FCM sama dengan yang terakhir dikirim, tidak perlu update.",
-        ); // Debugging
+        if (kDebugMode) {
+          print(
+            "Token FCM sama dengan yang terakhir dikirim, tidak perlu update.",
+          );
+        }
       }
     } catch (e) {
-      print("Gagal update FCM token: $e");
+      if (kDebugMode) {
+        print("Gagal update FCM token: $e");
+      }
       // Pertimbangkan: apakah perlu retry atau menampilkan error ke user?
     }
   }
