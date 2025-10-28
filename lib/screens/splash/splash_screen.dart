@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import 'package:app/provider/health_provider.dart';
+// import 'package:provider/provider.dart';
+// import 'package:app/provider/health_provider.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class SplashScreen extends StatefulWidget {
   final VoidCallback onInitializationComplete;
@@ -19,9 +21,41 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _startSplash();
+    // Panggil fungsi untuk minta izin saat halaman ini dibuka
+    _requestNotificationPermission();
   }
 
+  // Fungsi untuk meminta izin notifikasi
+  void _requestNotificationPermission() async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+    NotificationSettings settings = await messaging.requestPermission(
+      alert: true,
+      announcement: false,
+      badge: true,
+      carPlay: false,
+      criticalAlert: false,
+      provisional: false,
+      sound: true,
+    );
+
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      if (kDebugMode) {
+        print('User granted permission');
+      }
+    } else if (settings.authorizationStatus ==
+        AuthorizationStatus.provisional) {
+      if (kDebugMode) {
+        print('User granted provisional permission');
+      }
+    } else {
+      if (kDebugMode) {
+        print('User declined or has not accepted permission');
+      }
+    }
+  }
+
+  /*
   Future<void> _startSplash() async {
     try {
       // Tunggu durasi GIF selesai diputar
@@ -83,6 +117,7 @@ class _SplashScreenState extends State<SplashScreen> {
       }
     }
   }
+  */
 
   @override
   Widget build(BuildContext context) {
