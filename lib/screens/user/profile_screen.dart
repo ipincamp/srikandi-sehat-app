@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:app/provider/auth_provider.dart';
@@ -76,100 +77,177 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         automaticallyImplyLeading: false,
       ),
-      body: Column(
-        children: [
-          const SizedBox(height: 16),
-          ProfileTile(
-            name: _name,
-            email: _email,
-            onIconTap: () => Navigator.pushNamed(context, '/detail-profile'),
+      body: SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            // Pastikan Column mengisi setidaknya tinggi layar
+            minHeight:
+                MediaQuery.of(context).size.height -
+                (Scaffold.of(context).appBarMaxHeight ??
+                    kToolbarHeight) - // Tinggi AppBar
+                MediaQuery.of(context).padding.top - // Tinggi Status bar
+                kBottomNavigationBarHeight - // Perkiraan tinggi Bottom Nav Bar
+                MediaQuery.of(
+                  context,
+                ).padding.bottom, // Tinggi area bawah (jika ada notch/gestures)
           ),
-          const Divider(),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Profile',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-          buildListTile(
-            icon: Icons.book,
-            label: 'Riwayat Gejala',
-            color: Colors.red,
-            onTap: () => {Navigator.pushNamed(context, '/symptom-history')},
-          ),
-          buildListTile(
-            icon: Icons.history,
-            label: 'Riwayat Menstruasi',
-            color: Colors.pinkAccent,
-            onTap: () => {Navigator.pushNamed(context, '/menstrual-history')},
-          ),
-          buildListTile(
-            icon: Icons.person,
-            label: 'Ubah Profil',
-            color: Colors.orange,
-            onTap: () => {Navigator.pushNamed(context, '/edit-profile')},
-          ),
-          buildListTile(
-            icon: Icons.vpn_key,
-            label: 'Ubah Kata Sandi',
-            color: Colors.blue,
-            onTap: () => {Navigator.pushNamed(context, '/change-password')},
-          ),
-          // buildListTile(
-          //   icon: Icons.notifications,
-          //   label: 'Notifications',
-          //   color: Colors.green,
-          //   trailing: Switch(
-          //     value: _notificationsEnabled,
-          //     onChanged: (val) => setState(() => _notificationsEnabled = val),
-          //   ),
-          // ),
-          const Spacer(),
-          // ✅ Checkbox Persetujuan
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Center(
-              child: Wrap(
-                alignment:
-                    WrapAlignment.center, // penting agar Wrap juga center
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pushNamed(context, '/tos'),
-                    child: const Text(
-                      'Syarat Ketentuan',
-                      style: TextStyle(
-                        color: Colors.pink,
-                        fontWeight: FontWeight.bold,
-                      ),
+          child: IntrinsicHeight(
+            child: Column(
+              children: [
+                const SizedBox(height: 16),
+                ProfileTile(
+                  name: _name,
+                  email: _email,
+                  onIconTap: () =>
+                      Navigator.pushNamed(context, '/detail-profile'),
+                ),
+                const Divider(),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Profile',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
-                  const Text(' dan '),
-                  GestureDetector(
-                    onTap: () => Navigator.pushNamed(context, '/privacy'),
-                    child: const Text(
-                      'Kebijakan Privasi',
-                      style: TextStyle(
-                        color: Colors.pink,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                ),
+                buildListTile(
+                  icon: Icons.book,
+                  label: 'Riwayat Gejala',
+                  color: Colors.red,
+                  onTap: () => {
+                    Navigator.pushNamed(context, '/symptom-history'),
+                  },
+                ),
+                buildListTile(
+                  icon: Icons.history,
+                  label: 'Riwayat Menstruasi',
+                  color: Colors.pinkAccent,
+                  onTap: () => {
+                    Navigator.pushNamed(context, '/menstrual-history'),
+                  },
+                ),
+                buildListTile(
+                  icon: Icons.person,
+                  label: 'Ubah Profil',
+                  color: Colors.orange,
+                  onTap: () => {Navigator.pushNamed(context, '/edit-profile')},
+                ),
+                buildListTile(
+                  icon: Icons.vpn_key,
+                  label: 'Ubah Kata Sandi',
+                  color: Colors.blue,
+                  onTap: () => {
+                    Navigator.pushNamed(context, '/change-password'),
+                  },
+                ),
+                /*
+                buildListTile(
+                  icon: Icons.notifications,
+                  label: 'Notifications',
+                  color: Colors.green,
+                  trailing: Switch(
+                    value: _notificationsEnabled,
+                    onChanged: (val) => setState(() => _notificationsEnabled = val),
                   ),
-                ],
-              ),
-            ),
-          ),
+                ),
+                */
+                buildListTile(
+                  icon: Icons.info_outline,
+                  label: 'Tentang Aplikasi',
+                  color: Colors.teal,
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Tentang Aplikasi'),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // syarat ketentuan dan kebijakan privasi
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context); // Tutup dialog
+                                Navigator.pushNamed(context, '/tos');
+                              },
+                              child: const Text('Syarat Ketentuan'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context); // Tutup dialog
+                                Navigator.pushNamed(context, '/privacy');
+                              },
+                              child: const Text('Kebijakan Privasi'),
+                            ),
+                            const SizedBox(height: 10),
+                            // versi aplikasi
+                            const Text('Versi Aplikasi: 1.0.0'),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Tutup'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (kDebugMode) {
+                      print('Navigasi ke halaman Tentang Aplikasi');
+                    }
+                  },
+                ),
+                const Spacer(),
 
-          const SizedBox(height: 20),
-          const LogoutTile(),
-          const Padding(
-            padding: EdgeInsets.only(bottom: 16),
-            child: Text('App ver 1.0', style: TextStyle(color: Colors.grey)),
+                // ✅ Checkbox Persetujuan
+                /*
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Center(
+                    child: Wrap(
+                      alignment:
+                          WrapAlignment.center, // penting agar Wrap juga center
+                      children: [
+                        GestureDetector(
+                          onTap: () => Navigator.pushNamed(context, '/tos'),
+                          child: const Text(
+                            'Syarat Ketentuan',
+                            style: TextStyle(
+                              color: Colors.pink,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const Text(' dan '),
+                        GestureDetector(
+                          onTap: () => Navigator.pushNamed(context, '/privacy'),
+                          child: const Text(
+                            'Kebijakan Privasi',
+                            style: TextStyle(
+                              color: Colors.pink,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                */
+                const LogoutTile(),
+                /*
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 16),
+                  child: Text('App ver 1.0', style: TextStyle(color: Colors.grey)),
+                ),
+                */
+              ],
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
