@@ -3,7 +3,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:app/widgets/custom_alert.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -48,7 +47,11 @@ class NotificationService {
 
       final context = navigatorKey.currentState?.context;
       if (context != null && message.notification != null) {
-        // Determine alert type from backend data payload
+        // Tampilkan notifikasi sederhana atau log saja,
+        // karena alert bisa menyebabkan masalah context setelah navigasi.
+        // Alert utama dan navigasi sudah ditangani oleh register_screen.
+
+        /*
         AlertType alertType = message.data['status'] == 'success'
             ? AlertType.success
             : AlertType.error;
@@ -61,16 +64,36 @@ class NotificationService {
           type: alertType,
           duration: const Duration(seconds: 4),
         );
+        */
+        // --- END HAPUS ATAU KOMENTARI ---
 
-        // --- NEW LOGIC: Navigate after showing the alert if successful ---
+        // Juga hapus navigasi redundan dari foreground message handler
+        /*
         if (message.data['status'] == 'success') {
-          // Add a short delay to allow the user to see the alert
           Future.delayed(const Duration(seconds: 2), () {
-            navigatorKey.currentState?.pushNamedAndRemoveUntil(
-              '/login',
-              (route) => false,
-            );
+            // Periksa lagi jika context masih valid sebelum navigasi,
+            // meskipun sebaiknya navigasi ini dihapus.
+            if (navigatorKey.currentState?.context != null) {
+               navigatorKey.currentState?.pushNamedAndRemoveUntil(
+                '/login',
+                (route) => false,
+              );
+            }
           });
+        }
+        */
+
+        // Anda bisa menambahkan log atau menampilkan snackbar sederhana jika perlu
+        if (message.notification!.body != null) {
+          if (kDebugMode) {
+            print(
+              "FCM Foreground: ${message.notification!.title} - ${message.notification!.body}",
+            );
+          }
+          // Opsional: Tampilkan Snackbar sederhana
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   SnackBar(content: Text(message.notification!.body!)),
+          // );
         }
       }
     });
@@ -81,20 +104,22 @@ class NotificationService {
         print('Message opened from background/terminated state!');
         print('Data: ${message.data}');
       }
-      // If the app was opened from a success notification, go to login
+      // Logika navigasi saat notifikasi DITAP
       if (message.data['status'] == 'success') {
-        navigatorKey.currentState?.pushNamedAndRemoveUntil(
-          '/login',
-          (route) => false,
-        );
+        // Pastikan navigator siap sebelum navigasi
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          navigatorKey.currentState?.pushNamedAndRemoveUntil(
+            '/login',
+            (route) => false,
+          );
+        });
       }
+      // Tambahkan penanganan untuk status lain
     });
 
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
       if (kDebugMode) {
-        print(
-          ">>>>> FCM Token Refreshed by Firebase: $newToken <<<<<",
-        );
+        print(">>>>> FCM Token Refreshed by Firebase: $newToken <<<<<");
       }
       // Pastikan ada konteks yang valid untuk mengakses AuthProvider
       // Menggunakan navigatorKey adalah cara yang umum
@@ -105,25 +130,19 @@ class NotificationService {
         final prefs = await SharedPreferences.getInstance();
         if (prefs.getBool('isLoggedIn') == true) {
           if (kDebugMode) {
-            print(
-              "Mencoba update token FCM yang di-refresh ke backend...",
-            );
+            print("Mencoba update token FCM yang di-refresh ke backend...");
           }
           await authProvider.updateFcmToken(
             newToken: newToken,
           ); // Kirim token baru
         } else {
           if (kDebugMode) {
-            print(
-              "Pengguna tidak login, token refresh diabaikan.",
-            );
+            print("Pengguna tidak login, token refresh diabaikan.");
           }
         }
       } else {
         if (kDebugMode) {
-          print(
-            "Konteks tidak tersedia untuk update token refresh.",
-          );
+          print("Konteks tidak tersedia untuk update token refresh.");
         }
       }
     });
