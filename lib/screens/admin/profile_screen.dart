@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:app/provider/auth_provider.dart';
 import 'package:app/provider/user_profile_provider.dart';
 import 'package:app/widgets/custom_alert.dart';
-import 'package:app/widgets/logout_tile.dart';
 import 'package:app/widgets/profile_tile.dart';
+import 'package:app/widgets/custom_popup.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -25,14 +25,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadProfile({bool forceRefresh = false}) async {
-    final userProvider = Provider.of<AuthProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     try {
-      await userProvider.loadUserData();
+      await authProvider.loadUserData(); // Ambil data dasar dari AuthProvider
+      // Jika perlu data profil lengkap:
+      // await profileProvider.loadProfile(context, forceRefresh: forceRefresh);
       if (mounted) {
         setState(() {
-          _name = userProvider.name;
-          _email = userProvider.email;
+          _name = authProvider.name;
+          _email = authProvider.email;
+          // _role = profileProvider.role; // Ambil role dari UserProfileProvider
         });
       }
     } catch (e) {
@@ -41,6 +44,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } finally {
       if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _showLogoutConfirmation(BuildContext context) async {
+    final bool? confirmed = await CustomConfirmationPopup.show(
+      context,
+      title: 'Konfirmasi Logout',
+      message: 'Apakah Anda yakin ingin keluar dari aplikasi?',
+      confirmText: 'Ya',
+      cancelText: 'Batal',
+      confirmColor: Colors.red,
+      icon: Icons.logout,
+    );
+
+    if (confirmed == true) {
+      await _logout(context);
+    }
+  }
+
+  Future<void> _logout(BuildContext context) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final profileProvider = Provider.of<UserProfileProvider>(
+      context,
+      listen: false,
+    );
+
+    try {
+      await profileProvider.clearCache(); // Clear cache profil
+      final success = await authProvider.logout(context);
+
+      if (success) {
+        CustomAlert.show(context, 'Berhasil logout', type: AlertType.success);
+        await Future.delayed(const Duration(milliseconds: 700));
+        if (context.mounted) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/login',
+            (route) => false,
+          );
+        }
+      } else {
+        if (authProvider.errorMessage.isNotEmpty && context.mounted) {
+          CustomAlert.show(
+            context,
+            authProvider.errorMessage,
+            type: AlertType.error,
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        CustomAlert.show(
+          context,
+          'Error saat logout: $e',
+          type: AlertType.error,
+        );
+      }
     }
   }
 
@@ -64,7 +124,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProfileProvider>(context);
+    final authProvider = context.watch<AuthProvider>();
+    final role = authProvider.role;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.pink,
@@ -84,23 +146,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ProfileTile(
             name: _name,
             email: _email,
-            role: userProvider.role,
+            role: role,
+            /*
             onIconTap: () {
               // arahkan ke EditProfile atau lainnya
             },
+            */
           ),
 
           const Divider(),
 
           // buildListTile(
           const Spacer(),
-          const LogoutTile(),
+
           const Padding(
             padding: EdgeInsets.only(bottom: 16),
             child: Text('App ver 1.0', style: TextStyle(color: Colors.grey)),
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showLogoutConfirmation(context),
+        backgroundColor: Colors.red,
+        foregroundColor: Colors.white,
+        tooltip: 'Logout',
+        child: const Icon(Icons.logout),
+      ),
+      // Atur posisi FAB ke pojok kanan bawah
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }

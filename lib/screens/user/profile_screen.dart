@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:app/provider/auth_provider.dart';
 import 'package:app/widgets/custom_alert.dart';
-import 'package:app/widgets/logout_tile.dart';
 import 'package:app/widgets/notification_icon_button.dart';
 import 'package:app/widgets/profile_tile.dart';
+import 'package:app/provider/user_profile_provider.dart';
+import 'package:app/widgets/custom_popup.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -58,6 +59,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
       trailing: trailing ?? const Icon(Icons.arrow_forward_ios, size: 16),
       onTap: onTap,
     );
+  }
+
+  Future<void> _showLogoutConfirmation(BuildContext context) async {
+    final bool? confirmed = await CustomConfirmationPopup.show(
+      context,
+      title: 'Konfirmasi Logout',
+      message: 'Apakah Anda yakin ingin keluar dari aplikasi?',
+      confirmText: 'Ya',
+      cancelText: 'Batal',
+      confirmColor: Colors.red,
+      icon: Icons.logout,
+    );
+
+    if (confirmed == true) {
+      await _logout(context);
+    }
+  }
+
+  Future<void> _logout(BuildContext context) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final profileProvider = Provider.of<UserProfileProvider>(
+      context,
+      listen: false,
+    );
+
+    try {
+      // Clear profile cache terlebih dahulu
+      await profileProvider.clearCache();
+
+      // Lakukan logout
+      final success = await authProvider.logout(context);
+
+      if (success) {
+        CustomAlert.show(context, 'Berhasil logout', type: AlertType.success);
+        await Future.delayed(const Duration(milliseconds: 700));
+        if (context.mounted) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/login',
+            (route) => false,
+          );
+        }
+      } else {
+        if (authProvider.errorMessage.isNotEmpty && context.mounted) {
+          // Tambah cek mounted
+          CustomAlert.show(
+            context,
+            authProvider.errorMessage,
+            type: AlertType.error,
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        // Tambah cek mounted
+        CustomAlert.show(
+          context,
+          'Error saat logout: $e',
+          type: AlertType.error,
+        );
+      }
+    }
   }
 
   @override
@@ -199,10 +262,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     }
                   },
                 ),
-                const Spacer(),
 
                 // ✅ Checkbox Persetujuan
                 /*
+                const Spacer(),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Center(
@@ -236,19 +299,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                */
                 const LogoutTile(),
-                /*
+                */
+                const Spacer(),
+
                 const Padding(
                   padding: EdgeInsets.only(bottom: 16),
-                  child: Text('App ver 1.0', style: TextStyle(color: Colors.grey)),
+                  child: Text(
+                    'App ver 1.0',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ),
-                */
               ],
             ),
           ),
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showLogoutConfirmation(context), // Panggil konfirmasi
+        backgroundColor: Colors.red,
+        foregroundColor: Colors.white,
+        tooltip: 'Logout',
+        child: const Icon(Icons.logout),
+      ),
+      // Atur posisi FAB ke pojok kanan bawah
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }
