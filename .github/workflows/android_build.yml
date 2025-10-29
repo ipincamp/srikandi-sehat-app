@@ -30,22 +30,22 @@ jobs:
 
     # 2. Steps to place secret files needed for the build
     - name: Decode and place .env file
-      run: echo "${{ secrets.ENV_FILE }}" > .env
+      run: echo "${{ secrets.ENV_FILE }}" | base64 --decode > .env
       shell: bash
     - name: Decode and place Keystore file
-      run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+      run: echo "${{ secrets.KEYSTORE_FILE }}" | base64 --decode > android/app/upload-keystore.jks
       shell: bash
-    - name: Place key.properties file
-      run: echo "${{ secrets.KEY_PROPERTIES }}" > android/key.properties
+    - name: Decode and place key.properties file
+      run: echo "${{ secrets.KEY_PROPERTIES_FILE }}" | base64 --decode > android/key.properties
       shell: bash
-    - name: Place google-services.json file
-      run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > android/app/google-services.json
+    - name: Decode and place google-services.json file
+      run: echo "${{ secrets.GOOGLE_SERVICES_JSON_FILE }}" | base64 --decode > android/app/google-services.json
       shell: bash
-    - name: Place firebase.json file
-      run: echo "${{ secrets.FIREBASE_JSON }}" > firebase.json
+    - name: Decode and place firebase.json file
+      run: echo "${{ secrets.FIREBASE_JSON_FILE }}" | base64 --decode > firebase.json
       shell: bash
-    - name: Place firebase_options.dart file
-      run: echo "${{ secrets.FIREBASE_OPTIONS }}" > lib/firebase_options.dart
+    - name: Decode and place firebase_options.dart file
+      run: echo "${{ secrets.FIREBASE_OPTIONS_DART_FILE }}" | base64 --decode > lib/firebase_options.dart
       shell: bash
 
     # 3. Build the Flutter app for Android
