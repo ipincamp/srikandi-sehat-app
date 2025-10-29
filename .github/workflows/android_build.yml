@@ -45,7 +45,7 @@ jobs:
       run: echo "${{ secrets.FIREBASE_JSON }}" > firebase.json
       shell: bash
     - name: Place firebase_options.dart file
-      run: echo "${{ secrets.FIREBASE_OPTIONS }}" > lib/firebase_options.dart
+      run: echo '${{ secrets.FIREBASE_OPTIONS }}' > lib/firebase_options.dart
       shell: bash
 
     # 3. Build the Flutter app for Android
