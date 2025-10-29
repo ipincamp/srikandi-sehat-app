@@ -87,7 +87,7 @@ jobs:
         name: app-x86_64-release.apk
         path: build/app/outputs/flutter-apk/app-x86_64-release.apk
 
-    # 5. Upload Checksum Files
+    # 6. Upload Checksum Files
     - name: Upload SHA256 Checksum File
       uses: actions/upload-artifact@v4
       with:
