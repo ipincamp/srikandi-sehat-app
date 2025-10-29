@@ -94,7 +94,7 @@ jobs:
         name: sha256sums.txt
         path: build/app/outputs/flutter-apk/sha256sums.txt
 
-    # 6. Extract App Version and Build Number from pubspec.yaml
+    # 7. Extract App Version and Build Number from pubspec.yaml
     - name: Extract app version and build number
       id: get_version
       run: |
