@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -247,7 +248,9 @@ class AuthProvider with ChangeNotifier {
     if (kDebugMode) {
       debugPrint('--- LOGIN REQUEST ---');
       debugPrint('URL: $url');
-      debugPrint('Headers: ${{'Content-Type': 'application/json; charset=UTF-8'}}');
+      debugPrint(
+        'Headers: ${{'Content-Type': 'application/json; charset=UTF-8'}}',
+      );
       debugPrint(
         'Body: ${jsonEncode(<String, String>{'email': email, 'password': password})}',
       );
@@ -332,6 +335,7 @@ class AuthProvider with ChangeNotifier {
         notifyListeners();
         return false;
       } else {
+        debugPrint('Login failed: ${response.body}');
         _errorMessage =
             responseData['message']?.toString() ??
             responseData['error']?.toString() ??
@@ -341,20 +345,39 @@ class AuthProvider with ChangeNotifier {
         return false;
       }
     } catch (error) {
-      _errorMessage = 'An error occurred: ${error.toString()}';
-      if (error is http.ClientException ||
-          error.toString().contains('SocketException')) {
-        _errorMessage = 'Network error. Please check your internet connection.';
-        // await _showNoInternetAlert(context);
-      } else if (error is TimeoutException) {
-        _errorMessage = 'Request timed out. Please try again.';
-        await _showErrorAlert(context, _errorMessage);
+      _errorMessage = 'Terjadi kesalahan: ${error.toString()}';
+
+      if (error is TimeoutException) {
+        _errorMessage =
+            'Waktu tunggu koneksi habis. Periksa internet Anda dan coba lagi.';
+        if (context.mounted) {
+          await _showErrorAlert(context, _errorMessage);
+        }
+      } else if (error is SocketException || error is http.ClientException) {
+        debugPrint('Network Error Detected: ${error.toString()}');
+        _errorMessage = 'Kesalahan jaringan. Tidak dapat terhubung ke server.';
+        if (context.mounted) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/maintenance',
+            (route) => false,
+          );
+        }
+      } else {
+        if (context.mounted) {
+          await _showErrorAlert(context, _errorMessage);
+        }
       }
-      notifyListeners();
+
+      if (context.mounted) {
+        notifyListeners();
+      }
       return false;
     } finally {
       _isLoading = false;
-      notifyListeners();
+      if (context.mounted) {
+        notifyListeners();
+      }
     }
   }
 
@@ -685,7 +708,9 @@ class AuthProvider with ChangeNotifier {
         final token = prefs.getString('token'); // Auth token
         if (token == null) {
           if (kDebugMode) {
-            debugPrint("Auth token tidak ditemukan, tidak bisa update FCM token.");
+            debugPrint(
+              "Auth token tidak ditemukan, tidak bisa update FCM token.",
+            );
           }
           return; // Jangan lakukan update jika tidak ada auth token
         }
@@ -714,7 +739,9 @@ class AuthProvider with ChangeNotifier {
         if (response.statusCode == 200 || response.statusCode == 204) {
           await prefs.setString('last_sent_fcm_token', currentFcmToken);
           if (kDebugMode) {
-            debugPrint("FCM Token berhasil diupdate di backend dan disimpan lokal.");
+            debugPrint(
+              "FCM Token berhasil diupdate di backend dan disimpan lokal.",
+            );
           }
         } else {
           if (kDebugMode) {

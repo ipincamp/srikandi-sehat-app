@@ -1,13 +1,15 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'auth_guard.dart';
 
 class AuthRouteObserver extends RouteObserver<PageRoute<dynamic>> {
-  // 1. Buat daftar rute yang tidak memerlukan login
+  // daftar rute yang tidak memerlukan login
   final List<String> _publicRoutes = [
     '/login',
-    '/register', // Sebaiknya tambahkan /register juga
+    '/register',
     '/tos',
     '/privacy',
+    '/maintenance',
   ];
 
   @override
@@ -17,15 +19,22 @@ class AuthRouteObserver extends RouteObserver<PageRoute<dynamic>> {
   }
 
   void _checkAuth(Route route) async {
-    // 2. Ubah kondisi 'if' Anda
-    // Cek apakah rute saat ini TIDAK ada di dalam daftar publicRoutes
-    if (!_publicRoutes.contains(route.settings.name) &&
-        !await AuthGuard.isValidSession()) {
-      // Jika rute BUKAN rute publik DAN sesi tidak valid,
-      // baru lakukan redirect
-      final context = (route as PageRoute).navigator?.context;
-      if (context != null) {
-        AuthGuard.redirectToLogin(context);
+    if (route is PageRoute) {
+      final routeName = route.settings.name;
+      if (routeName != null && !_publicRoutes.contains(routeName)) {
+        if (!await AuthGuard.isValidSession()) {
+          // Jika BUKAN rute publik DAN sesi tidak valid, baru redirect
+          final context = route.navigator?.context;
+          if (context != null && context.mounted) {
+            AuthGuard.redirectToLogin(context);
+          }
+        }
+      }
+    } else {
+      if (kDebugMode) {
+        debugPrint(
+          "AuthRouteObserver: Ignoring non-PageRoute: ${route.runtimeType}",
+        );
       }
     }
   }
