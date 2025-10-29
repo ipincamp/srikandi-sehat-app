@@ -1,0 +1,69 @@
+name: Build Flutter Android
+
+on:
+  push:
+    branches: [ "build" ]
+  pull_request:
+    branches: [ "build" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Setup environment for Flutter build
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - name: Setup Java Development Kit (JDK)
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    - name: Setup Flutter SDK
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.35.7'
+        channel: 'stable'
+        cache: true
+    - name: Get Flutter dependencies
+      run: flutter pub get
+
+    # 2. Steps to place secret files needed for the build
+    - name: Decode and place .env file
+      run: echo "${{ secrets.ENV_FILE }}" > .env
+      shell: bash
+    - name: Decode and place Keystore file
+      run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+      shell: bash
+    - name: Place key.properties file
+      run: echo "${{ secrets.KEY_PROPERTIES }}" > android/key.properties
+      shell: bash
+    - name: Place google-services.json file
+      run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > android/app/google-services.json
+      shell: bash
+    - name: Place firebase.json file
+      run: echo "${{ secrets.FIREBASE_JSON }}" > firebase.json
+      shell: bash
+    - name: Place firebase_options.dart file
+      run: echo "${{ secrets.FIREBASE_OPTIONS }}" > lib/firebase_options.dart
+      shell: bash
+
+    # 3. Build the Flutter app for Android
+    - name: Build Flutter App Bundle (Release)
+      run: flutter build appbundle --release
+      working-directory: ./
+    - name: Build Flutter APK (Release, split per ABI)
+      run: flutter build apk --release --split-per-abi
+      working-directory: ./
+
+    # 4. Upload the build artifacts
+    - name: Upload App Bundle artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-appbundle
+        path: build/app/outputs/bundle/release/app-release.aab
+    - name: Upload APK artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-apks
+        path: build/app/outputs/flutter-apk/app-*.apk
