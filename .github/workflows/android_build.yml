@@ -65,7 +65,7 @@ jobs:
         sha256sum app-release.apk >> sha256sums.txt
         sha256sum app-x86_64-release.apk >> sha256sums.txt
 
-    # 4. Upload the build artifacts
+    # 5. Upload the build artifacts
     - name: Upload APK arm64-v8a
       uses: actions/upload-artifact@v4
       with:
