@@ -105,6 +105,10 @@ jobs:
         echo "version=$version_number" >> $GITHUB_OUTPUT
         echo "build=$build_number" >> $GITHUB_OUTPUT
         echo "full_version=$full_version" >> $GITHUB_OUTPUT
+    - name: Get Formatted Timestamp (GMT+7)
+      id: get_timestamp
+      run: |
+        echo "timestamp_gmt7=$(TZ='Asia/Jakarta' date '+%Y-%m-%d %H:%M:%S') GMT+7" >> $GITHUB_OUTPUT
 
     # 7. Create Draft GitHub Release with Artifacts
     - name: Create Draft Release
@@ -113,10 +117,23 @@ jobs:
       with:
         draft: true
         tag_name: v${{ steps.get_version.outputs.full_version }}
-        name: Release v${{ steps.get_version.outputs.full_version }} (Build ${{ steps.get_version.outputs.build }}) (Draft)
+        name: Release v${{ steps.get_version.outputs.full_version }} (Build ${{ steps.get_version.outputs.build }} ${{ steps.get_timestamp.outputs.timestamp_gmt7 }}) (Draft)
+        body: |
+          Ini adalah rilis draf otomatis yang dibuat oleh GitHub Actions untuk versi ${{ steps.get_version.outputs.full_version }}.
+
+          ### ⬇️ Unduhan untuk Android
+
+          * **Rekomendasi (64-bit):**
+              Untuk sebagian besar ponsel Android modern (keluaran ~2015 ke atas), silakan unduh file:
+              `app-arm64-v8a-release.apk`
+
+          * **Alternatif / Universal:**
+              Jika file di atas tidak dapat diinstal di perangkat Anda, silakan unduh file universal (yang berukuran sedikit lebih besar) ini:
+              `app-release.apk`
         files: |
           build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
           build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          build/app/outputs/flutter-apk/app-release.apk
           build/app/outputs/flutter-apk/app-x86_64-release.apk
           build/app/outputs/flutter-apk/sha256sums.txt
       env:
