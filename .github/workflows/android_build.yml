@@ -110,7 +110,7 @@ jobs:
       run: |
         echo "timestamp_gmt7=$(TZ='Asia/Jakarta' date '+%Y-%m-%d %H:%M:%S') GMT+7" >> $GITHUB_OUTPUT
 
-    # 7. Create Draft GitHub Release with Artifacts
+    # 8. Create Draft GitHub Release with Artifacts
     - name: Create Draft Release
       uses: softprops/action-gh-release@v1
       if: github.event_name == 'push' && github.ref == 'refs/heads/build'
