@@ -5,6 +5,7 @@ import 'package:app/provider/auth_provider.dart';
 import 'package:app/provider/health_provider.dart';
 import 'package:app/screens/splash/maintenance_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 class AuthWrapper extends StatefulWidget {
   final dynamic initialAuthState;
@@ -30,19 +31,22 @@ class _AuthWrapperState extends State<AuthWrapper> with RouteAware {
     super.initState();
     // Cek token setelah frame pertama selesai dibangun
     WidgetsBinding.instance.addPostFrameCallback((_) {
-       _checkAndSyncTokenAfterLogin();
+      _checkAndSyncTokenAfterLogin();
     });
   }
 
   Future<void> _checkAndSyncTokenAfterLogin() async {
-     final prefs = await SharedPreferences.getInstance();
-     final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+    final prefs = await SharedPreferences.getInstance();
+    final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
 
-     if (isLoggedIn && mounted) { // Pastikan user logged in dan widget masih ada
-        print("AuthWrapper: User logged in, checking FCM token sync...");
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        await authProvider.updateFcmToken();
-     }
+    if (isLoggedIn && mounted) {
+      // Pastikan user logged in dan widget masih ada
+      if (kDebugMode) {
+        debugPrint("AuthWrapper: User logged in, checking FCM token sync...");
+      }
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.updateFcmToken();
+    }
   }
 
   @override

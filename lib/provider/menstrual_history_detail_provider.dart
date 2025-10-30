@@ -78,7 +78,7 @@ class MenstrualHistoryDetailProvider with ChangeNotifier {
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         _detail = null;
-        message:
+        // message:
         'Siklus berhasil dihapus';
       } else {
         _error = 'Gagal Menghapus Siklus';

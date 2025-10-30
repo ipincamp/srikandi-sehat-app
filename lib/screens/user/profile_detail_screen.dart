@@ -18,15 +18,27 @@ class _DetailProfileScreenState extends State<DetailProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchProfileData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Cek mounted sebelum fetch, untuk keamanan ekstra jika screen ditutup cepat
+      if (mounted) {
+        _fetchProfileData();
+      }
+    });
+    // Jangan panggil _fetchProfileData() langsung di sini lagi
+    // _fetchProfileData();
   }
 
   Future<void> _fetchProfileData() async {
+    // Pastikan cek mounted di awal async function juga
+    if (!mounted) return;
+
     try {
       setState(() => _isRefreshing = true);
       final profileProvider = context.read<ProfileChangeProvider>();
+      // Panggil fetchProfile tanpa listen: false karena kita memang ingin UI update
       await profileProvider.fetchProfile();
     } finally {
+      // Cek mounted lagi setelah await selesai
       if (mounted) {
         setState(() {
           _initialLoadComplete = true;

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -35,7 +36,9 @@ class NotificationProvider with ChangeNotifier {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body)['data'];
-        _notifications = data.map((json) => NotificationModel.fromJson(json)).toList();
+        _notifications = data
+            .map((json) => NotificationModel.fromJson(json))
+            .toList();
       } else {
         _error = 'Gagal memuat notifikasi';
       }
@@ -46,7 +49,7 @@ class NotificationProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-  
+
   Future<void> markAsRead(int notificationId) async {
     // Cari notifikasi di list lokal
     final int index = _notifications.indexWhere((n) => n.id == notificationId);
@@ -83,7 +86,9 @@ class NotificationProvider with ChangeNotifier {
       // Jika terjadi error, kembalikan juga state-nya
       _notifications[index].isRead = false;
       notifyListeners();
-      print('Failed to mark notification as read: $e');
+      if (kDebugMode) {
+        debugPrint('Failed to mark notification as read: $e');
+      }
     }
   }
 }

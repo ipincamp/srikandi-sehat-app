@@ -102,6 +102,8 @@ class _SymptomLogBottomSheetState extends State<_SymptomLogBottomSheet> {
 
   Future<void> _submitSymptoms(BuildContext context) async {
     if (_selectedSymptoms.isEmpty) {
+      // Check mounted before showing alert, just in case
+      if (!mounted) return;
       CustomAlert.show(
         context,
         'Pilih minimal satu gejala',
@@ -115,7 +117,12 @@ class _SymptomLogBottomSheetState extends State<_SymptomLogBottomSheet> {
       context,
       listen: false,
     );
+    // Simpan NavigatorState SEBELUM await dan pop
+    final navigator = Navigator.of(context);
+    // Simpan ScaffoldMessengerState jika perlu alert setelah pop
+    // final scaffoldMessenger = ScaffoldMessenger.of(context);
 
+    // Panggil API untuk log gejala
     final result = await provider.logSymptoms(
       loggedAt: DateTime.now().toLocalIso8601String(),
       note: _notesController.text.trim().isNotEmpty
@@ -124,25 +131,42 @@ class _SymptomLogBottomSheetState extends State<_SymptomLogBottomSheet> {
       symptoms: _selectedSymptoms,
     );
 
-    if (!context.mounted) return;
+    // Periksa apakah widget masih mounted setelah await
+    if (!mounted) return;
 
     if (result.success) {
-      Navigator.pop(context);
-      CustomAlert.show(
-        context,
-        result.message ?? 'Gejala berhasil dicatat!',
-        type: AlertType.success,
-      );
+      // Tutup bottom sheet MENGGUNAKAN navigator yang disimpan
+      navigator.pop();
 
-      // Refresh symptom data
+      // Tampilkan notifikasi sukses MENGGUNAKAN scaffoldMessenger yang disimpan
+      /*
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(result.message ?? 'Gejala berhasil dicatat!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      */
+      // Tampilkan notifikasi sukses MENGGUNAKAN CustomAlert
+      if (mounted) {
+        // <--- Cek mounted lagi sebelum panggil CustomAlert
+        CustomAlert.show(
+          context, // Gunakan context asli dari BottomSheet
+          result.message ?? 'Gejala berhasil dicatat!',
+          type: AlertType.success,
+        );
+      }
+
+      // Refresh data gejala (tidak perlu context)
       await symptomProvider.fetchSymptoms();
 
-      // Navigate to detail screen if we have an ID
+      // Navigasi ke detail jika ada ID, MENGGUNAKAN navigator yang disimpan
       if (result.id != null) {
-        Navigator.push(
-          context,
+        navigator.push(
+          // Gunakan navigator yang disimpan
           MaterialPageRoute(
-            builder: (_) => ChangeNotifierProvider(
+            builder: (context) => ChangeNotifierProvider(
+              // context baru dari builder
               create: (_) => SymptomDetailProvider(),
               child: SymptomDetailScreen(symptomId: result.id!),
             ),
@@ -150,7 +174,16 @@ class _SymptomLogBottomSheetState extends State<_SymptomLogBottomSheet> {
         );
       }
     } else if (result.error != null) {
-      CustomAlert.show(context, result.error!, type: AlertType.error);
+      // Tampilkan error MENGGUNAKAN scaffoldMessenger yang disimpan
+      /*
+      scaffoldMessenger.showSnackBar(
+        SnackBar(content: Text(result.error!), backgroundColor: Colors.red),
+      );
+      */
+      // Jika CustomAlert:
+      if (mounted) {
+        CustomAlert.show(context, result.error!, type: AlertType.error);
+      }
     }
   }
 

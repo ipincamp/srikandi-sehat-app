@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import 'package:app/provider/health_provider.dart';
+// import 'package:provider/provider.dart';
+// import 'package:app/provider/health_provider.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class SplashScreen extends StatefulWidget {
   final VoidCallback onInitializationComplete;
@@ -13,15 +15,47 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  bool _isChecking = true;
+  // bool _isChecking = true;
   String? _statusMessage;
 
   @override
   void initState() {
     super.initState();
-    _startSplash();
+    // Panggil fungsi untuk minta izin saat halaman ini dibuka
+    _requestNotificationPermission();
   }
 
+  // Fungsi untuk meminta izin notifikasi
+  void _requestNotificationPermission() async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+    NotificationSettings settings = await messaging.requestPermission(
+      alert: true,
+      announcement: false,
+      badge: true,
+      carPlay: false,
+      criticalAlert: false,
+      provisional: false,
+      sound: true,
+    );
+
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      if (kDebugMode) {
+        debugPrint('User granted permission');
+      }
+    } else if (settings.authorizationStatus ==
+        AuthorizationStatus.provisional) {
+      if (kDebugMode) {
+        debugPrint('User granted provisional permission');
+      }
+    } else {
+      if (kDebugMode) {
+        debugPrint('User declined or has not accepted permission');
+      }
+    }
+  }
+
+  /*
   Future<void> _startSplash() async {
     try {
       // Tunggu durasi GIF selesai diputar
@@ -39,7 +73,7 @@ class _SplashScreenState extends State<SplashScreen> {
           // Jika timeout, anggap server offline tapi lanjutkan ke app
           if (mounted) {
             setState(() {
-              _isChecking = false;
+              // _isChecking = false;
               _statusMessage =
                   'Tidak dapat terhubung ke server, melanjutkan ke aplikasi...';
             });
@@ -50,7 +84,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
       if (mounted) {
         setState(() {
-          _isChecking = false;
+          // _isChecking = false;
         });
 
         // Beri delay kecil sebelum navigasi
@@ -73,7 +107,7 @@ class _SplashScreenState extends State<SplashScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _isChecking = false;
+          // _isChecking = false;
           _statusMessage = 'Terjadi kesalahan, melanjutkan ke aplikasi...';
         });
 
@@ -83,6 +117,7 @@ class _SplashScreenState extends State<SplashScreen> {
       }
     }
   }
+  */
 
   @override
   Widget build(BuildContext context) {

@@ -1,0 +1,140 @@
+name: Build Flutter Android
+
+on:
+  push:
+    branches: [ "build" ]
+  pull_request:
+    branches: [ "build" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Setup environment for Flutter build
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - name: Setup Java Development Kit (JDK)
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    - name: Setup Flutter SDK
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.35.7'
+        channel: 'stable'
+        cache: true
+    - name: Get Flutter dependencies
+      run: flutter pub get
+
+    # 2. Steps to place secret files needed for the build
+    - name: Decode and place .env file
+      run: echo "${{ secrets.ENV_FILE }}" | base64 --decode > .env
+      shell: bash
+    - name: Decode and place Keystore file
+      run: echo "${{ secrets.KEYSTORE_FILE }}" | base64 --decode > android/app/upload-keystore.jks
+      shell: bash
+    - name: Decode and place key.properties file
+      run: echo "${{ secrets.KEY_PROPERTIES_FILE }}" | base64 --decode > android/key.properties
+      shell: bash
+    - name: Decode and place google-services.json file
+      run: echo "${{ secrets.GOOGLE_SERVICES_JSON_FILE }}" | base64 --decode > android/app/google-services.json
+      shell: bash
+    - name: Decode and place firebase.json file
+      run: echo "${{ secrets.FIREBASE_JSON_FILE }}" | base64 --decode > firebase.json
+      shell: bash
+    - name: Decode and place firebase_options.dart file
+      run: echo "${{ secrets.FIREBASE_OPTIONS_DART_FILE }}" | base64 --decode > lib/firebase_options.dart
+      shell: bash
+
+    # 3. Build the Flutter app for Android
+    - name: Build Release - Universal
+      run: flutter build apk --release
+      working-directory: ./
+    - name: Build Release - Split per ABI
+      run: flutter build apk --release --split-per-abi
+      working-directory: ./
+
+    # 4. Generate Checksum files
+    - name: Generate SHA256 checksums file
+      run: |
+        cd build/app/outputs/flutter-apk
+        sha256sum app-arm64-v8a-release.apk > sha256sums.txt
+        sha256sum app-armeabi-v7a-release.apk >> sha256sums.txt
+        sha256sum app-release.apk >> sha256sums.txt
+        sha256sum app-x86_64-release.apk >> sha256sums.txt
+
+    # 5. Upload the build artifacts
+    - name: Upload APK arm64-v8a
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-arm64-v8a-release.apk
+        path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+    - name: Upload APK armeabi-v7a
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-armeabi-v7a-release.apk
+        path: build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+    - name: Upload APK release
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-release.apk
+        path: build/app/outputs/flutter-apk/app-release.apk
+    - name: Upload APK x86_64
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-x86_64-release.apk
+        path: build/app/outputs/flutter-apk/app-x86_64-release.apk
+
+    # 6. Upload Checksum Files
+    - name: Upload SHA256 Checksum File
+      uses: actions/upload-artifact@v4
+      with:
+        name: sha256sums.txt
+        path: build/app/outputs/flutter-apk/sha256sums.txt
+
+    # 7. Extract App Version and Build Number from pubspec.yaml
+    - name: Extract app version and build number
+      id: get_version
+      run: |
+        version_line=$(grep '^version:' pubspec.yaml)
+        full_version=$(echo $version_line | sed 's/version: //')
+        version_number=$(echo $full_version | cut -d'+' -f1)
+        build_number=$(echo $full_version | cut -d'+' -f2)
+        echo "version=$version_number" >> $GITHUB_OUTPUT
+        echo "build=$build_number" >> $GITHUB_OUTPUT
+        echo "full_version=$full_version" >> $GITHUB_OUTPUT
+    - name: Get Formatted Timestamp (GMT+7)
+      id: get_timestamp
+      run: |
+        echo "timestamp_gmt7=$(TZ='Asia/Jakarta' date '+%Y-%m-%d %H:%M:%S') GMT+7" >> $GITHUB_OUTPUT
+
+    # 8. Create Draft GitHub Release with Artifacts
+    - name: Create Draft Release
+      uses: softprops/action-gh-release@v1
+      if: github.event_name == 'push' && github.ref == 'refs/heads/build'
+      with:
+        draft: true
+        tag_name: v${{ steps.get_version.outputs.full_version }}
+        name: Release v${{ steps.get_version.outputs.full_version }} (Build ${{ steps.get_version.outputs.build }} ${{ steps.get_timestamp.outputs.timestamp_gmt7 }}) (Draft)
+        body: |
+          Ini adalah rilis draf otomatis yang dibuat oleh GitHub Actions untuk versi ${{ steps.get_version.outputs.full_version }}.
+
+          ### ⬇️ Unduhan untuk Android
+
+          * **Rekomendasi (64-bit):**
+              Untuk sebagian besar ponsel Android modern (keluaran ~2015 ke atas), silakan unduh file:
+              `app-arm64-v8a-release.apk`
+
+          * **Alternatif / Universal:**
+              Jika file di atas tidak dapat diinstal di perangkat Anda, silakan unduh file universal (yang berukuran sedikit lebih besar) ini:
+              `app-release.apk`
+        files: |
+          build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+          build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          build/app/outputs/flutter-apk/app-release.apk
+          build/app/outputs/flutter-apk/app-x86_64-release.apk
+          build/app/outputs/flutter-apk/sha256sums.txt
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

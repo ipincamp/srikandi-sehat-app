@@ -18,16 +18,56 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
   void initState() {
     super.initState();
     _startChecking();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _manualCheckStatus(showSnackbar: false);
+    });
   }
 
   void _startChecking() {
+    _timer?.cancel();
     final provider = Provider.of<HealthProvider>(context, listen: false);
     _timer = Timer.periodic(const Duration(seconds: 10), (_) async {
+      if (!mounted) {
+        _timer?.cancel();
+        return;
+      }
       await provider.checkHealth();
-      if (!provider.isMaintenance && mounted) {
+      // Jika TIDAK maintenance DAN TIDAK ada error saat pengecekan
+      if (!provider.isMaintenance && !provider.hasError && mounted) {
+        _timer?.cancel();
         Navigator.pushReplacementNamed(context, '/');
       }
     });
+  }
+
+  Future<void> _manualCheckStatus({bool showSnackbar = true}) async {
+    if (!mounted) return;
+
+    final provider = Provider.of<HealthProvider>(context, listen: false);
+    await provider.checkHealth();
+
+    if (!mounted) return;
+
+    // Jika TIDAK maintenance DAN TIDAK ada error saat pengecekan
+    if (!provider.isMaintenance && !provider.hasError) {
+      _timer?.cancel();
+      Navigator.pushReplacementNamed(context, '/');
+    } else if (showSnackbar) {
+      // Tampilkan feedback jika masih maintenance atau error
+      /*
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            provider.hasError
+                ? 'Masih belum bisa terhubung ke server. Coba lagi nanti.'
+                : 'Server masih dalam pemeliharaan. Coba lagi nanti.',
+          ),
+          duration: const Duration(seconds: 3),
+          backgroundColor: provider.hasError ? Colors.red : Colors.orange,
+        ),
+      );
+      */
+    }
   }
 
   @override
@@ -85,8 +125,10 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  provider.error ??
-                      'Kami sedang melakukan perawatan sistem.\nSilakan coba lagi nanti.',
+                  // Tampilkan pesan error spesifik jika ada dari HealthProvider
+                  provider.hasError
+                      ? 'Tidak dapat menghubungi server saat ini.'
+                      : 'Kami sedang melakukan perawatan sistem.\nSilakan coba lagi nanti.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 16, color: Colors.black54),
                 ),
@@ -99,9 +141,24 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
 
                 // Tombol Cek Status Kembali
                 ElevatedButton.icon(
-                  onPressed: () => provider.checkHealth(),
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Cek Status Kembali'),
+                  // Panggil fungsi _manualCheckStatus saat ditekan
+                  onPressed: () => _manualCheckStatus(showSnackbar: true),
+                  icon:
+                      provider
+                          .isLoading
+                      ? Container(
+                          width: 20,
+                          height: 20,
+                          padding: const EdgeInsets.all(2.0),
+                          child: const CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Icon(Icons.refresh),
+                  label: Text(
+                    provider.isLoading ? 'Mengecek...' : 'Cek Status Kembali',
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.pink,
                     foregroundColor: Colors.white,
