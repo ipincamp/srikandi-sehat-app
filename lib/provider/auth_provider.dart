@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -7,7 +8,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:app/provider/cycle_tracking_provider.dart';
 import 'package:app/core/auth/notification_service.dart';
@@ -21,6 +21,7 @@ class AuthProvider with ChangeNotifier {
   String? _role;
   bool _profileComplete = false;
   String? _createdAt;
+  bool _isEmailVerified = false;
 
   String? get authToken => _authToken;
   String? get userId => _userId;
@@ -29,6 +30,7 @@ class AuthProvider with ChangeNotifier {
   String? get role => _role;
   bool get profileComplete => _profileComplete;
   String? get createdAt => _createdAt;
+  bool get isEmailVerified => _isEmailVerified;
 
   bool _isLoading = false;
   String _errorMessage = '';
@@ -307,6 +309,7 @@ class AuthProvider with ChangeNotifier {
         }
         _profileComplete = data['profile_complete'] ?? false;
         _createdAt = data['created_at']?.toString();
+        _isEmailVerified = data['is_verified'] ?? false;
 
         if (_authToken == null || _userId == null) {
           _errorMessage = 'Missing required user data';
@@ -325,6 +328,7 @@ class AuthProvider with ChangeNotifier {
         await prefs.setString('role', _role ?? '');
         await prefs.setBool('profile_complete', _profileComplete);
         await prefs.setString('created_at', _createdAt ?? '');
+        await prefs.setBool('is_email_verified', _isEmailVerified);
 
         await updateFcmToken(); // Cek dan update token FCM
 
@@ -566,6 +570,7 @@ class AuthProvider with ChangeNotifier {
       _role = null;
       _profileComplete = false;
       _createdAt = null;
+      _isEmailVerified = false;
 
       // Clear shared preferences
       // await prefs.clear();
@@ -577,6 +582,7 @@ class AuthProvider with ChangeNotifier {
       await prefs.remove('role');
       await prefs.remove('profile_complete');
       await prefs.remove('created_at');
+      await prefs.remove('is_email_verified');
 
       if (response.statusCode == 200) {
         notifyListeners();
@@ -620,6 +626,7 @@ class AuthProvider with ChangeNotifier {
     _role = prefs.getString('role');
     _profileComplete = prefs.getBool('profile_complete') ?? false;
     _createdAt = prefs.getString('created_at');
+    _isEmailVerified = prefs.getBool('is_email_verified') ?? false;
     notifyListeners();
   }
 
@@ -763,6 +770,67 @@ class AuthProvider with ChangeNotifier {
         debugPrint("Gagal update FCM token: $e");
       }
       // Pertimbangkan: apakah perlu retry atau menampilkan error ke user?
+    }
+  }
+
+  Future<bool> resendVerificationEmail(BuildContext context) async {
+    _isLoading = true;
+    _errorMessage = '';
+    notifyListeners();
+
+    final hasConnection = await _checkInternetConnection();
+    if (!hasConnection) {
+      _isLoading = false;
+      _errorMessage = 'No internet connection';
+      notifyListeners();
+      await _showNoInternetAlert(context);
+      return false;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    final baseUrl = dotenv.env['API_URL'];
+    final url = '$baseUrl/auth/resend-verification';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 30));
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 202) {
+        if (context.mounted) {
+          CustomAlert.show(
+            context,
+            responseData['message'] ?? 'Email verifikasi telah dikirim.',
+            type: AlertType.success,
+            duration: const Duration(seconds: 3),
+          );
+        }
+        return true;
+      } else {
+        _errorMessage =
+            responseData['message'] ?? 'Gagal mengirim email verifikasi.';
+        if (context.mounted) {
+          // Gunakan _showErrorAlert yang sudah ada
+          await _showErrorAlert(context, _errorMessage);
+        }
+        return false;
+      }
+    } catch (error) {
+      _errorMessage = 'Terjadi kesalahan: ${error.toString()}';
+      if (context.mounted) {
+        await _showErrorAlert(context, _errorMessage);
+      }
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 

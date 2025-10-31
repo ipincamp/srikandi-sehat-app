@@ -125,6 +125,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -205,17 +207,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Navigator.pushNamed(context, '/change-password'),
                   },
                 ),
-                /*
-                buildListTile(
-                  icon: Icons.notifications,
-                  label: 'Notifications',
-                  color: Colors.green,
-                  trailing: Switch(
-                    value: _notificationsEnabled,
-                    onChanged: (val) => setState(() => _notificationsEnabled = val),
+                if (!authProvider.isEmailVerified)
+                  buildListTile(
+                    icon: Icons.mark_email_read,
+                    label: 'Verifikasi Email',
+                    color: Colors.cyan,
+                    trailing: authProvider.isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.arrow_forward_ios, size: 16),
+                    onTap: authProvider.isLoading
+                        ? null
+                        : () async {
+                            await authProvider.resendVerificationEmail(context);
+                          },
                   ),
-                ),
-                */
                 buildListTile(
                   icon: Icons.info_outline,
                   label: 'Tentang Aplikasi',
