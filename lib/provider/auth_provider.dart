@@ -427,76 +427,20 @@ class AuthProvider with ChangeNotifier {
 
       final responseData = jsonDecode(response.body) as Map<String, dynamic>;
 
-      if (response.statusCode == 202) {
+      if (response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          response.statusCode == 202) {
+
         // Simpan token FCM yang digunakan untuk registrasi
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('last_sent_fcm_token', fcmToken);
-        if (kDebugMode) {
-          debugPrint("FCM Token dari registrasi disimpan lokal.");
-        }
 
-        // Status 202 (Accepted) dianggap sukses
+        // Simpan pesan sukses untuk ditampilkan di UI
         _errorMessage =
             responseData['message'] ??
-            'Pendaftaran sedang diproses. Anda akan menerima notifikasi.';
+            'Registrasi berhasil. Silakan verifikasi email Anda.';
         notifyListeners();
-
-        if (context.mounted) {
-          CustomAlert.show(
-            context,
-            _errorMessage,
-            type: AlertType.info,
-            duration: const Duration(seconds: 4),
-          );
-          // Langsung navigasi setelah menampilkan alert
-          Navigator.pushReplacementNamed(context, '/login');
-        }
-        return true;
-
-        // if (context.mounted) {
-        //   await showDialog(
-        //     context: context,
-        //     barrierDismissible: false, // User harus tekan tombol
-        //     builder: (ctx) => AlertDialog(
-        //       shape: RoundedRectangleBorder(
-        //         borderRadius: BorderRadius.circular(12.0),
-        //       ),
-        //       title: const Text(
-        //         'Pendaftaran Diproses',
-        //         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        //         textAlign: TextAlign.center,
-        //       ),
-        //       content: Text(
-        //         _errorMessage,
-        //         style: const TextStyle(fontSize: 14),
-        //         textAlign: TextAlign.center,
-        //       ),
-        //       actionsAlignment: MainAxisAlignment.center,
-        //       actions: [
-        //         ElevatedButton(
-        //           style: ElevatedButton.styleFrom(
-        //             backgroundColor: Colors.blue,
-        //             minimumSize: const Size(120, 40),
-        //             shape: RoundedRectangleBorder(
-        //               borderRadius: BorderRadius.circular(8),
-        //             ),
-        //           ),
-        //           onPressed: () => Navigator.of(ctx).pop(),
-        //           child: const Text(
-        //             'Mengerti',
-        //             style: TextStyle(
-        //               color: Colors.white,
-        //               fontWeight: FontWeight.w500,
-        //             ),
-        //           ),
-        //         ),
-        //       ],
-        //       contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-        //       actionsPadding: const EdgeInsets.only(bottom: 16),
-        //     ),
-        //   );
-        // }
-        // return true;
+        return true; // Kembalikan true (sukses)
       }
 
       // Handle error cases
@@ -511,8 +455,7 @@ class AuthProvider with ChangeNotifier {
       }
 
       notifyListeners();
-      await _showErrorAlert(context, _errorMessage);
-      return false;
+      return false; // Kembalikan false (gagal)
     } catch (error) {
       _errorMessage = 'Terjadi kesalahan: $error';
       if (error is http.ClientException ||

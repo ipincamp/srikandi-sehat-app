@@ -5,6 +5,7 @@ import 'package:app/provider/auth_provider.dart';
 import 'package:app/widgets/custom_alert.dart';
 import 'package:app/widgets/custom_button.dart';
 import 'package:app/widgets/custom_form.dart';
+import 'package:app/widgets/custom_popup.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -71,29 +72,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
         context,
       );
 
-      // --- SIMPLIFIED LOGIC ---
       if (success) {
-        // Only show a "processing" message.
-        // The notification service will handle the final result and navigation.
+        // Pendaftaran SUKSES
         if (!mounted) return;
-        CustomAlert.show(
+
+        // Poin #2: Tampilkan dialog SUKSES (bukan error merah)
+        await CustomConfirmationPopup.show(
           context,
-          'Pendaftaran sedang diproses, Anda akan menerima notifikasi jika sudah selesai.',
-          type: AlertType.info,
-          duration: const Duration(seconds: 4),
+          title: 'Registrasi Berhasil',
+          message: authProvider.errorMessage,
+          confirmText: 'Mengerti',
+          confirmColor: Colors.green,
+          icon: Icons.check_circle,
+          singleButton: true,
         );
-        Navigator.pushReplacementNamed(context, '/login');
-        // DO NOT NAVIGATE HERE ANYMORE
+
+        // Poin #1: Arahkan ke halaman OTP setelah dialog ditutup
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/verify-otp');
+        }
       } else {
-        // Show error from API if the request itself failed (e.g., email already exists)
+        // Pendaftaran GAGAL (misal: email sudah dipakai)
         if (!mounted) return;
         CustomAlert.show(
           context,
-          authProvider.errorMessage,
+          authProvider.errorMessage, // Tampilkan pesan error
           type: AlertType.error,
-          duration: const Duration(milliseconds: 2000),
+          duration: const Duration(milliseconds: 2500),
         );
       }
+
     } catch (e) {
       if (!mounted) return;
       CustomAlert.show(
