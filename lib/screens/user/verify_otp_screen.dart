@@ -3,9 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/provider/auth_provider.dart';
 import 'package:app/widgets/custom_button.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:app/widgets/custom_popup.dart';
 
 class VerifyOtpScreen extends StatefulWidget {
   const VerifyOtpScreen({super.key});
@@ -133,10 +134,26 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
   }
 
   Future<void> _handleLogout(BuildContext context) async {
+    // Tampilkan konfirmasi terlebih dahulu
+    final bool? confirmed = await CustomConfirmationPopup.show(
+      context,
+      title: 'Konfirmasi Logout',
+      message: 'Apakah Anda yakin ingin keluar dan kembali ke halaman login?',
+      confirmText: 'Ya, Logout',
+      cancelText: 'Batal',
+      confirmColor: Colors.red,
+      icon: Icons.logout,
+    );
+
+    // Jika pengguna tidak menekan "Ya, Logout", hentikan fungsi
+    if (confirmed != true) {
+      return;
+    }
+
+    // Jika dikonfirmasi, lanjutkan proses logout
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     await authProvider.logout(context);
     if (mounted) {
-      // Kembali ke login setelah logout
       Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
     }
   }
