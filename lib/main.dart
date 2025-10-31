@@ -5,7 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/firebase_options.dart';
 import 'package:app/provider/auth_provider.dart';
 import 'package:app/provider/csv_download_provider.dart';
@@ -94,6 +94,8 @@ class AppProviders extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => HealthProvider()),
       ],
+      child: const MainAppInitializer(),
+      /*
       child: FutureBuilder(
         future: _checkInitialAuthState(),
         builder: (context, snapshot) {
@@ -109,15 +111,57 @@ class AppProviders extends StatelessWidget {
           );
         },
       ),
+      */
     );
   }
 
+  /*
   Future<AuthState> _checkInitialAuthState() async {
     final prefs = await SharedPreferences.getInstance();
     await Future.delayed(const Duration(seconds: 3));
     return AuthState(
       isLoggedIn: prefs.getBool('isLoggedIn') ?? false,
       role: prefs.getString('role'),
+    );
+  }
+  */
+}
+
+class MainAppInitializer extends StatelessWidget {
+  const MainAppInitializer({super.key});
+
+  // Fungsi ini akan memuat data awal sebelum app build
+  Future<void> _loadInitialData(BuildContext context) async {
+    // Ambil provider (tanpa listen)
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final healthProvider = Provider.of<HealthProvider>(context, listen: false);
+
+    // 1. Muat data user (termasuk status verifikasi) dari SharedPreferences
+    await authProvider.loadUserData();
+
+    // 2. Cek status server (maintenance, dll)
+    await healthProvider.checkHealth();
+
+    // 3. Tahan splash screen selama 3 detik (sesuai kode asli Anda)
+    await Future.delayed(const Duration(seconds: 3));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+      future: _loadInitialData(context),
+      builder: (context, snapshot) {
+        // Selama data sedang dimuat, tampilkan SplashScreen
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            home: SplashScreen(onInitializationComplete: () {}),
+          );
+        }
+
+        // Setelah selesai, bangun aplikasi utama
+        return const MyApp();
+      },
     );
   }
 }
@@ -130,9 +174,10 @@ class AuthState {
 }
 
 class MyApp extends StatefulWidget {
-  final AuthState initialAuthState;
+  // final AuthState initialAuthState;
 
-  const MyApp({super.key, required this.initialAuthState});
+  // const MyApp({super.key, required this.initialAuthState});
+  const MyApp({super.key});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -148,7 +193,7 @@ class _MyAppState extends State<MyApp> {
         // Langsung return MaintenanceScreen jika dalam maintenance
         if (healthProvider.isMaintenance) {
           return MaterialApp(
-            debugShowCheckedModeBanner: false,
+            debugShowCheckedModeBanner: kDebugMode,
             home: const MaintenanceScreen(),
           );
         }
@@ -156,7 +201,7 @@ class _MyAppState extends State<MyApp> {
         // Jika tidak maintenance, return app normal
         return MaterialApp(
           title: 'Srikandi Sehat',
-          debugShowCheckedModeBanner: false,
+          debugShowCheckedModeBanner: kDebugMode,
           navigatorObservers: [_routeObserver],
           navigatorKey: navigatorKey,
           theme: ThemeData(
@@ -184,9 +229,10 @@ class _MyAppState extends State<MyApp> {
             guestChild: const LoginScreen(),
           ),
           */
+          initialRoute: '/',
           routes: {
             '/': (context) => AuthWrapper(
-              initialAuthState: widget.initialAuthState,
+              // initialAuthState: widget.initialAuthState,
               adminChild: const admin.MainScreen(),
               userChild: const user.MainScreen(),
               guestChild: const LoginScreen(),

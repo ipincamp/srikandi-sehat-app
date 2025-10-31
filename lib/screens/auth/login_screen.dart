@@ -46,6 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
       await loginProvider.updateFcmToken();
 
       final role = loginProvider.role;
+      final isVerified = loginProvider.isEmailVerified;
 
       if (!mounted) return;
 
@@ -53,14 +54,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
       await Future.delayed(const Duration(seconds: 1));
 
-      // Navigasi berdasarkan role
-      if (role == 'user') {
+      if (role == 'user' && !isVerified) {
+        // 1. Pengguna adalah 'user' TAPI BELUM terverifikasi
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/verify-otp',
+          (route) => false,
+        );
+      } else if (role == 'user') {
+        // 2. Pengguna adalah 'user' DAN SUDAH terverifikasi
         await prefs.setBool('showLoginModal', true);
         Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
       } else if (role == 'admin') {
+        // 3. Pengguna adalah 'admin' (admin tidak perlu verifikasi)
         Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
       } else {
-        // Fallback jika role tidak dikenali
+        // 4. Fallback jika role tidak dikenali
         CustomAlert.show(
           context,
           'Role tidak dikenali: $role',
@@ -141,8 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 type: CustomFormFieldType.password,
                 isPassword: true,
                 validatePasswordComplexity: false,
-                textInputAction:
-                    TextInputAction.done,
+                textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) {
                   if (!loginProvider.isLoading) {
                     // Cek agar tidak submit saat loading

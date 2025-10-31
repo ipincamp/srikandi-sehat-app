@@ -132,6 +132,15 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     }
   }
 
+  Future<void> _handleLogout(BuildContext context) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    await authProvider.logout(context);
+    if (mounted) {
+      // Kembali ke login setelah logout
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+    }
+  }
+
   Future<void> _submitOtp() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -143,10 +152,15 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     final success = await authProvider.submitOtp(otp, context);
 
     if (success && mounted) {
-      // Jika berhasil, kembali ke halaman profil
-      // AuthProvider akan memberitahu halaman profil untuk refresh
-      Navigator.of(context).pop();
+      // --- UBAH NAVIGASI DI SINI ---
+      // Jika sukses, arahkan ke halaman utama (/main)
+      // AuthWrapper akan otomatis mengarahkan ke user.MainScreen
+      // karena isEmailVerified di provider sudah true.
+      Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
+      // HAPUS: Navigator.of(context).pop();
+      // --- AKHIR PERUBAHAN ---
     }
+    // Jika gagal, alert akan ditampilkan oleh provider
   }
 
   @override
@@ -159,6 +173,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
         title: const Text('Verifikasi Email'),
         backgroundColor: Colors.pink,
         foregroundColor: Colors.white,
+        automaticallyImplyLeading: false,
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -241,6 +256,13 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                         'Kirim Ulang Kode dalam (${_formatDuration(_cooldownSeconds)})',
                       )
                     : const Text('Kirim Ulang Kode?'),
+              ),
+              TextButton(
+                onPressed: authProvider.isLoading
+                    ? null
+                    : () => _handleLogout(context),
+                style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
+                child: const Text('Logout'),
               ),
             ],
           ),
