@@ -773,7 +773,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> resendVerificationEmail(BuildContext context) async {
+  Future<bool> resendVerificationEmail(BuildContext context, {bool showAlert = false}) async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
@@ -804,7 +804,8 @@ class AuthProvider with ChangeNotifier {
       final responseData = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 202) {
-        if (context.mounted) {
+        // Hanya tampilkan alert jika diminta (misal: saat kirim ulang)
+        if (showAlert && context.mounted) {
           CustomAlert.show(
             context,
             responseData['message'] ?? 'Email verifikasi telah dikirim.',
@@ -812,20 +813,95 @@ class AuthProvider with ChangeNotifier {
             duration: const Duration(seconds: 3),
           );
         }
-        return true;
+        return true; // Sukses
       } else {
         _errorMessage =
             responseData['message'] ?? 'Gagal mengirim email verifikasi.';
         if (context.mounted) {
-          // Gunakan _showErrorAlert yang sudah ada
           await _showErrorAlert(context, _errorMessage);
+        }
+        return false; // Gagal
+      }
+    } catch (error) {
+      _errorMessage = 'Terjadi kesalahan: ${error.toString()}';
+      if (context.mounted) {
+        await _showErrorAlert(context, _errorMessage);
+      }
+      return false; // Gagal
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> submitOtp(String otp, BuildContext context) async {
+    _isLoading = true;
+    _errorMessage = '';
+    notifyListeners();
+
+    final hasConnection = await _checkInternetConnection();
+    if (!hasConnection) {
+      _isLoading = false;
+      _errorMessage = 'No internet connection';
+      notifyListeners();
+      await _showNoInternetAlert(context);
+      return false;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    final baseUrl = dotenv.env['API_URL'];
+    final url = '$baseUrl/auth/verify-otp';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({'otp': otp}),
+      ).timeout(const Duration(seconds: 30));
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        // Sukses! Update status verifikasi
+        _isEmailVerified = true;
+        await prefs.setBool('is_email_verified', true);
+
+        if (context.mounted) {
+          CustomAlert.show(
+            context,
+            responseData['message'] ?? 'Email berhasil diverifikasi!',
+            type: AlertType.success,
+            duration: const Duration(seconds: 2),
+          );
+        }
+        notifyListeners(); // Update UI di profile screen
+        return true;
+      } else {
+        _errorMessage =
+            responseData['message'] ?? 'OTP salah atau tidak valid.';
+        if (context.mounted) {
+          // Tampilkan error langsung di halaman OTP
+          CustomAlert.show(
+            context,
+            _errorMessage,
+            type: AlertType.error,
+          );
         }
         return false;
       }
     } catch (error) {
       _errorMessage = 'Terjadi kesalahan: ${error.toString()}';
       if (context.mounted) {
-        await _showErrorAlert(context, _errorMessage);
+        CustomAlert.show(
+          context,
+          _errorMessage,
+          type: AlertType.error,
+        );
       }
       return false;
     } finally {

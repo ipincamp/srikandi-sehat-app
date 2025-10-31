@@ -44,6 +44,7 @@ import 'package:app/core/auth/notification_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:app/provider/notification_provider.dart';
 import 'package:app/screens/user/notification_history_screen.dart' as user;
+import 'package:app/screens/user/verify_otp_screen.dart' as user;
 import 'package:app/widgets/markdown_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -206,6 +207,7 @@ class _MyAppState extends State<MyApp> {
             '/notification-history': (context) =>
                 const user.NotificationHistoryScreen(),
             '/change-password': (context) => const user.ChangePasswordScreen(),
+            '/verify-otp': (context) => const user.VerifyOtpScreen(),
             '/edit-profile': (context) => const user.EditProfileScreen(),
             '/detail-profile': (context) => const user.DetailProfileScreen(),
             '/symptom-history': (context) => const user.SymptomHistoryScreen(),

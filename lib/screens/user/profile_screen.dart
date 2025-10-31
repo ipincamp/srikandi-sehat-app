@@ -222,7 +222,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onTap: authProvider.isLoading
                         ? null
                         : () async {
-                            await authProvider.resendVerificationEmail(context);
+                            // Ambil provider (listen: false) untuk aksi
+                            final auth = Provider.of<AuthProvider>(
+                              context,
+                              listen: false,
+                            );
+
+                            // 1. Panggil API untuk kirim email
+                            final success = await auth.resendVerificationEmail(
+                              context,
+                            );
+
+                            // 2. Jika kirim email sukses, navigasi ke halaman OTP
+                            if (success && mounted) {
+                              Navigator.pushNamed(context, '/verify-otp');
+                            }
+                            // Alert sukses/gagal sudah di-handle di dalam resendVerificationEmail
                           },
                   ),
                 buildListTile(
