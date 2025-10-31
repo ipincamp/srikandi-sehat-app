@@ -243,6 +243,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _submitOtp(),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'OTP tidak boleh kosong';
