@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:app/provider/auth_provider.dart';
 import 'package:app/widgets/custom_button.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class VerifyOtpScreen extends StatefulWidget {
   const VerifyOtpScreen({super.key});
@@ -15,10 +18,118 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
   final _formKey = GlobalKey<FormState>();
   final _otpController = TextEditingController();
 
+  Timer? _timer;
+  int _cooldownSeconds = 0;
+  bool _isCooldownActive = false;
+  final String _cooldownPrefKey = 'otpCooldownEndTime';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCooldown();
+  }
+
   @override
   void dispose() {
     _otpController.dispose();
+    _timer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _loadCooldown() async {
+    final prefs = await SharedPreferences.getInstance();
+    final endTimeMs = prefs.getInt(_cooldownPrefKey);
+
+    if (endTimeMs == null) return;
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (endTimeMs > now) {
+      final remainingSeconds = ((endTimeMs - now) / 1000).ceil();
+      _setCooldown(remainingSeconds);
+    }
+  }
+
+  Future<void> _setCooldown(int seconds) async {
+    if (seconds <= 0) return;
+
+    final endTime = DateTime.now().add(Duration(seconds: seconds));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_cooldownPrefKey, endTime.millisecondsSinceEpoch);
+
+    setState(() {
+      _cooldownSeconds = seconds;
+      _isCooldownActive = true;
+    });
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer?.cancel(); // Batalkan timer lama jika ada
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_cooldownSeconds > 0) {
+        if (mounted) {
+          setState(() {
+            _cooldownSeconds--;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _isCooldownActive = false;
+          });
+        }
+        timer.cancel();
+      }
+    });
+  }
+
+  int _parseSecondsFromError(String message) {
+    int totalSeconds = 0;
+    try {
+      // "Harap tunggu 13 menit 52 detik lagi..."
+      final minMatch = RegExp(r'(\d+)\s+menit').firstMatch(message);
+      final secMatch = RegExp(r'(\d+)\s+detik').firstMatch(message);
+
+      if (minMatch != null) {
+        totalSeconds += int.parse(minMatch.group(1)!) * 60;
+      }
+      if (secMatch != null) {
+        totalSeconds += int.parse(secMatch.group(1)!);
+      }
+      // Tambahkan 1 detik buffer
+      return totalSeconds > 0 ? totalSeconds + 1 : 0;
+    } catch (e) {
+      return 0; // Gagal parsing, jangan set cooldown
+    }
+  }
+
+  String _formatDuration(int seconds) {
+    final minutes = (seconds ~/ 60).toString().padLeft(2, '0');
+    final remainingSeconds = (seconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$remainingSeconds';
+  }
+
+  Future<void> _handleResend() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.resendVerificationEmail(
+      context,
+      showAlert: true,
+    );
+
+    if (success) {
+      // Jika sukses (200 OK), backend memulai cooldown 15 menit
+      _setCooldown(900); // 15 menit = 900 detik
+    } else {
+      // Cek apakah errornya adalah 429 (Too Many Requests)
+      final errorMessage = authProvider.errorMessage;
+      if (errorMessage.contains("Harap tunggu")) {
+        final remainingSeconds = _parseSecondsFromError(errorMessage);
+        if (remainingSeconds > 0) {
+          _setCooldown(remainingSeconds);
+        }
+      }
+      // Jika error lain, provider sudah menampilkannya via _showErrorAlert
+    }
   }
 
   Future<void> _submitOtp() async {
@@ -114,22 +225,22 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
               CustomButton(
                 label: 'Verifikasi Sekarang',
                 onPressed: _submitOtp,
-                isLoading: authProvider.isLoading,
+                isLoading:
+                    authProvider.isLoading &&
+                    !_isCooldownActive, // Hanya loading submit
                 fullWidth: true,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
               const SizedBox(height: 16),
               TextButton(
-                onPressed: authProvider.isLoading
-                    ? null
-                    : () async {
-                        // Kirim ulang email
-                        await authProvider.resendVerificationEmail(
-                          context,
-                          showAlert: true,
-                        );
-                      },
-                child: const Text('Kirim Ulang Kode?'),
+                onPressed: (_isCooldownActive || authProvider.isLoading)
+                    ? null // Nonaktifkan jika sedang cooldown ATAU sedang loading submit
+                    : _handleResend,
+                child: _isCooldownActive
+                    ? Text(
+                        'Kirim Ulang Kode dalam (${_formatDuration(_cooldownSeconds)})',
+                      )
+                    : const Text('Kirim Ulang Kode?'),
               ),
             ],
           ),
