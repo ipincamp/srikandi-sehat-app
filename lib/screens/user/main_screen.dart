@@ -24,7 +24,7 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen>
-    with TickerProviderStateMixin, WidgetsBindingObserver {
+    with TickerProviderStateMixin {
   int _selectedIndex = 0;
   late AnimationController _slideController;
 
@@ -45,17 +45,18 @@ class _MainScreenState extends State<MainScreen>
     );
     _checkShowModalOnLogin();
 
-    WidgetsBinding.instance.addObserver(this);
+    // WidgetsBinding.instance.addObserver(this);
     _checkAndRequestNotificationPermissionWithHandler();
   }
 
   @override
   void dispose() {
     _slideController.dispose();
-    WidgetsBinding.instance.removeObserver(this);
+    // WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
+  /* DEPRECATED: Using lifecycle state changes to check permissions can lead to repetitive prompts.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
@@ -65,6 +66,7 @@ class _MainScreenState extends State<MainScreen>
       _checkAndRequestNotificationPermissionWithHandler();
     }
   }
+  */
 
   Future<void> _checkAndRequestNotificationPermissionWithHandler() async {
     if (!mounted) return;
