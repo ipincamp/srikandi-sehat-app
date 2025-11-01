@@ -2,9 +2,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/provider/auth_provider.dart'; // Pastikan import AuthProvider ada
+
+// Initialize flutter local notifications plugin
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 
 // Handler untuk background message harus tetap di luar kelas (top-level function)
 @pragma('vm:entry-point')
@@ -14,11 +19,82 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   if (kDebugMode) {
     debugPrint("Handling a background message: ${message.messageId}");
   }
-  // Anda bisa menambahkan logika lain di sini jika diperlukan saat notifikasi diterima di background
+
+  // Show notification in background
+  await _showNotification(message);
+}
+
+// Helper function to show notification (can be called from background)
+Future<void> _showNotification(RemoteMessage message) async {
+  const AndroidNotificationDetails androidPlatformChannelSpecifics =
+      AndroidNotificationDetails(
+        'srikandi_sehat_channel', // channel id
+        'Srikandi Sehat Notifications', // channel name
+        channelDescription: 'Notifikasi dari Srikandi Sehat',
+        importance: Importance.high,
+        priority: Priority.high,
+        showWhen: true,
+        enableVibration: true,
+        playSound: true,
+      );
+
+  const NotificationDetails platformChannelSpecifics = NotificationDetails(
+    android: androidPlatformChannelSpecifics,
+  );
+
+  await flutterLocalNotificationsPlugin.show(
+    message.hashCode, // notification id
+    message.notification?.title ?? 'Srikandi Sehat',
+    message.notification?.body ?? 'Anda memiliki notifikasi baru',
+    platformChannelSpecifics,
+    payload: message.data.toString(),
+  );
 }
 
 class NotificationService {
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+
+  // Initialize local notifications
+  Future<void> _initializeLocalNotifications(
+    GlobalKey<NavigatorState> navigatorKey,
+  ) async {
+    // Android initialization settings
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    final InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+
+    await flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) async {
+        if (kDebugMode) {
+          debugPrint('Notification tapped with payload: ${response.payload}');
+        }
+        // Handle notification tap - navigate to appropriate screen
+        // You can parse the payload and navigate accordingly
+        final context = navigatorKey.currentState?.context;
+        if (context != null) {
+          // Example: navigate to notification history
+          navigatorKey.currentState?.pushNamed('/notification-history');
+        }
+      },
+    );
+
+    // Create notification channel for Android
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      'srikandi_sehat_channel', // id
+      'Srikandi Sehat Notifications', // name
+      description: 'Notifikasi dari Srikandi Sehat',
+      importance: Importance.high,
+    );
+
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.createNotificationChannel(channel);
+  }
 
   // Fungsi untuk mendapatkan FCM Token
   Future<String?> getFCMToken() async {
@@ -73,6 +149,9 @@ class NotificationService {
 
   // Fungsi inisialisasi utama
   Future<void> initialize(GlobalKey<NavigatorState> navigatorKey) async {
+    // 0. Initialize local notifications first
+    await _initializeLocalNotifications(navigatorKey);
+
     // 1. Minta izin notifikasi setelah Firebase siap
     await _requestNotificationPermission();
 
@@ -80,7 +159,7 @@ class NotificationService {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
     // 3. Handler untuk notifikasi saat aplikasi di foreground
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
       if (kDebugMode) {
         debugPrint('Foreground message received!');
         debugPrint('Message data: ${message.data}');
@@ -91,20 +170,17 @@ class NotificationService {
         }
       }
 
-      // Logika untuk menampilkan notifikasi/alert saat di foreground (jika diperlukan)
-      // Misalnya, menggunakan snackbar atau custom alert
+      // Show popup notification when app is in foreground
+      await _showNotification(message);
+
+      // Optional: Show snackbar or custom alert
       final context = navigatorKey.currentState?.context;
       if (context != null && message.notification != null) {
-        // Anda bisa menampilkan snackbar sederhana di sini
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   SnackBar(
-        //      content: Text(message.notification!.body ?? 'Notifikasi baru diterima'),
-        //      backgroundColor: Colors.blue, // Atau warna lain
-        //    ),
-        // );
-        debugPrint(
-          "FCM Foreground: ${message.notification!.title} - ${message.notification!.body}",
-        );
+        if (kDebugMode) {
+          debugPrint(
+            "FCM Foreground: ${message.notification!.title} - ${message.notification!.body}",
+          );
+        }
       }
     });
 
