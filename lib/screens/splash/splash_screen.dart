@@ -21,6 +21,11 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 🎯 [SplashScreen] Screen initialized');
+      debugPrint('│ 🔄 Requesting notification permission...');
+    }
     // Panggil fungsi untuk minta izin saat halaman ini dibuka
     _requestNotificationPermission();
   }
@@ -28,6 +33,10 @@ class _SplashScreenState extends State<SplashScreen> {
   // Fungsi untuk meminta izin notifikasi
   void _requestNotificationPermission() async {
     FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+    if (kDebugMode) {
+      debugPrint('│ 🔔 Requesting Firebase notification permission...');
+    }
 
     NotificationSettings settings = await messaging.requestPermission(
       alert: true,
@@ -41,16 +50,20 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
       if (kDebugMode) {
-        debugPrint('User granted permission');
+        debugPrint('│ ✅ User granted permission');
+        debugPrint('└─────────────────────────────────────────');
       }
     } else if (settings.authorizationStatus ==
         AuthorizationStatus.provisional) {
       if (kDebugMode) {
-        debugPrint('User granted provisional permission');
+        debugPrint('│ ⚠️ User granted provisional permission');
+        debugPrint('└─────────────────────────────────────────');
       }
     } else {
       if (kDebugMode) {
-        debugPrint('User declined or has not accepted permission');
+        debugPrint('│ ❌ User declined or has not accepted permission');
+        debugPrint('│ 📊 Status: ${settings.authorizationStatus}');
+        debugPrint('└─────────────────────────────────────────');
       }
     }
   }

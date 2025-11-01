@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 // import 'package:flutter_svg/flutter_svg.dart'; // <-- DIHAPUS
 import 'package:provider/provider.dart';
@@ -20,13 +21,34 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isGoogleLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 🔐 [LoginScreen] Screen initialized');
+      debugPrint('└─────────────────────────────────────────');
+    }
+  }
+
+  @override
   void dispose() {
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 🔐 [LoginScreen] Screen disposed');
+      debugPrint('└─────────────────────────────────────────');
+    }
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
   Future<void> _login() async {
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 🔐 [LoginScreen] Login attempt started');
+      debugPrint('│ 📧 Email: ${_emailController.text.trim()}');
+    }
+
     final loginProvider = Provider.of<AuthProvider>(context, listen: false);
     final prefs = await SharedPreferences.getInstance();
 
@@ -34,6 +56,10 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
+      if (kDebugMode) {
+        debugPrint('│ ❌ Validation failed: Empty email or password');
+        debugPrint('└─────────────────────────────────────────');
+      }
       CustomAlert.show(
         context,
         'Email dan password tidak boleh kosong',
@@ -42,13 +68,27 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    if (kDebugMode) {
+      debugPrint('│ 📡 Calling login provider...');
+    }
+
     final success = await loginProvider.login(email, password, context);
 
     if (success) {
+      if (kDebugMode) {
+        debugPrint('│ ✅ Login successful');
+        debugPrint('│ 🔄 Updating FCM token...');
+      }
+
       await loginProvider.updateFcmToken();
 
       final role = loginProvider.role;
       final isVerified = loginProvider.isEmailVerified;
+
+      if (kDebugMode) {
+        debugPrint('│ 🎭 Role: $role');
+        debugPrint('│ ✉️ Email Verified: $isVerified');
+      }
 
       if (!mounted) return;
 
@@ -57,17 +97,33 @@ class _LoginScreenState extends State<LoginScreen> {
       await Future.delayed(const Duration(seconds: 1));
 
       if (role == 'user' && !isVerified) {
+        if (kDebugMode) {
+          debugPrint('│ 🔄 Navigating to OTP verification');
+          debugPrint('└─────────────────────────────────────────');
+        }
         Navigator.pushNamedAndRemoveUntil(
           context,
           '/verify-otp',
           (route) => false,
         );
       } else if (role == 'user') {
+        if (kDebugMode) {
+          debugPrint('│ 🔄 Navigating to user main screen');
+          debugPrint('└─────────────────────────────────────────');
+        }
         await prefs.setBool('showLoginModal', true);
         Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
       } else if (role == 'admin') {
+        if (kDebugMode) {
+          debugPrint('│ 🔄 Navigating to admin screen');
+          debugPrint('└─────────────────────────────────────────');
+        }
         Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
       } else {
+        if (kDebugMode) {
+          debugPrint('│ ❌ Unknown role: $role');
+          debugPrint('└─────────────────────────────────────────');
+        }
         CustomAlert.show(
           context,
           'Role tidak dikenali: $role',
@@ -76,6 +132,11 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
     } else {
+      if (kDebugMode) {
+        debugPrint('│ ❌ Login failed');
+        debugPrint('│ 💬 Error: ${loginProvider.errorMessage}');
+        debugPrint('└─────────────────────────────────────────');
+      }
       CustomAlert.show(
         context,
         loginProvider.errorMessage,
@@ -85,6 +146,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleGoogleLogin() async {
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 🔐 [LoginScreen] Google login started');
+    }
+
     setState(() => _isGoogleLoading = true);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final prefs = await SharedPreferences.getInstance();
@@ -94,6 +160,12 @@ class _LoginScreenState extends State<LoginScreen> {
     if (success) {
       final role = authProvider.role;
       final isVerified = authProvider.isEmailVerified;
+
+      if (kDebugMode) {
+        debugPrint('│ ✅ Google login successful');
+        debugPrint('│ 🎭 Role: $role');
+        debugPrint('│ ✉️ Email Verified: $isVerified');
+      }
 
       if (!mounted) return;
 
@@ -106,23 +178,45 @@ class _LoginScreenState extends State<LoginScreen> {
       await Future.delayed(const Duration(seconds: 1));
 
       if (role == 'user' && !isVerified) {
+        if (kDebugMode) {
+          debugPrint('│ 🔄 Navigating to OTP verification');
+          debugPrint('└─────────────────────────────────────────');
+        }
         Navigator.pushNamedAndRemoveUntil(
           context,
           '/verify-otp',
           (route) => false,
         );
       } else if (role == 'user') {
+        if (kDebugMode) {
+          debugPrint('│ 🔄 Navigating to user main screen');
+          debugPrint('└─────────────────────────────────────────');
+        }
         await prefs.setBool('showLoginModal', true);
         Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
       } else if (role == 'admin') {
+        if (kDebugMode) {
+          debugPrint('│ 🔄 Navigating to admin screen');
+          debugPrint('└─────────────────────────────────────────');
+        }
         Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
       } else {
+        if (kDebugMode) {
+          debugPrint('│ ❌ Unknown role: $role');
+          debugPrint('└─────────────────────────────────────────');
+        }
         CustomAlert.show(
           context,
           'Role tidak dikenali: $role',
           type: AlertType.error,
         );
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      }
+    } else {
+      if (kDebugMode) {
+        debugPrint('│ ❌ Google login failed');
+        debugPrint('│ 💬 Error: ${authProvider.errorMessage}');
+        debugPrint('└─────────────────────────────────────────');
       }
     }
     if (mounted) {

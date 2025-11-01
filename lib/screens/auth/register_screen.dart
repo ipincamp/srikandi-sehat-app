@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 // import 'package:flutter_svg/flutter_svg.dart'; // <-- DIHAPUS
 import 'package:provider/provider.dart';
@@ -26,12 +27,51 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _isGoogleLoading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 📝 [RegisterScreen] Screen initialized');
+      debugPrint('└─────────────────────────────────────────');
+    }
+  }
+
+  @override
+  void dispose() {
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 📝 [RegisterScreen] Screen disposed');
+      debugPrint('└─────────────────────────────────────────');
+    }
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
   Future<void> _register() async {
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 📝 [RegisterScreen] Registration started');
+      debugPrint('│ 👤 Name: ${_nameController.text.trim()}');
+      debugPrint('│ 📧 Email: ${_emailController.text.trim()}');
+    }
+
     if (!_formKey.currentState!.validate()) {
+      if (kDebugMode) {
+        debugPrint('│ ❌ Form validation failed');
+        debugPrint('└─────────────────────────────────────────');
+      }
       return;
     }
 
     if (!_isAggreeToTerms) {
+      if (kDebugMode) {
+        debugPrint('│ ❌ Terms not agreed');
+        debugPrint('└─────────────────────────────────────────');
+      }
       CustomAlert.show(
         context,
         'Anda harus menyetujui Terms of Service dan Privacy Policy terlebih dahulu.',
@@ -40,13 +80,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    if (kDebugMode) {
+      debugPrint('│ ✅ Validation passed');
+    }
+
     setState(() => _isLoading = true);
 
     try {
+      if (kDebugMode) {
+        debugPrint('│ 🔔 Getting FCM token...');
+      }
+
       final notificationService = NotificationService();
       final fcmToken = await notificationService.getFCMToken();
 
       if (fcmToken == null) {
+        if (kDebugMode) {
+          debugPrint('│ ❌ FCM token is null');
+          debugPrint('└─────────────────────────────────────────');
+        }
         if (!mounted) return;
         CustomAlert.show(
           context,
@@ -55,6 +107,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
         setState(() => _isLoading = false);
         return;
+      }
+
+      if (kDebugMode) {
+        debugPrint('│ ✅ FCM token obtained');
+        debugPrint('│ 📡 Calling register provider...');
       }
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -73,6 +130,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (success) {
+        if (kDebugMode) {
+          debugPrint('│ ✅ Registration successful');
+          debugPrint('│ 🔄 Navigating to OTP verification');
+          debugPrint('└─────────────────────────────────────────');
+        }
         if (!mounted) return;
         await CustomConfirmationPopup.show(
           context,
@@ -87,6 +149,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
           Navigator.pushReplacementNamed(context, '/verify-otp');
         }
       } else {
+        if (kDebugMode) {
+          debugPrint('│ ❌ Registration failed');
+          debugPrint('│ 💬 Error: ${authProvider.errorMessage}');
+          debugPrint('└─────────────────────────────────────────');
+        }
         if (!mounted) return;
         CustomAlert.show(
           context,
@@ -96,6 +163,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
       }
     } catch (e) {
+      if (kDebugMode) {
+        debugPrint('│ ❌ Exception caught!');
+        debugPrint('│ 🔴 Type: ${e.runtimeType}');
+        debugPrint('│ 💬 Message: ${e.toString()}');
+        debugPrint('└─────────────────────────────────────────');
+      }
       if (!mounted) return;
       CustomAlert.show(
         context,
@@ -110,7 +183,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _handleGoogleRegister() async {
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 📝 [RegisterScreen] Google register started');
+    }
+
     if (!_isAggreeToTerms) {
+      if (kDebugMode) {
+        debugPrint('│ ❌ Terms not agreed');
+        debugPrint('└─────────────────────────────────────────');
+      }
       CustomAlert.show(
         context,
         'Anda harus menyetujui Terms of Service dan Privacy Policy terlebih dahulu.',
@@ -127,6 +209,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (success) {
       final role = authProvider.role;
 
+      if (kDebugMode) {
+        debugPrint('│ ✅ Google register successful');
+        debugPrint('│ 🎭 Role: $role');
+      }
+
       if (!mounted) return;
 
       CustomAlert.show(
@@ -138,10 +225,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
       await Future.delayed(const Duration(seconds: 1));
 
       if (role == 'user') {
+        if (kDebugMode) {
+          debugPrint('│ 🔄 Navigating to user main screen');
+          debugPrint('└─────────────────────────────────────────');
+        }
         Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
       } else if (role == 'admin') {
+        if (kDebugMode) {
+          debugPrint('│ 🔄 Navigating to admin screen');
+          debugPrint('└─────────────────────────────────────────');
+        }
         Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
       } else {
+        if (kDebugMode) {
+          debugPrint('│ ❌ Unknown role: $role');
+          debugPrint('└─────────────────────────────────────────');
+        }
         CustomAlert.show(
           context,
           'Role tidak dikenali: $role',
@@ -149,19 +248,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
+    } else {
+      if (kDebugMode) {
+        debugPrint('│ ❌ Google register failed');
+        debugPrint('│ 💬 Error: ${authProvider.errorMessage}');
+        debugPrint('└─────────────────────────────────────────');
+      }
     }
     if (mounted) {
       setState(() => _isGoogleLoading = false);
     }
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    super.dispose();
   }
 
   @override
