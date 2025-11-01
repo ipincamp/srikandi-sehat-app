@@ -1,5 +1,5 @@
 // Import Firebase scripts
-importScripts("https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js");
+importScripts("https://www.gstatic.com/firebasejs/12.5.0/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/12.5.0/firebase-messaging-compat.js");
 
 // Firebase configuration
@@ -32,16 +32,48 @@ const messaging = firebase.messaging();
 
 // Background message handler
 messaging.onBackgroundMessage((payload) => {
-    console.log(
-        "[firebase-messaging-sw.js] Received background message ",
-        payload
-    );
-    // Customize notification here
-    const notificationTitle = payload.notification.title;
+    console.log('=== BACKGROUND MESSAGE RECEIVED ===');
+    console.log('[firebase-messaging-sw.js] Payload:', payload);
+
+    // Extract notification data
+    const notificationTitle = payload.notification?.title || 'Srikandi Sehat';
     const notificationOptions = {
-        body: payload.notification.body,
-        icon: '/favicon.png' // Replace with your icon path if any
+        body: payload.notification?.body || 'Anda memiliki notifikasi baru',
+        icon: '/favicon.png', // Replace with your icon path if any
+        badge: '/favicon.png',
+        data: payload.data,
+        tag: payload.messageId || 'default-tag',
+        requireInteraction: false,
     };
 
-    self.registration.showNotification(notificationTitle, notificationOptions);
+    console.log('Showing notification:', notificationTitle, notificationOptions);
+    console.log('===================================');
+
+    return self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+// Handle notification click
+self.addEventListener('notificationclick', (event) => {
+    console.log('=== NOTIFICATION CLICKED ===');
+    console.log('Notification:', event.notification);
+    console.log('Data:', event.notification.data);
+    console.log('===========================');
+
+    event.notification.close();
+
+    // Open the app or navigate to specific page
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+            // Check if app is already open
+            for (let client of clientList) {
+                if (client.url.includes(self.location.origin) && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            // If app is not open, open it
+            if (clients.openWindow) {
+                return clients.openWindow('/');
+            }
+        })
+    );
 });

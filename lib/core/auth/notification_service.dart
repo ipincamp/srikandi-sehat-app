@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:app/provider/auth_provider.dart'; // Pastikan import AuthProvider ada
+import 'package:app/provider/auth_provider.dart';
 
 // Initialize flutter local notifications plugin
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -28,6 +28,22 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 // Helper function to show notification (can be called from background)
 Future<void> _showNotification(RemoteMessage message) async {
+  if (kIsWeb) {
+    // For web, use browser's notification API or just log
+    // flutter_local_notifications doesn't work on web
+    if (kDebugMode) {
+      debugPrint('=== WEB NOTIFICATION RECEIVED ===');
+      debugPrint('Title: ${message.notification?.title ?? 'No title'}');
+      debugPrint('Body: ${message.notification?.body ?? 'No body'}');
+      debugPrint('Data: ${message.data}');
+      debugPrint('================================');
+    }
+    // Web notifications are handled by the service worker
+    // Or you can show a custom in-app notification UI
+    return;
+  }
+
+  // Android/iOS notification using flutter_local_notifications
   const AndroidNotificationDetails androidPlatformChannelSpecifics =
       AndroidNotificationDetails(
         'srikandi_sehat_channel', // channel id
@@ -60,7 +76,17 @@ class NotificationService {
   Future<void> _initializeLocalNotifications(
     GlobalKey<NavigatorState> navigatorKey,
   ) async {
-    // Android initialization settings
+    // Skip local notifications on web - they're handled by service worker
+    if (kIsWeb) {
+      if (kDebugMode) {
+        debugPrint(
+          'Web platform detected - using service worker for notifications',
+        );
+      }
+      return;
+    }
+
+    // Android/iOS initialization settings
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
@@ -101,16 +127,42 @@ class NotificationService {
   // Fungsi untuk mendapatkan FCM Token
   Future<String?> getFCMToken() async {
     try {
-      final token = await _firebaseMessaging.getToken();
-      if (kDebugMode) {
-        debugPrint("===================================");
-        debugPrint("FCM Token: $token");
-        debugPrint("===================================");
+      // For web, need to pass VAPID key
+      String? token;
+      if (kIsWeb) {
+        // Get the VAPID key from Firebase Console > Project Settings > Cloud Messaging > Web Push certificates
+        // For now, try to get token without VAPID (might work in some cases)
+        token = await _firebaseMessaging.getToken();
+
+        if (kDebugMode) {
+          debugPrint("===================================");
+          debugPrint("FCM Token (Web): $token");
+          debugPrint("===================================");
+          if (token == null) {
+            debugPrint("Note: Web FCM might need VAPID key configuration");
+            debugPrint(
+              "Go to Firebase Console > Project Settings > Cloud Messaging",
+            );
+            debugPrint("Generate Web Push certificates if not done yet");
+          }
+        }
+      } else {
+        token = await _firebaseMessaging.getToken();
+        if (kDebugMode) {
+          debugPrint("===================================");
+          debugPrint("FCM Token (Mobile): $token");
+          debugPrint("===================================");
+        }
       }
       return token;
     } catch (e) {
       if (kDebugMode) {
         debugPrint("Failed to get FCM token: $e");
+        if (kIsWeb) {
+          debugPrint(
+            "Web platform detected - check service worker registration",
+          );
+        }
       }
       return null;
     }
@@ -151,28 +203,39 @@ class NotificationService {
 
   // Fungsi inisialisasi utama
   Future<void> initialize(GlobalKey<NavigatorState> navigatorKey) async {
-    // 0. Initialize local notifications first
+    if (kDebugMode) {
+      debugPrint('=== Initializing Notification Service ===');
+      debugPrint('Platform: ${kIsWeb ? 'Web' : 'Mobile'}');
+    }
+
+    // 0. Initialize local notifications first (skipped on web)
     await _initializeLocalNotifications(navigatorKey);
 
     // 1. Minta izin notifikasi setelah Firebase siap
     await _requestNotificationPermission();
 
-    // 2. Set background message handler
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    // 2. Set background message handler (only for mobile)
+    if (!kIsWeb) {
+      FirebaseMessaging.onBackgroundMessage(
+        _firebaseMessagingBackgroundHandler,
+      );
+    }
 
     // 3. Handler untuk notifikasi saat aplikasi di foreground
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
       if (kDebugMode) {
-        debugPrint('Foreground message received!');
+        debugPrint('=== FOREGROUND MESSAGE RECEIVED ===');
+        debugPrint('Platform: ${kIsWeb ? 'Web' : 'Mobile'}');
+        debugPrint('Message ID: ${message.messageId}');
         debugPrint('Message data: ${message.data}');
         if (message.notification != null) {
-          debugPrint(
-            'Message also contained a notification: ${message.notification}',
-          );
+          debugPrint('Notification Title: ${message.notification!.title}');
+          debugPrint('Notification Body: ${message.notification!.body}');
         }
+        debugPrint('===================================');
       }
 
-      // Show popup notification when app is in foreground
+      // Show notification (web will just log, mobile will show popup)
       await _showNotification(message);
 
       // Optional: Show snackbar or custom alert
@@ -183,14 +246,43 @@ class NotificationService {
             "FCM Foreground: ${message.notification!.title} - ${message.notification!.body}",
           );
         }
+
+        // For web, show an in-app notification using SnackBar
+        if (kIsWeb) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    message.notification!.title ?? 'Notification',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  if (message.notification!.body != null)
+                    Text(message.notification!.body!),
+                ],
+              ),
+              duration: const Duration(seconds: 5),
+              action: SnackBarAction(
+                label: 'View',
+                onPressed: () {
+                  navigatorKey.currentState?.pushNamed('/notification-history');
+                },
+              ),
+            ),
+          );
+        }
       }
     });
 
     // 4. Handler saat notifikasi di-tap (dari background/terminated)
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       if (kDebugMode) {
-        debugPrint('Message opened from background/terminated state!');
+        debugPrint('=== MESSAGE OPENED FROM BACKGROUND ===');
+        debugPrint('Message ID: ${message.messageId}');
         debugPrint('Message data: ${message.data}');
+        debugPrint('======================================');
       }
       // Logika navigasi berdasarkan data notifikasi
       if (message.data['status'] == 'success') {
