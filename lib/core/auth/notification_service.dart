@@ -20,8 +20,10 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     debugPrint("Handling a background message: ${message.messageId}");
   }
 
-  // Show notification in background
-  await _showNotification(message);
+  // DO NOT show notification here!
+  // When app is in background/terminated, Firebase Messaging automatically
+  // displays the notification if the message contains a 'notification' payload.
+  // Only handle data-only messages or custom logic here.
 }
 
 // Helper function to show notification (can be called from background)
