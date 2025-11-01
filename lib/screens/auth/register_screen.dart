@@ -215,41 +215,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 30),
-                _isGoogleLoading
-                    ? const SizedBox(
-                        height: 50,
-                        child: Center(child: CircularProgressIndicator()),
-                      )
-                    : OutlinedButton.icon(
-                        icon: Image.asset(
-                          // <-- DIGANTI
-                          'assets/images/google-logo.png', // <-- DIGANTI
-                          width: 24,
-                          height: 24,
-                        ),
-                        label: const Text(
-                          'Daftar dengan Google',
-                          style: TextStyle(
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          // fullWidth: true,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          side: BorderSide(
-                            color: Colors.grey.shade300,
-                            width: 2,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(50),
-                          ),
-                        ),
-                        onPressed: isLoading ? null : _handleGoogleRegister,
-                      ),
-                const SizedBox(height: 20),
-                _buildOrDivider(),
-                const SizedBox(height: 20),
                 CustomFormField(
                   label: 'Nama Lengkap',
                   placeholder: 'Masukkan nama lengkap',
@@ -371,6 +336,40 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         isFullRounded: true,
                         padding: const EdgeInsets.symmetric(vertical: 20),
                         onPressed: isLoading ? null : _register,
+                      ),
+                const SizedBox(height: 20),
+                _buildOrDivider(),
+                const SizedBox(height: 20),
+                _isGoogleLoading
+                    ? const SizedBox(
+                        height: 50,
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    : OutlinedButton.icon(
+                        icon: Image.asset(
+                          'assets/images/google-logo.png',
+                          width: 24,
+                          height: 24,
+                        ),
+                        label: const Text(
+                          'Daftar dengan Google',
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 0),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: BorderSide(
+                            color: Colors.grey.shade300,
+                            width: 2,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(50),
+                          ),
+                        ),
+                        onPressed: isLoading ? null : _handleGoogleRegister,
                       ),
                 const SizedBox(height: 20),
                 Row(

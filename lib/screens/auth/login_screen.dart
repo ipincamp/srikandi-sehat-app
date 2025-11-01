@@ -219,8 +219,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ? const CircularProgressIndicator()
                   : OutlinedButton.icon(
                       icon: Image.asset(
-                        // <-- DIGANTI
-                        'assets/images/google-logo.png', // <-- DIGANTI
+                        'assets/images/google-logo.png',
                         width: 24,
                         height: 24,
                       ),
@@ -232,7 +231,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       style: OutlinedButton.styleFrom(
-                        // fullWidth: true,
+                        minimumSize: const Size(double.infinity, 0),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         side: BorderSide(color: Colors.grey.shade300, width: 2),
                         shape: RoundedRectangleBorder(
