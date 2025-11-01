@@ -52,7 +52,6 @@ class AuthProvider with ChangeNotifier {
       if (kDebugMode) {
         debugPrint('┌─────────────────────────────────────────');
         debugPrint('│ 🔐 [AuthProvider] Initializing Google Sign-In');
-        debugPrint('│ ℹ️ Note: serverClientId should be in strings.xml for Android');
       }
 
       if (!kIsWeb) {
@@ -69,6 +68,7 @@ class AuthProvider with ChangeNotifier {
         }
       }
 
+      await _googleSignIn.initialize();
       _isGoogleSignInInitialized = true;
 
       if (kDebugMode) {
