@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+// import 'package:flutter_svg/flutter_svg.dart'; // <-- DIHAPUS
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/provider/auth_provider.dart';
@@ -16,6 +17,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _isGoogleLoading = false;
 
   @override
   void dispose() {
@@ -55,27 +57,22 @@ class _LoginScreenState extends State<LoginScreen> {
       await Future.delayed(const Duration(seconds: 1));
 
       if (role == 'user' && !isVerified) {
-        // 1. Pengguna adalah 'user' TAPI BELUM terverifikasi
         Navigator.pushNamedAndRemoveUntil(
           context,
           '/verify-otp',
           (route) => false,
         );
       } else if (role == 'user') {
-        // 2. Pengguna adalah 'user' DAN SUDAH terverifikasi
         await prefs.setBool('showLoginModal', true);
         Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
       } else if (role == 'admin') {
-        // 3. Pengguna adalah 'admin' (admin tidak perlu verifikasi)
         Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
       } else {
-        // 4. Fallback jika role tidak dikenali
         CustomAlert.show(
           context,
           'Role tidak dikenali: $role',
           type: AlertType.error,
         );
-        // Redirect ke halaman default atau logout
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
     } else {
@@ -87,9 +84,56 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _handleGoogleLogin() async {
+    setState(() => _isGoogleLoading = true);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final prefs = await SharedPreferences.getInstance();
+
+    final success = await authProvider.handleGoogleSignIn(context);
+
+    if (success) {
+      final role = authProvider.role;
+      final isVerified = authProvider.isEmailVerified;
+
+      if (!mounted) return;
+
+      CustomAlert.show(
+        context,
+        'Login Google berhasil!',
+        type: AlertType.success,
+      );
+
+      await Future.delayed(const Duration(seconds: 1));
+
+      if (role == 'user' && !isVerified) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/verify-otp',
+          (route) => false,
+        );
+      } else if (role == 'user') {
+        await prefs.setBool('showLoginModal', true);
+        Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
+      } else if (role == 'admin') {
+        Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
+      } else {
+        CustomAlert.show(
+          context,
+          'Role tidak dikenali: $role',
+          type: AlertType.error,
+        );
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      }
+    }
+    if (mounted) {
+      setState(() => _isGoogleLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final loginProvider = Provider.of<AuthProvider>(context);
+    final isLoading = loginProvider.isLoading || _isGoogleLoading;
 
     return Scaffold(
       appBar: AppBar(
@@ -152,8 +196,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 validatePasswordComplexity: false,
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) {
-                  if (!loginProvider.isLoading) {
-                    // Cek agar tidak submit saat loading
+                  if (!isLoading) {
                     _login();
                   }
                 },
@@ -167,7 +210,36 @@ class _LoginScreenState extends State<LoginScreen> {
                       fullWidth: true,
                       isFullRounded: true,
                       padding: const EdgeInsets.symmetric(vertical: 20),
-                      onPressed: _login,
+                      onPressed: isLoading ? null : _login,
+                    ),
+              const SizedBox(height: 20),
+              _buildOrDivider(),
+              const SizedBox(height: 20),
+              _isGoogleLoading
+                  ? const CircularProgressIndicator()
+                  : OutlinedButton.icon(
+                      icon: Image.asset(
+                        // <-- DIGANTI
+                        'assets/images/google-logo.png', // <-- DIGANTI
+                        width: 24,
+                        height: 24,
+                      ),
+                      label: const Text(
+                        'Lanjutkan dengan Google',
+                        style: TextStyle(
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        // fullWidth: true,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: BorderSide(color: Colors.grey.shade300, width: 2),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                      ),
+                      onPressed: isLoading ? null : _handleGoogleLogin,
                     ),
               const SizedBox(height: 20),
               Row(
@@ -179,9 +251,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   GestureDetector(
                     child: TextButton(
-                      onPressed: () {
-                        Navigator.pushReplacementNamed(context, '/register');
-                      },
+                      onPressed: isLoading
+                          ? null
+                          : () {
+                              Navigator.pushReplacementNamed(
+                                context,
+                                '/register',
+                              );
+                            },
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.pink,
                         textStyle: const TextStyle(
@@ -198,6 +275,25 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildOrDivider() {
+    return Row(
+      children: [
+        Expanded(child: Divider(color: Colors.grey.shade300)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            'ATAU',
+            style: TextStyle(
+              color: Colors.grey.shade500,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        Expanded(child: Divider(color: Colors.grey.shade300)),
+      ],
     );
   }
 }

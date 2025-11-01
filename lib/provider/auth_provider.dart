@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -38,10 +39,43 @@ class AuthProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
 
+  final _googleSignIn = GoogleSignIn.instance;
+  bool _isGoogleSignInInitialized = false;
+
+  AuthProvider() {
+    _initializeGoogleSignIn();
+  }
+
+  Future<void> _initializeGoogleSignIn() async {
+    try {
+      // Sign out first to clear any cached credentials
+      try {
+        await _googleSignIn.signOut();
+      } catch (e) {
+        // Ignore sign out errors during initialization
+        if (kDebugMode) {
+          debugPrint('Sign out during init (safe to ignore): $e');
+        }
+      }
+
+      await _googleSignIn.initialize();
+      _isGoogleSignInInitialized = true;
+
+      if (kDebugMode) {
+        debugPrint('Google Sign-In initialized successfully.');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Failed to initialize Google Sign-In: $e');
+      }
+      _isGoogleSignInInitialized = false;
+    }
+  }
+
   // Check internet connection
   Future<bool> _checkInternetConnection() async {
     final connectivityResult = await Connectivity().checkConnectivity();
-    return connectivityResult != ConnectivityResult.none;
+    return !connectivityResult.contains(ConnectivityResult.none);
   }
 
   // Tampilkan dialog peringatan tidak ada internet
@@ -222,6 +256,188 @@ class AuthProvider with ChangeNotifier {
           ),
         ),
       );
+    }
+  }
+
+  Future<bool> handleGoogleSignIn(BuildContext context) async {
+    _isLoading = true;
+    _errorMessage = '';
+    notifyListeners();
+
+    // Ensure Google Sign-In is initialized
+    if (!_isGoogleSignInInitialized) {
+      await _initializeGoogleSignIn();
+
+      if (!_isGoogleSignInInitialized) {
+        _isLoading = false;
+        _errorMessage =
+            'Gagal menginisialisasi Google Sign-In. Silakan coba lagi.';
+        notifyListeners();
+        if (context.mounted) {
+          await _showErrorAlert(context, _errorMessage);
+        }
+        return false;
+      }
+    }
+
+    final hasConnection = await _checkInternetConnection();
+    if (!hasConnection) {
+      _isLoading = false;
+      _errorMessage = 'No internet connection';
+      notifyListeners();
+      await _showNoInternetAlert(context);
+      return false;
+    }
+
+    try {
+      // authenticate() throws exceptions instead of returning null
+      if (kDebugMode) {
+        debugPrint('Starting Google Sign-In authentication...');
+      }
+
+      final GoogleSignInAccount account = await _googleSignIn.authenticate(
+        scopeHint: ['email', 'profile', 'openid'],
+      );
+
+      if (kDebugMode) {
+        debugPrint('Google Sign-In successful: ${account.email}');
+        debugPrint('Display Name: ${account.displayName}');
+        debugPrint('ID: ${account.id}');
+      }
+
+      // Get the authentication token
+      final auth = account.authentication;
+      if (kDebugMode) {
+        debugPrint(
+          'Got authentication, idToken is ${auth.idToken != null ? "present" : "null"}',
+        );
+      }
+
+      if (auth.idToken == null) {
+        throw Exception('Failed to get ID token from Google Sign-In');
+      }
+
+      return await loginWithGoogle(auth.idToken!, context);
+    } on GoogleSignInException catch (e) {
+      _isLoading = false;
+      if (kDebugMode) {
+        debugPrint('GoogleSignInException caught:');
+        debugPrint('  Code: ${e.code.name}');
+        debugPrint('  Description: ${e.description}');
+        debugPrint('  Details: ${e.details}');
+      }
+
+      // Handle specific Google Sign-In errors
+      if (e.code.name == 'canceled') {
+        _errorMessage = 'Login Google dibatalkan';
+        // Don't show error alert for user cancellation
+      } else if (e.code.name == 'network_error') {
+        _errorMessage =
+            'Terjadi kesalahan jaringan. Periksa koneksi internet Anda.';
+        if (context.mounted) {
+          await _showErrorAlert(context, _errorMessage);
+        }
+      } else if (e.code.name == 'sign_in_failed') {
+        _errorMessage =
+            'Login Google gagal. Pastikan aplikasi Google Play Services terinstal dan diperbarui.';
+        if (context.mounted) {
+          await _showErrorAlert(context, _errorMessage);
+        }
+      } else {
+        _errorMessage = 'Terjadi kesalahan: ${e.description ?? e.code.name}';
+        if (context.mounted) {
+          await _showErrorAlert(context, _errorMessage);
+        }
+      }
+
+      notifyListeners();
+      return false;
+    } catch (error) {
+      if (kDebugMode) {
+        debugPrint(
+          'Unexpected error during Google Sign-In: ${error.toString()}',
+        );
+        debugPrint('Error type: ${error.runtimeType}');
+      }
+      _isLoading = false;
+      _errorMessage = 'Terjadi kesalahan tidak terduga: ${error.toString()}';
+      notifyListeners();
+
+      if (context.mounted) {
+        await _showErrorAlert(context, _errorMessage);
+      }
+
+      return false;
+    }
+  }
+
+  Future<bool> loginWithGoogle(String idToken, BuildContext context) async {
+    // _isLoading sudah true dari handleGoogleSignIn
+    final baseUrl = dotenv.env['API_URL'];
+    final url = '$baseUrl/auth/google';
+
+    if (kDebugMode) {
+      debugPrint('--- GOOGLE LOGIN REQUEST ---');
+      debugPrint('URL: $url');
+      debugPrint(
+        'Headers: ${{'Content-Type': 'application/json; charset=UTF-8'}}',
+      );
+      debugPrint('Body: ${jsonEncode(<String, String>{'id_token': idToken})}');
+    }
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse(url),
+            headers: {'Content-Type': 'application/json; charset=UTF-8'},
+            body: jsonEncode(<String, String>{'id_token': idToken}),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        // Logika sukses (sama seperti login biasa)
+        final data = responseData['data'];
+        _authToken = data['token']?.toString();
+        _userId = data['id']?.toString();
+        _name = data['name']?.toString();
+        _email = data['email']?.toString();
+        _role = data['role']?.toString().toLowerCase();
+        _profileComplete = data['profile_complete'] ?? false;
+        _createdAt = data['created_at']?.toString();
+        _isEmailVerified = data['is_verified'] ?? false; // Dari Google = true
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isLoggedIn', true);
+        await prefs.setString('token', _authToken!);
+        await prefs.setString('userId', _userId!);
+        await prefs.setString('name', _name ?? '');
+        await prefs.setString('email', _email ?? '');
+        await prefs.setString('role', _role ?? '');
+        await prefs.setBool('profile_complete', _profileComplete);
+        await prefs.setString('created_at', _createdAt ?? '');
+        await prefs.setBool('is_email_verified', _isEmailVerified);
+
+        await updateFcmToken();
+        notifyListeners();
+        return true;
+      } else {
+        // Gagal dari backend
+        _errorMessage =
+            responseData['message']?.toString() ?? 'Login Google Gagal';
+        await _showErrorAlert(context, _errorMessage);
+        return false;
+      }
+    } catch (error) {
+      _errorMessage = 'Terjadi kesalahan: ${error.toString()}';
+      if (context.mounted) {
+        await _showErrorAlert(context, _errorMessage);
+      }
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
@@ -420,7 +636,7 @@ class AuthProvider with ChangeNotifier {
               'email': email,
               'password': password,
               'password_confirmation': confirmPassword,
-              'fcm_token': fcmToken,
+              // 'fcm_token': fcmToken, // DEPRECATED
             }),
           )
           .timeout(const Duration(seconds: 30));
@@ -430,10 +646,37 @@ class AuthProvider with ChangeNotifier {
       if (response.statusCode == 200 ||
           response.statusCode == 201 ||
           response.statusCode == 202) {
+        final data = responseData['data'];
+        _authToken = data['token']?.toString();
+        _userId = data['id']?.toString();
+        _name = data['name']?.toString();
+        _email = data['email']?.toString();
+        _role = data['role']?.toString().toLowerCase();
+        _profileComplete = data['profile_complete'] ?? false;
+        _createdAt = data['created_at']?.toString();
+        _isEmailVerified = data['is_verified'] ?? false;
 
-        // Simpan token FCM yang digunakan untuk registrasi
+        if (_authToken == null || _userId == null) {
+          _errorMessage = 'Respons registrasi tidak valid';
+          notifyListeners();
+          await _showErrorAlert(context, _errorMessage);
+          return false;
+        }
+
+        // Simpan data login ke shared preferences
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('last_sent_fcm_token', fcmToken);
+        await prefs.setBool('isLoggedIn', true);
+        await prefs.setString('token', _authToken!);
+        await prefs.setString('userId', _userId!);
+        await prefs.setString('name', _name ?? '');
+        await prefs.setString('email', _email ?? '');
+        await prefs.setString('role', _role ?? '');
+        await prefs.setBool('profile_complete', _profileComplete);
+        await prefs.setString('created_at', _createdAt ?? '');
+        await prefs.setBool('is_email_verified', _isEmailVerified);
+
+        // Update FCM token
+        await updateFcmToken(newToken: fcmToken);
 
         // Simpan pesan sukses untuk ditampilkan di UI
         _errorMessage =
@@ -448,7 +691,7 @@ class AuthProvider with ChangeNotifier {
         _errorMessage = responseData['message'];
       } else if (responseData.containsKey('errors')) {
         _errorMessage = (responseData['errors'] as Map<String, dynamic>).values
-            .map((e) => e.join(', '))
+            .map((e) => e[0]) // Ambil error pertama saja
             .join('\n');
       } else {
         _errorMessage = 'Pendaftaran gagal. Silakan coba lagi.';
@@ -699,7 +942,6 @@ class AuthProvider with ChangeNotifier {
               "Gagal update FCM token di backend: ${response.statusCode} - ${response.body}",
             );
           }
-          // Pertimbangkan: apakah perlu retry atau menampilkan error ke user?
         }
       } else {
         if (kDebugMode) {
@@ -712,11 +954,13 @@ class AuthProvider with ChangeNotifier {
       if (kDebugMode) {
         debugPrint("Gagal update FCM token: $e");
       }
-      // Pertimbangkan: apakah perlu retry atau menampilkan error ke user?
     }
   }
 
-  Future<bool> resendVerificationEmail(BuildContext context, {bool showAlert = false}) async {
+  Future<bool> resendVerificationEmail(
+    BuildContext context, {
+    bool showAlert = false,
+  }) async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
@@ -736,18 +980,19 @@ class AuthProvider with ChangeNotifier {
     final url = '$baseUrl/auth/resend-verification';
 
     try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 30));
+      final response = await http
+          .post(
+            Uri.parse(url),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Accept': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 30));
 
       final responseData = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 202) {
-        // Hanya tampilkan alert jika diminta (misal: saat kirim ulang)
         if (showAlert && context.mounted) {
           CustomAlert.show(
             context,
@@ -756,21 +1001,21 @@ class AuthProvider with ChangeNotifier {
             duration: const Duration(seconds: 3),
           );
         }
-        return true; // Sukses
+        return true;
       } else {
         _errorMessage =
             responseData['message'] ?? 'Gagal mengirim email verifikasi.';
         if (context.mounted) {
           await _showErrorAlert(context, _errorMessage);
         }
-        return false; // Gagal
+        return false;
       }
     } catch (error) {
       _errorMessage = 'Terjadi kesalahan: ${error.toString()}';
       if (context.mounted) {
         await _showErrorAlert(context, _errorMessage);
       }
-      return false; // Gagal
+      return false;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -797,15 +1042,17 @@ class AuthProvider with ChangeNotifier {
     final url = '$baseUrl/auth/verify-otp';
 
     try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({'otp': otp}),
-      ).timeout(const Duration(seconds: 30));
+      final response = await http
+          .post(
+            Uri.parse(url),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({'otp': otp}),
+          )
+          .timeout(const Duration(seconds: 30));
 
       final responseData = jsonDecode(response.body);
 
@@ -822,29 +1069,20 @@ class AuthProvider with ChangeNotifier {
             duration: const Duration(seconds: 2),
           );
         }
-        notifyListeners(); // Update UI di profile screen
+        notifyListeners();
         return true;
       } else {
         _errorMessage =
             responseData['message'] ?? 'OTP salah atau tidak valid.';
         if (context.mounted) {
-          // Tampilkan error langsung di halaman OTP
-          CustomAlert.show(
-            context,
-            _errorMessage,
-            type: AlertType.error,
-          );
+          CustomAlert.show(context, _errorMessage, type: AlertType.error);
         }
         return false;
       }
     } catch (error) {
       _errorMessage = 'Terjadi kesalahan: ${error.toString()}';
       if (context.mounted) {
-        CustomAlert.show(
-          context,
-          _errorMessage,
-          type: AlertType.error,
-        );
+        CustomAlert.show(context, _errorMessage, type: AlertType.error);
       }
       return false;
     } finally {

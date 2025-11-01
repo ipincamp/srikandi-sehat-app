@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+// import 'package:flutter_svg/flutter_svg.dart'; // <-- DIHAPUS
 import 'package:provider/provider.dart';
 import 'package:app/core/auth/notification_service.dart';
 import 'package:app/provider/auth_provider.dart';
@@ -23,6 +24,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool _isAggreeToTerms = false;
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) {
@@ -41,7 +43,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // 1. Get FCM Token
       final notificationService = NotificationService();
       final fcmToken = await notificationService.getFCMToken();
 
@@ -62,7 +63,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final password = _passwordController.text;
       final confirmPassword = _confirmPasswordController.text;
 
-      // 2. Pass FCM Token to the register method
       final success = await authProvider.register(
         name,
         email,
@@ -73,10 +73,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (success) {
-        // Pendaftaran SUKSES
         if (!mounted) return;
-
-        // Poin #2: Tampilkan dialog SUKSES (bukan error merah)
         await CustomConfirmationPopup.show(
           context,
           title: 'Registrasi Berhasil',
@@ -86,22 +83,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
           icon: Icons.check_circle,
           singleButton: true,
         );
-
-        // Poin #1: Arahkan ke halaman OTP setelah dialog ditutup
         if (mounted) {
           Navigator.pushReplacementNamed(context, '/verify-otp');
         }
       } else {
-        // Pendaftaran GAGAL (misal: email sudah dipakai)
         if (!mounted) return;
         CustomAlert.show(
           context,
-          authProvider.errorMessage, // Tampilkan pesan error
+          authProvider.errorMessage,
           type: AlertType.error,
           duration: const Duration(milliseconds: 2500),
         );
       }
-
     } catch (e) {
       if (!mounted) return;
       CustomAlert.show(
@@ -116,6 +109,52 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  Future<void> _handleGoogleRegister() async {
+    if (!_isAggreeToTerms) {
+      CustomAlert.show(
+        context,
+        'Anda harus menyetujui Terms of Service dan Privacy Policy terlebih dahulu.',
+        type: AlertType.warning,
+      );
+      return;
+    }
+
+    setState(() => _isGoogleLoading = true);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    final success = await authProvider.handleGoogleSignIn(context);
+
+    if (success) {
+      final role = authProvider.role;
+
+      if (!mounted) return;
+
+      CustomAlert.show(
+        context,
+        'Login Google berhasil!',
+        type: AlertType.success,
+      );
+
+      await Future.delayed(const Duration(seconds: 1));
+
+      if (role == 'user') {
+        Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
+      } else if (role == 'admin') {
+        Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
+      } else {
+        CustomAlert.show(
+          context,
+          'Role tidak dikenali: $role',
+          type: AlertType.error,
+        );
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      }
+    }
+    if (mounted) {
+      setState(() => _isGoogleLoading = false);
+    }
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -127,6 +166,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final isLoading = authProvider.isLoading || _isGoogleLoading;
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -146,7 +188,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // const SizedBox(height: 0),
                 Image.asset(
                   'assets/images/srikandisehat-logo.png',
                   width: 120,
@@ -174,8 +215,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 30),
-
-                // Name Field
+                _isGoogleLoading
+                    ? const SizedBox(
+                        height: 50,
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    : OutlinedButton.icon(
+                        icon: Image.asset(
+                          // <-- DIGANTI
+                          'assets/images/google-logo.png', // <-- DIGANTI
+                          width: 24,
+                          height: 24,
+                        ),
+                        label: const Text(
+                          'Daftar dengan Google',
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          // fullWidth: true,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: BorderSide(
+                            color: Colors.grey.shade300,
+                            width: 2,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(50),
+                          ),
+                        ),
+                        onPressed: isLoading ? null : _handleGoogleRegister,
+                      ),
+                const SizedBox(height: 20),
+                _buildOrDivider(),
+                const SizedBox(height: 20),
                 CustomFormField(
                   label: 'Nama Lengkap',
                   placeholder: 'Masukkan nama lengkap',
@@ -193,8 +267,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-
-                // Email Field
                 CustomFormField(
                   label: 'Email',
                   placeholder: 'email@example.com',
@@ -203,8 +275,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   prefixIcon: Icons.email,
                 ),
                 const SizedBox(height: 16),
-
-                // Password Field
                 CustomFormField(
                   label: 'Password',
                   placeholder: 'Masukkan password',
@@ -222,8 +292,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-
-                // Confirm Password Field
                 CustomFormField(
                   label: 'Konfirmasi Password',
                   placeholder: 'Ulangi password',
@@ -241,8 +309,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-
-                // ✅ Checkbox Persetujuan
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -286,10 +352,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 16),
-
-                // Register Button
                 _isLoading
                     ? const SizedBox(
                         height: 50,
@@ -307,11 +370,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         fullWidth: true,
                         isFullRounded: true,
                         padding: const EdgeInsets.symmetric(vertical: 20),
-                        onPressed: _register,
+                        onPressed: isLoading ? null : _register,
                       ),
                 const SizedBox(height: 20),
-
-                // Login Link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -321,9 +382,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     GestureDetector(
                       child: TextButton(
-                        onPressed: () {
-                          Navigator.pushReplacementNamed(context, '/login');
-                        },
+                        onPressed: isLoading
+                            ? null
+                            : () {
+                                Navigator.pushReplacementNamed(
+                                  context,
+                                  '/login',
+                                );
+                              },
                         style: TextButton.styleFrom(
                           foregroundColor: Colors.pink,
                           textStyle: const TextStyle(
@@ -341,6 +407,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildOrDivider() {
+    return Row(
+      children: [
+        Expanded(child: Divider(color: Colors.grey.shade300)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            'ATAU',
+            style: TextStyle(
+              color: Colors.grey.shade500,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        Expanded(child: Divider(color: Colors.grey.shade300)),
+      ],
     );
   }
 }
