@@ -15,11 +15,12 @@ class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
   @override
   void initState() {
     super.initState();
+    // Only load if not already loaded - won't fetch on every screen change
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<NotificationProvider>(
         context,
         listen: false,
-      ).fetchNotifications();
+      ).loadInitialNotifications();
     });
   }
 

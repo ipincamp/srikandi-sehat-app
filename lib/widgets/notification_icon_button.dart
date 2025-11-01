@@ -13,12 +13,12 @@ class _NotificationIconButtonState extends State<NotificationIconButton> {
   @override
   void initState() {
     super.initState();
-    // Panggil fetchNotifications sekali saat widget pertama kali dibuat
+    // Only load initial notifications once, not on every widget rebuild
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<NotificationProvider>(
         context,
         listen: false,
-      ).fetchNotifications();
+      ).loadInitialNotifications();
     });
   }
 
@@ -26,9 +26,8 @@ class _NotificationIconButtonState extends State<NotificationIconButton> {
   Widget build(BuildContext context) {
     return Consumer<NotificationProvider>(
       builder: (context, provider, child) {
-        final unreadCount = provider.notifications
-            .where((n) => !n.isRead)
-            .length;
+        // Use cached unreadCount instead of recalculating
+        final unreadCount = provider.unreadCount;
 
         return Stack(
           clipBehavior: Clip.none,

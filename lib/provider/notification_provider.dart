@@ -10,16 +10,32 @@ class NotificationProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   int _unreadCount = 0;
+  bool _hasLoadedOnce = false; // Track if notifications have been loaded
 
   List<NotificationModel> get notifications => _notifications;
   bool get isLoading => _isLoading;
   String? get error => _error;
   int get unreadCount => _unreadCount;
+  bool get hasLoadedOnce => _hasLoadedOnce;
 
   // Method to refresh notifications when FCM message received
   Future<void> refreshNotifications() async {
     if (kDebugMode) {
       debugPrint('🔄 Refreshing notifications after FCM message...');
+    }
+    await fetchNotifications();
+  }
+
+  // Method for initial load only (call once when app starts)
+  Future<void> loadInitialNotifications() async {
+    if (_hasLoadedOnce) {
+      if (kDebugMode) {
+        debugPrint('⏭️ Notifications already loaded, skipping fetch');
+      }
+      return;
+    }
+    if (kDebugMode) {
+      debugPrint('📥 Loading initial notifications...');
     }
     await fetchNotifications();
   }
@@ -51,6 +67,7 @@ class NotificationProvider with ChangeNotifier {
 
         // Count unread notifications
         _unreadCount = _notifications.where((n) => !n.isRead).length;
+        _hasLoadedOnce = true; // Mark as loaded
 
         if (kDebugMode) {
           debugPrint(
