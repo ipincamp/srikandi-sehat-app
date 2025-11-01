@@ -6,6 +6,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/provider/auth_provider.dart';
+import 'package:app/provider/notification_provider.dart';
 
 // Initialize flutter local notifications plugin
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -238,40 +239,56 @@ class NotificationService {
       // Show notification (web will just log, mobile will show popup)
       await _showNotification(message);
 
-      // Optional: Show snackbar or custom alert
+      // Refresh notification list in all screens
       final context = navigatorKey.currentState?.context;
-      if (context != null && message.notification != null) {
-        if (kDebugMode) {
-          debugPrint(
-            "FCM Foreground: ${message.notification!.title} - ${message.notification!.body}",
+      if (context != null) {
+        try {
+          final notificationProvider = Provider.of<NotificationProvider>(
+            context,
+            listen: false,
           );
+          await notificationProvider.refreshNotifications();
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('Failed to refresh notifications: $e');
+          }
         }
 
-        // For web, show an in-app notification using SnackBar
-        if (kIsWeb) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    message.notification!.title ?? 'Notification',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  if (message.notification!.body != null)
-                    Text(message.notification!.body!),
-                ],
+        if (message.notification != null) {
+          if (kDebugMode) {
+            debugPrint(
+              "FCM Foreground: ${message.notification!.title} - ${message.notification!.body}",
+            );
+          }
+
+          // For web, show an in-app notification using SnackBar
+          if (kIsWeb) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      message.notification!.title ?? 'Notification',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    if (message.notification!.body != null)
+                      Text(message.notification!.body!),
+                  ],
+                ),
+                duration: const Duration(seconds: 5),
+                action: SnackBarAction(
+                  label: 'View',
+                  onPressed: () {
+                    navigatorKey.currentState?.pushNamed(
+                      '/notification-history',
+                    );
+                  },
+                ),
               ),
-              duration: const Duration(seconds: 5),
-              action: SnackBarAction(
-                label: 'View',
-                onPressed: () {
-                  navigatorKey.currentState?.pushNamed('/notification-history');
-                },
-              ),
-            ),
-          );
+            );
+          }
         }
       }
     });
@@ -284,6 +301,23 @@ class NotificationService {
         debugPrint('Message data: ${message.data}');
         debugPrint('======================================');
       }
+
+      // Refresh notification list when opening from background
+      final context = navigatorKey.currentState?.context;
+      if (context != null) {
+        try {
+          final notificationProvider = Provider.of<NotificationProvider>(
+            context,
+            listen: false,
+          );
+          notificationProvider.refreshNotifications();
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('Failed to refresh notifications: $e');
+          }
+        }
+      }
+
       // Logika navigasi berdasarkan data notifikasi
       if (message.data['status'] == 'success') {
         // Pastikan navigator siap sebelum navigasi
