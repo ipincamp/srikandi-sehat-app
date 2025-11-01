@@ -39,6 +39,7 @@ class AuthProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
 
+  // Use GoogleSignIn singleton instance
   final _googleSignIn = GoogleSignIn.instance;
   bool _isGoogleSignInInitialized = false;
 
@@ -48,28 +49,37 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> _initializeGoogleSignIn() async {
     try {
+      if (kDebugMode) {
+        debugPrint('┌─────────────────────────────────────────');
+        debugPrint('│ 🔐 [AuthProvider] Initializing Google Sign-In');
+        debugPrint('│ ℹ️ Note: serverClientId should be in strings.xml for Android');
+      }
+
       if (!kIsWeb) {
         // Only sign out and initialize on mobile platforms
         try {
           await _googleSignIn.signOut();
+          if (kDebugMode) {
+            debugPrint('│ ✅ Signed out existing session');
+          }
         } catch (e) {
           if (kDebugMode) {
-            debugPrint('Sign out during init (safe to ignore): $e');
+            debugPrint('│ ⚠️ Sign out during init (safe to ignore): $e');
           }
         }
-
-        // Mobile requires explicit initialization
-        // Web reads configuration from meta tag automatically
       }
 
       _isGoogleSignInInitialized = true;
 
       if (kDebugMode) {
-        debugPrint('Google Sign-In initialized successfully.');
+        debugPrint('│ ✅ Google Sign-In initialized successfully');
+        debugPrint('└─────────────────────────────────────────');
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Failed to initialize Google Sign-In: $e');
+        debugPrint('│ ❌ Failed to initialize Google Sign-In');
+        debugPrint('│ 💬 Error: $e');
+        debugPrint('└─────────────────────────────────────────');
       }
       _isGoogleSignInInitialized = false;
     }
