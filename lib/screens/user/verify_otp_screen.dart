@@ -196,94 +196,103 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
         padding: const EdgeInsets.all(24.0),
         child: Form(
           key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.mark_email_read_outlined,
-                size: 80,
-                color: Colors.pink[400],
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Masukkan Kode Verifikasi',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 40),
+                Icon(
+                  Icons.mark_email_read_outlined,
+                  size: 80,
+                  color: Colors.pink[400],
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Kami telah mengirimkan 6 digit kode OTP ke $email. Silakan periksa kotak masuk Anda.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.grey, fontSize: 16),
-              ),
-              const SizedBox(height: 32),
-              TextFormField(
-                controller: _otpController,
-                decoration: InputDecoration(
-                  labelText: 'Kode OTP 6 Digit',
-                  hintText: '123456',
-                  counterText: "", // Sembunyikan counter
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 24),
+                Text(
+                  'Masukkan Kode Verifikasi',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.pink, width: 2),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Kami telah mengirimkan 6 digit kode OTP ke $email. Silakan periksa kotak masuk Anda.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.grey, fontSize: 16),
+                ),
+                const SizedBox(height: 32),
+                TextFormField(
+                  controller: _otpController,
+                  decoration: InputDecoration(
+                    labelText: 'Kode OTP 6 Digit',
+                    hintText: '123456',
+                    counterText: "", // Sembunyikan counter
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: Colors.pink,
+                        width: 2,
+                      ),
+                    ),
                   ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(6),
+                  ],
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _submitOtp(),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'OTP tidak boleh kosong';
+                    }
+                    if (value.length != 6) {
+                      return 'OTP harus 6 digit';
+                    }
+                    return null;
+                  },
                 ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(6),
-                ],
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+                const SizedBox(height: 24),
+                CustomButton(
+                  label: 'Verifikasi Sekarang',
+                  onPressed: _submitOtp,
+                  isLoading:
+                      authProvider.isLoading &&
+                      !_isCooldownActive, // Hanya loading submit
+                  fullWidth: true,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) => _submitOtp(),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'OTP tidak boleh kosong';
-                  }
-                  if (value.length != 6) {
-                    return 'OTP harus 6 digit';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-              CustomButton(
-                label: 'Verifikasi Sekarang',
-                onPressed: _submitOtp,
-                isLoading:
-                    authProvider.isLoading &&
-                    !_isCooldownActive, // Hanya loading submit
-                fullWidth: true,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: (_isCooldownActive || authProvider.isLoading)
-                    ? null // Nonaktifkan jika sedang cooldown ATAU sedang loading submit
-                    : _handleResend,
-                child: _isCooldownActive
-                    ? Text(
-                        'Kirim Ulang Kode dalam (${_formatDuration(_cooldownSeconds)})',
-                      )
-                    : const Text('Kirim Ulang Kode?'),
-              ),
-              TextButton(
-                onPressed: authProvider.isLoading
-                    ? null
-                    : () => _handleLogout(context),
-                style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
-                child: const Text('Logout'),
-              ),
-            ],
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: (_isCooldownActive || authProvider.isLoading)
+                      ? null // Nonaktifkan jika sedang cooldown ATAU sedang loading submit
+                      : _handleResend,
+                  child: _isCooldownActive
+                      ? Text(
+                          'Kirim Ulang Kode dalam (${_formatDuration(_cooldownSeconds)})',
+                        )
+                      : const Text('Kirim Ulang Kode?'),
+                ),
+                TextButton(
+                  onPressed: authProvider.isLoading
+                      ? null
+                      : () => _handleLogout(context),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.grey[600],
+                  ),
+                  child: const Text('Logout'),
+                ),
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
         ),
       ),
