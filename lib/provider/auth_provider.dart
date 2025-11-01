@@ -48,17 +48,20 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> _initializeGoogleSignIn() async {
     try {
-      // Sign out first to clear any cached credentials
-      try {
-        await _googleSignIn.signOut();
-      } catch (e) {
-        // Ignore sign out errors during initialization
-        if (kDebugMode) {
-          debugPrint('Sign out during init (safe to ignore): $e');
+      if (!kIsWeb) {
+        // Only sign out and initialize on mobile platforms
+        try {
+          await _googleSignIn.signOut();
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('Sign out during init (safe to ignore): $e');
+          }
         }
+
+        // Mobile requires explicit initialization
+        // Web reads configuration from meta tag automatically
       }
 
-      await _googleSignIn.initialize();
       _isGoogleSignInInitialized = true;
 
       if (kDebugMode) {
@@ -295,7 +298,23 @@ class AuthProvider with ChangeNotifier {
         debugPrint('Starting Google Sign-In authentication...');
       }
 
-      final GoogleSignInAccount account = await _googleSignIn.authenticate(
+      GoogleSignInAccount account;
+
+      if (kIsWeb) {
+        // Web doesn't support authenticate() - show user-friendly error
+        _isLoading = false;
+        _errorMessage =
+            'Google Sign-In belum didukung di web browser. '
+            'Silakan gunakan aplikasi mobile untuk login dengan Google.';
+        notifyListeners();
+        if (context.mounted) {
+          await _showErrorAlert(context, _errorMessage);
+        }
+        return false;
+      }
+
+      // Mobile platforms use authenticate()
+      account = await _googleSignIn.authenticate(
         scopeHint: ['email', 'profile', 'openid'],
       );
 
