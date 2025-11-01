@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/core/network/http_client.dart';
@@ -66,8 +67,23 @@ class UserProfileProvider with ChangeNotifier {
     BuildContext context, {
     bool forceRefresh = false,
   }) async {
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 👤 [UserProfileProvider] Load profile');
+      debugPrint('│ 🔄 Force Refresh: $forceRefresh');
+      debugPrint('│ 📅 Last Fetched: ${_lastFetched?.toString() ?? "Never"}');
+    }
+    
     if (!forceRefresh && _shouldUseCache()) {
+      if (kDebugMode) {
+        debugPrint('│ ✅ Using cached profile data');
+        debugPrint('└─────────────────────────────────────────');
+      }
       return;
+    }
+
+    if (kDebugMode) {
+      debugPrint('│ 📡 Fetching profile from server...');
     }
 
     _isLoading = true;
@@ -77,6 +93,10 @@ class UserProfileProvider with ChangeNotifier {
       // Gunakan HttpClient yang sudah memiliki auth guard
       final response = await HttpClient.get(context, 'me', body: {});
 
+      if (kDebugMode) {
+        debugPrint('│ 📊 Response Status: ${response.statusCode}');
+      }
+
       final responseData = jsonDecode(response.body);
 
       if (response.statusCode == 200 && responseData['data'] != null) {
@@ -85,6 +105,14 @@ class UserProfileProvider with ChangeNotifier {
         _errorMessage = '';
         _lastFetched = DateTime.now();
 
+        if (kDebugMode) {
+          debugPrint('│ ✅ Profile loaded successfully');
+          debugPrint('│ 👤 Name: ${_userData['name']}');
+          debugPrint('│ 📧 Email: ${_userData['email']}');
+          debugPrint('│ 🎭 Role: ${_userData['role']}');
+          debugPrint('│ 🔢 Current Cycle Number: $_currentCycleNumber');
+        }
+
         final prefs = await SharedPreferences.getInstance();
         await prefs.setInt('current_cycle_number', _currentCycleNumber ?? 0);
 
@@ -92,15 +120,41 @@ class UserProfileProvider with ChangeNotifier {
         if (_userData['role'] != null) {
           await prefs.setString('role', _userData['role']);
         }
+
+        if (kDebugMode) {
+          debugPrint('│ 💾 Saved to SharedPreferences');
+          debugPrint('│ ✅ Load completed successfully');
+          debugPrint('└─────────────────────────────────────────');
+        }
       } else {
         _errorMessage = responseData['message'] ?? 'Gagal mengambil profil.';
 
+        if (kDebugMode) {
+          debugPrint('│ ❌ Failed to load profile');
+          debugPrint('│ 📊 Status: ${response.statusCode}');
+          debugPrint('│ 💬 Error: $_errorMessage');
+        }
+
         if (response.statusCode == 401) {
+          if (kDebugMode) {
+            debugPrint('│ 🔒 Unauthorized, clearing profile data');
+          }
           await clearProfileData();
+        }
+        
+        if (kDebugMode) {
+          debugPrint('└─────────────────────────────────────────');
         }
       }
     } catch (e) {
-      _errorMessage = 'Terjadi kesalahan: $e';
+      _errorMessage = 'Terjadi kesalahan: ${e.toString()}';
+      
+      if (kDebugMode) {
+        debugPrint('│ ❌ Exception caught!');
+        debugPrint('│ 🔴 Type: ${e.runtimeType}');
+        debugPrint('│ 💬 Message: ${e.toString()}');
+        debugPrint('└─────────────────────────────────────────');
+      }
 
       // Jika error karena unauthorized, biarkan HttpClient yang handle
       if (e.toString().contains('Unauthorized')) {
@@ -152,7 +206,7 @@ class UserProfileProvider with ChangeNotifier {
         _errorMessage = responseData['message'] ?? 'Gagal memperbarui profil.';
       }
     } catch (e) {
-      _errorMessage = 'Terjadi kesalahan: $e';
+      _errorMessage = 'Terjadi kesalahan: ${e.toString()}';
     } finally {
       _isLoading = false;
       notifyListeners();

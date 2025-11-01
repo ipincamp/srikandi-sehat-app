@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -18,7 +19,17 @@ class RecommendationProvider with ChangeNotifier {
   bool get hasFetched => _hasFetched;
 
   Future<void> fetchRecommendations() async {
-    if (_hasFetched) return; // Hindari fetch berulang
+    if (_hasFetched) {
+      if (kDebugMode) {
+        debugPrint('⚠️ [RecommendationProvider] Already fetched, skipping');
+      }
+      return; // Hindari fetch berulang
+    }
+
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 💡 [RecommendationProvider] Fetch recommendations');
+    }
 
     _isLoading = true;
     _errorMessage = '';
@@ -30,6 +41,12 @@ class RecommendationProvider with ChangeNotifier {
       final baseUrl = dotenv.env['API_URL'];
       final url = '$baseUrl/menstrual/recommendations';
 
+      if (kDebugMode) {
+        debugPrint('│ 🔑 Token: ${token != null ? "✓ (${token.length} chars)" : "✗ Missing"}');
+        debugPrint('│ 🌐 API URL: $url');
+        debugPrint('│ 📡 Fetching recommendations...');
+      }
+
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -39,6 +56,10 @@ class RecommendationProvider with ChangeNotifier {
         },
       );
 
+      if (kDebugMode) {
+        debugPrint('│ 📊 Response Status: ${response.statusCode}');
+      }
+
       if (response.statusCode == 200) {
         final jsonBody = json.decode(response.body);
         final List<dynamic> data = jsonBody['data'];
@@ -46,11 +67,31 @@ class RecommendationProvider with ChangeNotifier {
             .map((json) => Recommendation.fromJson(json))
             .toList();
         _hasFetched = true;
+        
+        if (kDebugMode) {
+          debugPrint('│ ✅ Fetched ${_recommendations.length} recommendations');
+          debugPrint('│ ✅ Fetch completed successfully');
+          debugPrint('└─────────────────────────────────────────');
+        }
       } else {
         _errorMessage = 'Gagal memuat data rekomendasi';
+        
+        if (kDebugMode) {
+          debugPrint('│ ❌ Failed to fetch recommendations');
+          debugPrint('│ 📊 Status: ${response.statusCode}');
+          debugPrint('│ 💬 Error: $_errorMessage');
+          debugPrint('└─────────────────────────────────────────');
+        }
       }
     } catch (e) {
       _errorMessage = 'Terjadi kesalahan: $e';
+      
+      if (kDebugMode) {
+        debugPrint('│ ❌ Exception caught');
+        debugPrint('│ 🔥 Error type: ${e.runtimeType}');
+        debugPrint('│ 💬 Error: $_errorMessage');
+        debugPrint('└─────────────────────────────────────────');
+      }
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -58,9 +99,20 @@ class RecommendationProvider with ChangeNotifier {
   }
 
   void reset() {
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 🔄 [RecommendationProvider] Reset');
+      debugPrint('│ 📊 Previous count: ${_recommendations.length}');
+    }
+    
     _hasFetched = false;
     _recommendations = [];
     _errorMessage = '';
     notifyListeners();
+    
+    if (kDebugMode) {
+      debugPrint('│ ✅ Reset completed');
+      debugPrint('└─────────────────────────────────────────');
+    }
   }
 }

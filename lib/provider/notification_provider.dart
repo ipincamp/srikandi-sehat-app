@@ -41,6 +41,11 @@ class NotificationProvider with ChangeNotifier {
   }
 
   Future<void> fetchNotifications() async {
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 📡 [NotificationProvider] Fetching notifications...');
+    }
+    
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -49,7 +54,12 @@ class NotificationProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
       final baseUrl = dotenv.env['API_URL'];
-      final url = '$baseUrl/notifications'; // Asumsi endpoint-nya ini
+      final url = '$baseUrl/notifications';
+
+      if (kDebugMode) {
+        debugPrint('│ 🌐 API URL: $url');
+        debugPrint('│ 🔑 Token: ${token != null ? "Present (${token.length} chars)" : "Missing"}');
+      }
 
       final response = await http.get(
         Uri.parse(url),
@@ -59,6 +69,10 @@ class NotificationProvider with ChangeNotifier {
         },
       );
 
+      if (kDebugMode) {
+        debugPrint('│ 📊 Response Status: ${response.statusCode}');
+      }
+
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body)['data'];
         _notifications = data
@@ -67,18 +81,28 @@ class NotificationProvider with ChangeNotifier {
 
         // Count unread notifications
         _unreadCount = _notifications.where((n) => !n.isRead).length;
-        _hasLoadedOnce = true; // Mark as loaded
+        _hasLoadedOnce = true;
 
         if (kDebugMode) {
-          debugPrint(
-            'Fetched ${_notifications.length} notifications, $_unreadCount unread',
-          );
+          debugPrint('│ ✅ Success: Fetched ${_notifications.length} notifications');
+          debugPrint('│ 📬 Unread: $_unreadCount');
+          debugPrint('│ 📭 Read: ${_notifications.length - _unreadCount}');
+          debugPrint('└─────────────────────────────────────────');
         }
       } else {
         _error = 'Gagal memuat notifikasi';
+        if (kDebugMode) {
+          debugPrint('│ ❌ Error: HTTP ${response.statusCode}');
+          debugPrint('│ 📄 Response: ${response.body}');
+          debugPrint('└─────────────────────────────────────────');
+        }
       }
     } catch (e) {
       _error = 'Terjadi kesalahan: ${e.toString()}';
+      if (kDebugMode) {
+        debugPrint('│ ❌ Exception: $e');
+        debugPrint('└─────────────────────────────────────────');
+      }
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -86,16 +110,35 @@ class NotificationProvider with ChangeNotifier {
   }
 
   Future<void> markAsRead(int notificationId) async {
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 📖 [NotificationProvider] Marking notification as read');
+      debugPrint('│ 🆔 Notification ID: $notificationId');
+    }
+    
     // Cari notifikasi di list lokal
     final int index = _notifications.indexWhere((n) => n.id == notificationId);
     if (index == -1 || _notifications[index].isRead) {
-      // Jika tidak ditemukan atau sudah dibaca, tidak perlu lakukan apa-apa
+      if (kDebugMode) {
+        if (index == -1) {
+          debugPrint('│ ⚠️ Notification not found in local list');
+        } else {
+          debugPrint('│ ⏭️ Notification already marked as read');
+        }
+        debugPrint('└─────────────────────────────────────────');
+      }
       return;
     }
 
     // Update state di UI secara optimis agar responsif
     _notifications[index].isRead = true;
     _unreadCount = _notifications.where((n) => !n.isRead).length;
+    
+    if (kDebugMode) {
+      debugPrint('│ ✅ Optimistically updated UI');
+      debugPrint('│ 📬 Unread count: $_unreadCount');
+    }
+    
     notifyListeners();
 
     try {
@@ -103,6 +146,10 @@ class NotificationProvider with ChangeNotifier {
       final token = prefs.getString('token');
       final baseUrl = dotenv.env['API_URL'];
       final url = '$baseUrl/notifications/$notificationId/read';
+
+      if (kDebugMode) {
+        debugPrint('│ 🌐 API URL: $url');
+      }
 
       final response = await http.patch(
         Uri.parse(url),
@@ -112,20 +159,37 @@ class NotificationProvider with ChangeNotifier {
         },
       );
 
+      if (kDebugMode) {
+        debugPrint('│ 📊 Response Status: ${response.statusCode}');
+      }
+
       if (response.statusCode != 200) {
         // Jika gagal, kembalikan state ke semula (belum dibaca)
         _notifications[index].isRead = false;
         _unreadCount = _notifications.where((n) => !n.isRead).length;
         notifyListeners();
-        // Anda bisa menambahkan notifikasi error di sini jika perlu
+        
+        if (kDebugMode) {
+          debugPrint('│ ❌ Failed to mark as read - reverting state');
+          debugPrint('│ 📄 Response: ${response.body}');
+          debugPrint('└─────────────────────────────────────────');
+        }
+      } else {
+        if (kDebugMode) {
+          debugPrint('│ ✅ Successfully marked as read on server');
+          debugPrint('└─────────────────────────────────────────');
+        }
       }
     } catch (e) {
       // Jika terjadi error, kembalikan juga state-nya
       _notifications[index].isRead = false;
       _unreadCount = _notifications.where((n) => !n.isRead).length;
       notifyListeners();
+      
       if (kDebugMode) {
-        debugPrint('Failed to mark notification as read: $e');
+        debugPrint('│ ❌ Exception: $e');
+        debugPrint('│ 🔄 Reverted to unread state');
+        debugPrint('└─────────────────────────────────────────');
       }
     }
   }

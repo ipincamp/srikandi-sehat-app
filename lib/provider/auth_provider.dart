@@ -392,16 +392,18 @@ class AuthProvider with ChangeNotifier {
 
   Future<bool> loginWithGoogle(String idToken, BuildContext context) async {
     // _isLoading sudah true dari handleGoogleSignIn
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 🔐 [AuthProvider] Google Login initiated');
+      debugPrint('│ 🎫 ID Token: ${idToken.isNotEmpty ? "✓ (${idToken.length} chars)" : "✗ Empty"}');
+    }
+    
     final baseUrl = dotenv.env['API_URL'];
     final url = '$baseUrl/auth/google';
 
     if (kDebugMode) {
-      debugPrint('--- GOOGLE LOGIN REQUEST ---');
-      debugPrint('URL: $url');
-      debugPrint(
-        'Headers: ${{'Content-Type': 'application/json; charset=UTF-8'}}',
-      );
-      debugPrint('Body: ${jsonEncode(<String, String>{'id_token': idToken})}');
+      debugPrint('│ 🌐 API URL: $url');
+      debugPrint('│ 📡 Sending Google login request...');
     }
 
     try {
@@ -413,9 +415,18 @@ class AuthProvider with ChangeNotifier {
           )
           .timeout(const Duration(seconds: 10));
 
+      if (kDebugMode) {
+        debugPrint('│ 📊 Response Status: ${response.statusCode}');
+      }
+
       final responseData = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
+        if (kDebugMode) {
+          debugPrint('│ ✅ Google login successful');
+          debugPrint('│ 📦 Extracting user data...');
+        }
+        
         // Logika sukses (sama seperti login biasa)
         final data = responseData['data'];
         _authToken = data['token']?.toString();
@@ -426,6 +437,16 @@ class AuthProvider with ChangeNotifier {
         _profileComplete = data['profile_complete'] ?? false;
         _createdAt = data['created_at']?.toString();
         _isEmailVerified = data['is_verified'] ?? false; // Dari Google = true
+
+        if (kDebugMode) {
+          debugPrint('│ 🔑 Token: ${_authToken != null ? "✓ (${_authToken!.length} chars)" : "✗ Missing"}');
+          debugPrint('│ 🆔 User ID: ${_userId ?? "✗ Missing"}');
+          debugPrint('│ 👤 Name: ${_name ?? "✗ Missing"}');
+          debugPrint('│ 📧 Email: ${_email ?? "✗ Missing"}');
+          debugPrint('│ 🎭 Role: ${_role ?? "✗ Missing"}');
+          debugPrint('│ ✓ Email Verified: $_isEmailVerified (from Google)');
+          debugPrint('│ 💾 Saving to SharedPreferences...');
+        }
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isLoggedIn', true);
@@ -438,17 +459,44 @@ class AuthProvider with ChangeNotifier {
         await prefs.setString('created_at', _createdAt ?? '');
         await prefs.setBool('is_email_verified', _isEmailVerified);
 
+        if (kDebugMode) {
+          debugPrint('│ ✅ Saved to SharedPreferences');
+          debugPrint('│ 📡 Updating FCM token...');
+        }
+
         await updateFcmToken();
+        
+        if (kDebugMode) {
+          debugPrint('│ ✅ Google login process completed');
+          debugPrint('└─────────────────────────────────────────');
+        }
+        
         notifyListeners();
         return true;
       } else {
         // Gagal dari backend
         _errorMessage =
             responseData['message']?.toString() ?? 'Login Google Gagal';
+        
+        if (kDebugMode) {
+          debugPrint('│ ❌ Google login failed');
+          debugPrint('│ 📊 Status: ${response.statusCode}');
+          debugPrint('│ 📄 Response: ${response.body}');
+          debugPrint('│ 💬 Error: $_errorMessage');
+          debugPrint('└─────────────────────────────────────────');
+        }
+        
         await _showErrorAlert(context, _errorMessage);
         return false;
       }
     } catch (error) {
+      if (kDebugMode) {
+        debugPrint('│ ❌ Exception caught during Google login');
+        debugPrint('│ 🔥 Error type: ${error.runtimeType}');
+        debugPrint('│ 💬 Error: ${error.toString()}');
+        debugPrint('└─────────────────────────────────────────');
+      }
+      
       _errorMessage = 'Terjadi kesalahan: ${error.toString()}';
       if (context.mounted) {
         await _showErrorAlert(context, _errorMessage);
@@ -457,6 +505,10 @@ class AuthProvider with ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+      
+      if (kDebugMode) {
+        debugPrint('│ 🏁 Google login method finished (finally block)');
+      }
     }
   }
 
@@ -465,32 +517,46 @@ class AuthProvider with ChangeNotifier {
     String password,
     BuildContext context,
   ) async {
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 🔐 [AuthProvider] Login initiated');
+      debugPrint('│ 📧 Email: $email');
+    }
+    
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
 
     // Check internet connection
+    if (kDebugMode) {
+      debugPrint('│ 🌐 Checking internet connection...');
+    }
+    
     final hasConnection = await _checkInternetConnection();
     if (!hasConnection) {
       _isLoading = false;
       _errorMessage = 'No internet connection';
       notifyListeners();
+      
+      if (kDebugMode) {
+        debugPrint('│ ❌ No internet connection');
+        debugPrint('└─────────────────────────────────────────');
+      }
+      
       await _showNoInternetAlert(context);
       return false;
+    }
+
+    if (kDebugMode) {
+      debugPrint('│ ✅ Internet connection available');
     }
 
     final baseUrl = dotenv.env['API_URL'];
     final url = '$baseUrl/auth/login';
 
     if (kDebugMode) {
-      debugPrint('--- LOGIN REQUEST ---');
-      debugPrint('URL: $url');
-      debugPrint(
-        'Headers: ${{'Content-Type': 'application/json; charset=UTF-8'}}',
-      );
-      debugPrint(
-        'Body: ${jsonEncode(<String, String>{'email': email, 'password': password})}',
-      );
+      debugPrint('│ 🌐 API URL: $url');
+      debugPrint('│ 📦 Preparing request...');
     }
 
     try {
@@ -506,17 +572,22 @@ class AuthProvider with ChangeNotifier {
           .timeout(const Duration(seconds: 10));
 
       if (kDebugMode) {
-        debugPrint('--- LOGIN RESPONSE ---');
-        debugPrint('Status Code: ${response.statusCode}');
-        debugPrint('Headers: ${response.headers}');
-        debugPrint('Body: ${response.body}');
+        debugPrint('│ 📊 Response Status: ${response.statusCode}');
       }
+      
       final responseData = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
         if (responseData == null || responseData['data'] == null) {
           _errorMessage = 'Invalid server response';
           notifyListeners();
+          
+          if (kDebugMode) {
+            debugPrint('│ ❌ Invalid server response structure');
+            debugPrint('│ 📄 Response: ${response.body}');
+            debugPrint('└─────────────────────────────────────────');
+          }
+          
           await _showErrorAlert(context, _errorMessage);
           return false;
         }
@@ -525,8 +596,20 @@ class AuthProvider with ChangeNotifier {
         if (data is! Map<String, dynamic>) {
           _errorMessage = 'Invalid user data format';
           notifyListeners();
+          
+          if (kDebugMode) {
+            debugPrint('│ ❌ Invalid user data format');
+            debugPrint('│ 📄 Data type: ${data.runtimeType}');
+            debugPrint('└─────────────────────────────────────────');
+          }
+          
           await _showErrorAlert(context, _errorMessage);
           return false;
+        }
+
+        if (kDebugMode) {
+          debugPrint('│ ✅ Login successful');
+          debugPrint('│ 📦 Extracting user data...');
         }
 
         _authToken = data['token']?.toString();
@@ -536,21 +619,51 @@ class AuthProvider with ChangeNotifier {
         // Di method login(), setelah mendapatkan response
         _role = data['role']?.toString().toLowerCase(); // Convert ke lowercase
 
+        if (kDebugMode) {
+          debugPrint('│ 🔑 Token: ${_authToken != null ? "✓ (${_authToken!.length} chars)" : "✗ Missing"}');
+          debugPrint('│ 🆔 User ID: ${_userId ?? "✗ Missing"}');
+          debugPrint('│ 👤 Name: ${_name ?? "✗ Missing"}');
+          debugPrint('│ 📧 Email: ${_email ?? "✗ Missing"}');
+          debugPrint('│ 🎭 Role: ${_role ?? "✗ Missing"}');
+        }
+
         // Validasi role yang diharapkan
         if (_role != 'user' && _role != 'admin') {
           _errorMessage = 'Role tidak valid: $_role';
           notifyListeners();
+          
+          if (kDebugMode) {
+            debugPrint('│ ❌ Invalid role: $_role');
+            debugPrint('└─────────────────────────────────────────');
+          }
+          
           return false;
         }
+        
         _profileComplete = data['profile_complete'] ?? false;
         _createdAt = data['created_at']?.toString();
         _isEmailVerified = data['is_verified'] ?? false;
 
+        if (kDebugMode) {
+          debugPrint('│ ✓ Profile Complete: $_profileComplete');
+          debugPrint('│ ✓ Email Verified: $_isEmailVerified');
+        }
+
         if (_authToken == null || _userId == null) {
           _errorMessage = 'Missing required user data';
           notifyListeners();
+          
+          if (kDebugMode) {
+            debugPrint('│ ❌ Missing required data (token or userId)');
+            debugPrint('└─────────────────────────────────────────');
+          }
+          
           await _showErrorAlert(context, _errorMessage);
           return false;
+        }
+
+        if (kDebugMode) {
+          debugPrint('│ 💾 Saving to SharedPreferences...');
         }
 
         // Save to shared preferences
@@ -565,36 +678,78 @@ class AuthProvider with ChangeNotifier {
         await prefs.setString('created_at', _createdAt ?? '');
         await prefs.setBool('is_email_verified', _isEmailVerified);
 
+        if (kDebugMode) {
+          debugPrint('│ ✅ Saved to SharedPreferences');
+          debugPrint('│ 📡 Updating FCM token...');
+        }
+
         await updateFcmToken(); // Cek dan update token FCM
+
+        if (kDebugMode) {
+          debugPrint('│ ✅ Login process completed successfully');
+          debugPrint('└─────────────────────────────────────────');
+        }
 
         notifyListeners();
         return true;
       } else if (response.statusCode == 401 || response.statusCode == 400) {
         _errorMessage = "Email atau Kata sandi salah";
         notifyListeners();
+        
+        if (kDebugMode) {
+          debugPrint('│ ❌ Authentication failed');
+          debugPrint('│ 📊 Status: ${response.statusCode}');
+          debugPrint('│ 💬 Message: $_errorMessage');
+          debugPrint('└─────────────────────────────────────────');
+        }
+        
         return false;
       } else {
-        debugPrint('Login failed: ${response.body}');
         _errorMessage =
             responseData['message']?.toString() ??
             responseData['error']?.toString() ??
             'Login failed with status ${response.statusCode}';
         notifyListeners();
+        
+        if (kDebugMode) {
+          debugPrint('│ ❌ Login failed with unexpected status');
+          debugPrint('│ 📊 Status: ${response.statusCode}');
+          debugPrint('│ 📄 Response: ${response.body}');
+          debugPrint('│ 💬 Error: $_errorMessage');
+          debugPrint('└─────────────────────────────────────────');
+        }
+        
         await _showErrorAlert(context, _errorMessage);
         return false;
       }
     } catch (error) {
       _errorMessage = 'Terjadi kesalahan: ${error.toString()}';
 
+      if (kDebugMode) {
+        debugPrint('│ ❌ Exception caught during login');
+        debugPrint('│ 🔥 Error type: ${error.runtimeType}');
+        debugPrint('│ 💬 Error: ${error.toString()}');
+      }
+
       if (error is TimeoutException) {
         _errorMessage =
             'Waktu tunggu koneksi habis. Periksa internet Anda dan coba lagi.';
+        
+        if (kDebugMode) {
+          debugPrint('│ ⏱️ Timeout error');
+          debugPrint('└─────────────────────────────────────────');
+        }
+        
         if (context.mounted) {
           await _showErrorAlert(context, _errorMessage);
         }
       } else if (error is SocketException || error is http.ClientException) {
-        debugPrint('Network Error Detected: ${error.toString()}');
         _errorMessage = 'Kesalahan jaringan. Tidak dapat terhubung ke server.';
+        
+        if (kDebugMode) {
+          debugPrint('│ 🌐 Network error detected');
+          debugPrint('└─────────────────────────────────────────');
+        }
         if (context.mounted) {
           Navigator.pushNamedAndRemoveUntil(
             context,
@@ -603,6 +758,11 @@ class AuthProvider with ChangeNotifier {
           );
         }
       } else {
+        if (kDebugMode) {
+          debugPrint('│ ❌ Other error type');
+          debugPrint('└─────────────────────────────────────────');
+        }
+        
         if (context.mounted) {
           await _showErrorAlert(context, _errorMessage);
         }
@@ -617,6 +777,10 @@ class AuthProvider with ChangeNotifier {
       if (context.mounted) {
         notifyListeners();
       }
+      
+      if (kDebugMode) {
+        debugPrint('│ 🏁 Login method finished (finally block)');
+      }
     }
   }
 
@@ -628,22 +792,49 @@ class AuthProvider with ChangeNotifier {
     String fcmToken,
     BuildContext context,
   ) async {
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 📝 [AuthProvider] Register initiated');
+      debugPrint('│ 👤 Name: $name');
+      debugPrint('│ 📧 Email: $email');
+      debugPrint('│ 🔔 FCM Token: ${fcmToken.isNotEmpty ? "✓ (${fcmToken.length} chars)" : "✗ Empty"}');
+    }
+    
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
 
     // Check internet connection
+    if (kDebugMode) {
+      debugPrint('│ 🌐 Checking internet connection...');
+    }
+    
     final hasConnection = await _checkInternetConnection();
     if (!hasConnection) {
       _isLoading = false;
       _errorMessage = 'No internet connection';
       notifyListeners();
+      
+      if (kDebugMode) {
+        debugPrint('│ ❌ No internet connection');
+        debugPrint('└─────────────────────────────────────────');
+      }
+      
       await _showNoInternetAlert(context);
       return false;
     }
 
+    if (kDebugMode) {
+      debugPrint('│ ✅ Internet connection available');
+    }
+
     final baseUrl = dotenv.env['API_URL'];
     final url = '$baseUrl/auth/register';
+
+    if (kDebugMode) {
+      debugPrint('│ 🌐 API URL: $url');
+      debugPrint('│ 📦 Preparing registration request...');
+    }
 
     try {
       final response = await http
@@ -660,11 +851,21 @@ class AuthProvider with ChangeNotifier {
           )
           .timeout(const Duration(seconds: 30));
 
+      if (kDebugMode) {
+        debugPrint('│ 📊 Response Status: ${response.statusCode}');
+      }
+
       final responseData = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 ||
           response.statusCode == 201 ||
           response.statusCode == 202) {
+        
+        if (kDebugMode) {
+          debugPrint('│ ✅ Registration successful');
+          debugPrint('│ 📦 Extracting user data...');
+        }
+        
         final data = responseData['data'];
         _authToken = data['token']?.toString();
         _userId = data['id']?.toString();
@@ -675,11 +876,30 @@ class AuthProvider with ChangeNotifier {
         _createdAt = data['created_at']?.toString();
         _isEmailVerified = data['is_verified'] ?? false;
 
+        if (kDebugMode) {
+          debugPrint('│ 🔑 Token: ${_authToken != null ? "✓ (${_authToken!.length} chars)" : "✗ Missing"}');
+          debugPrint('│ 🆔 User ID: ${_userId ?? "✗ Missing"}');
+          debugPrint('│ 👤 Name: ${_name ?? "✗ Missing"}');
+          debugPrint('│ 📧 Email: ${_email ?? "✗ Missing"}');
+          debugPrint('│ 🎭 Role: ${_role ?? "✗ Missing"}');
+          debugPrint('│ ✓ Email Verified: $_isEmailVerified');
+        }
+
         if (_authToken == null || _userId == null) {
           _errorMessage = 'Respons registrasi tidak valid';
           notifyListeners();
+          
+          if (kDebugMode) {
+            debugPrint('│ ❌ Invalid registration response (missing token or userId)');
+            debugPrint('└─────────────────────────────────────────');
+          }
+          
           await _showErrorAlert(context, _errorMessage);
           return false;
+        }
+
+        if (kDebugMode) {
+          debugPrint('│ 💾 Saving to SharedPreferences...');
         }
 
         // Simpan data login ke shared preferences
@@ -694,8 +914,18 @@ class AuthProvider with ChangeNotifier {
         await prefs.setString('created_at', _createdAt ?? '');
         await prefs.setBool('is_email_verified', _isEmailVerified);
 
+        if (kDebugMode) {
+          debugPrint('│ ✅ Saved to SharedPreferences');
+          debugPrint('│ 📡 Updating FCM token...');
+        }
+
         // Update FCM token
         await updateFcmToken(newToken: fcmToken);
+
+        if (kDebugMode) {
+          debugPrint('│ ✅ Registration process completed successfully');
+          debugPrint('└─────────────────────────────────────────');
+        }
 
         // Simpan pesan sukses untuk ditampilkan di UI
         _errorMessage =
@@ -706,6 +936,12 @@ class AuthProvider with ChangeNotifier {
       }
 
       // Handle error cases
+      if (kDebugMode) {
+        debugPrint('│ ❌ Registration failed');
+        debugPrint('│ 📊 Status: ${response.statusCode}');
+        debugPrint('│ 📄 Response: ${response.body}');
+      }
+      
       if (responseData.containsKey('message')) {
         _errorMessage = responseData['message'];
       } else if (responseData.containsKey('errors')) {
@@ -716,45 +952,109 @@ class AuthProvider with ChangeNotifier {
         _errorMessage = 'Pendaftaran gagal. Silakan coba lagi.';
       }
 
+      if (kDebugMode) {
+        debugPrint('│ 💬 Error: $_errorMessage');
+        debugPrint('└─────────────────────────────────────────');
+      }
+
       notifyListeners();
       return false; // Kembalikan false (gagal)
     } catch (error) {
+      if (kDebugMode) {
+        debugPrint('│ ❌ Exception caught during registration');
+        debugPrint('│ 🔥 Error type: ${error.runtimeType}');
+        debugPrint('│ 💬 Error: ${error.toString()}');
+      }
+      
       _errorMessage = 'Terjadi kesalahan: $error';
       if (error is http.ClientException ||
           error.toString().contains('SocketException')) {
         _errorMessage = 'Kesalahan jaringan. Periksa koneksi internet Anda.';
+        
+        if (kDebugMode) {
+          debugPrint('│ 🌐 Network error detected');
+          debugPrint('└─────────────────────────────────────────');
+        }
+        
         await _showNoInternetAlert(context);
       } else if (error is TimeoutException) {
         _errorMessage = 'Waktu permintaan habis. Silakan coba lagi.';
+        
+        if (kDebugMode) {
+          debugPrint('│ ⏱️ Timeout error');
+          debugPrint('└─────────────────────────────────────────');
+        }
+        
         await _showErrorAlert(context, _errorMessage);
+      } else {
+        if (kDebugMode) {
+          debugPrint('│ ❌ Other error type');
+          debugPrint('└─────────────────────────────────────────');
+        }
       }
+      
       notifyListeners();
       return false;
     } finally {
       _isLoading = false;
       notifyListeners();
+      
+      if (kDebugMode) {
+        debugPrint('│ 🏁 Register method finished (finally block)');
+      }
     }
   }
 
   Future<bool> logout(BuildContext context) async {
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 🚪 [AuthProvider] Logout initiated');
+      debugPrint('│ 🆔 User ID: $_userId');
+    }
+    
     final cycleProvider = Provider.of<CycleTrackingProvider>(
       context,
       listen: false,
     );
+    
     // Check internet connection
+    if (kDebugMode) {
+      debugPrint('│ 🌐 Checking internet connection...');
+    }
+    
     final hasConnection = await _checkInternetConnection();
     if (!hasConnection) {
       _errorMessage = 'No internet connection';
       notifyListeners();
+      
+      if (kDebugMode) {
+        debugPrint('│ ❌ No internet connection');
+        debugPrint('└─────────────────────────────────────────');
+      }
+      
       await _showNoInternetAlert(context);
       return false;
+    }
+
+    if (kDebugMode) {
+      debugPrint('│ ✅ Internet connection available');
+      debugPrint('│ 🔑 Retrieving token from SharedPreferences...');
     }
 
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
+    if (kDebugMode) {
+      debugPrint('│ 🔑 Token: ${token != null ? "✓ (${token.length} chars)" : "✗ Missing"}');
+    }
+
     final baseUrl = dotenv.env['API_URL'];
     final url = '$baseUrl/auth/logout';
+
+    if (kDebugMode) {
+      debugPrint('│ 🌐 API URL: $url');
+      debugPrint('│ 📡 Sending logout request...');
+    }
 
     try {
       final response = await http
@@ -767,6 +1067,11 @@ class AuthProvider with ChangeNotifier {
           )
           .timeout(const Duration(seconds: 30));
 
+      if (kDebugMode) {
+        debugPrint('│ 📊 Response Status: ${response.statusCode}');
+        debugPrint('│ 🗑️ Clearing local state...');
+      }
+
       // Clear provider state
       _authToken = null;
       _userId = null;
@@ -776,6 +1081,10 @@ class AuthProvider with ChangeNotifier {
       _profileComplete = false;
       _createdAt = null;
       _isEmailVerified = false;
+
+      if (kDebugMode) {
+        debugPrint('│ 💾 Clearing SharedPreferences...');
+      }
 
       // Clear shared preferences
       // await prefs.clear();
@@ -790,10 +1099,27 @@ class AuthProvider with ChangeNotifier {
       await prefs.remove('is_email_verified');
 
       if (response.statusCode == 200) {
+        if (kDebugMode) {
+          debugPrint('│ ✅ Logout successful');
+          debugPrint('│ 🔄 Resetting cycle provider state...');
+        }
+        
         notifyListeners();
         cycleProvider.resetState();
+        
+        if (kDebugMode) {
+          debugPrint('│ ✅ Logout process completed');
+          debugPrint('└─────────────────────────────────────────');
+        }
+        
         return true;
       } else if (response.statusCode == 401) {
+        if (kDebugMode) {
+          debugPrint('│ ⚠️ Logout returned 401 (token already invalid)');
+          debugPrint('│ ✅ Treating as successful logout');
+          debugPrint('└─────────────────────────────────────────');
+        }
+        
         notifyListeners();
         if (context.mounted) {
           Navigator.of(
@@ -804,19 +1130,51 @@ class AuthProvider with ChangeNotifier {
       } else {
         _errorMessage = 'Logout failed with status ${response.statusCode}';
         notifyListeners();
+        
+        if (kDebugMode) {
+          debugPrint('│ ❌ Logout failed');
+          debugPrint('│ 📊 Status: ${response.statusCode}');
+          debugPrint('│ 💬 Error: $_errorMessage');
+          debugPrint('└─────────────────────────────────────────');
+        }
+        
         await _showErrorAlert(context, _errorMessage);
         return false;
       }
     } catch (error) {
+      if (kDebugMode) {
+        debugPrint('│ ❌ Exception caught during logout');
+        debugPrint('│ 🔥 Error type: ${error.runtimeType}');
+        debugPrint('│ 💬 Error: ${error.toString()}');
+      }
+      
       _errorMessage = 'An error occurred: $error';
       if (error is http.ClientException ||
           error.toString().contains('SocketException')) {
         _errorMessage = 'Network error. Please check your internet connection.';
+        
+        if (kDebugMode) {
+          debugPrint('│ 🌐 Network error detected');
+          debugPrint('└─────────────────────────────────────────');
+        }
+        
         await _showNoInternetAlert(context);
       } else if (error is TimeoutException) {
         _errorMessage = 'Request timed out. Please try again.';
+        
+        if (kDebugMode) {
+          debugPrint('│ ⏱️ Timeout error');
+          debugPrint('└─────────────────────────────────────────');
+        }
+        
         await _showErrorAlert(context, _errorMessage);
+      } else {
+        if (kDebugMode) {
+          debugPrint('│ ❌ Other error type');
+          debugPrint('└─────────────────────────────────────────');
+        }
       }
+      
       notifyListeners();
       return false;
     }
@@ -893,15 +1251,26 @@ class AuthProvider with ChangeNotifier {
 
   // Fungsi untuk update FCM Token
   Future<void> updateFcmToken({String? newToken}) async {
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 🔔 [AuthProvider] Update FCM Token initiated');
+      debugPrint('│ 🎫 New Token provided: ${newToken != null ? "✓ (${newToken.length} chars)" : "✗ Will fetch current"}');
+    }
+    
     try {
       final notificationService = NotificationService();
       // Dapatkan token saat ini atau gunakan token baru dari onTokenRefresh
       final currentFcmToken =
           newToken ?? await notificationService.getFCMToken();
 
+      if (kDebugMode) {
+        debugPrint('│ 🔔 Current FCM Token: ${currentFcmToken != null ? "✓ (${currentFcmToken.length} chars)" : "✗ Not available"}');
+      }
+
       if (currentFcmToken == null) {
         if (kDebugMode) {
-          debugPrint("FCM token saat ini tidak tersedia, lewati pembaruan.");
+          debugPrint('│ ⚠️ FCM token not available, skipping update');
+          debugPrint('└─────────────────────────────────────────');
         }
         return;
       }
@@ -909,20 +1278,27 @@ class AuthProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final lastSentToken = prefs.getString('last_sent_fcm_token');
 
+      if (kDebugMode) {
+        debugPrint('│ 📝 Last Sent Token: ${lastSentToken != null ? "✓ (${lastSentToken.length} chars)" : "✗ Never sent"}');
+        debugPrint('│ 🔍 Comparing tokens...');
+      }
+
       // Bandingkan token saat ini dengan token terakhir yang dikirim
       if (currentFcmToken != lastSentToken) {
         if (kDebugMode) {
-          debugPrint(
-            "Token FCM berubah atau belum pernah dikirim. Mengirim ke backend...",
-          );
+          debugPrint('│ ✅ Token changed or never sent, updating backend...');
         }
 
         final token = prefs.getString('token'); // Auth token
+        
+        if (kDebugMode) {
+          debugPrint('│ 🔑 Auth Token: ${token != null ? "✓ (${token.length} chars)" : "✗ Missing"}');
+        }
+        
         if (token == null) {
           if (kDebugMode) {
-            debugPrint(
-              "Auth token tidak ditemukan, tidak bisa update FCM token.",
-            );
+            debugPrint('│ ❌ Auth token not found, cannot update FCM token');
+            debugPrint('└─────────────────────────────────────────');
           }
           return; // Jangan lakukan update jika tidak ada auth token
         }
@@ -930,11 +1306,17 @@ class AuthProvider with ChangeNotifier {
         final baseUrl = dotenv.env['API_URL'];
         if (baseUrl == null) {
           if (kDebugMode) {
-            debugPrint("API URL tidak ditemukan.");
+            debugPrint('│ ❌ API URL not found');
+            debugPrint('└─────────────────────────────────────────');
           }
           return;
         }
         final url = '$baseUrl/me/fcm-token';
+
+        if (kDebugMode) {
+          debugPrint('│ 🌐 API URL: $url');
+          debugPrint('│ 📡 Sending FCM token update...');
+        }
 
         final response = await http
             .patch(
@@ -947,31 +1329,39 @@ class AuthProvider with ChangeNotifier {
             )
             .timeout(const Duration(seconds: 15)); // Tambahkan timeout
 
+        if (kDebugMode) {
+          debugPrint('│ 📊 Response Status: ${response.statusCode}');
+        }
+
         // Jika berhasil, simpan token yang baru dikirim
         if (response.statusCode == 200 || response.statusCode == 204) {
           await prefs.setString('last_sent_fcm_token', currentFcmToken);
+          
           if (kDebugMode) {
-            debugPrint(
-              "FCM Token berhasil diupdate di backend dan disimpan lokal.",
-            );
+            debugPrint('│ ✅ FCM token successfully updated on backend');
+            debugPrint('│ 💾 Saved last_sent_fcm_token to SharedPreferences');
+            debugPrint('└─────────────────────────────────────────');
           }
         } else {
           if (kDebugMode) {
-            debugPrint(
-              "Gagal update FCM token di backend: ${response.statusCode} - ${response.body}",
-            );
+            debugPrint('│ ❌ Failed to update FCM token on backend');
+            debugPrint('│ 📊 Status: ${response.statusCode}');
+            debugPrint('│ 📄 Response: ${response.body}');
+            debugPrint('└─────────────────────────────────────────');
           }
         }
       } else {
         if (kDebugMode) {
-          debugPrint(
-            "Token FCM sama dengan yang terakhir dikirim, tidak perlu update.",
-          );
+          debugPrint('│ ✓ Token unchanged, no update needed');
+          debugPrint('└─────────────────────────────────────────');
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint("Gagal update FCM token: $e");
+        debugPrint('│ ❌ Exception caught during FCM token update');
+        debugPrint('│ 🔥 Error type: ${e.runtimeType}');
+        debugPrint('│ 💬 Error: ${e.toString()}');
+        debugPrint('└─────────────────────────────────────────');
       }
     }
   }

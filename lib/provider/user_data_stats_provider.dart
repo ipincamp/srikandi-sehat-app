@@ -23,6 +23,13 @@ class UserDataStatsProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 📊 [UserDataStatsProvider] Fetch statistics');
+      debugPrint('│ 🔑 Token: ${token != null ? "Present" : "Missing"}');
+      debugPrint('│ 🌐 API: $url');
+    }
+
     try {
       // String endpoint = 'admin/users/statistics';
       final response = await http.get(
@@ -33,6 +40,10 @@ class UserDataStatsProvider with ChangeNotifier {
         },
       );
 
+      if (kDebugMode) {
+        debugPrint('│ 📊 Response Status: ${response.statusCode}');
+      }
+
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
         final stats = jsonData['data'];
@@ -42,18 +53,37 @@ class UserDataStatsProvider with ChangeNotifier {
         _urbanCount = stats['total_urban_users'] ?? 0;
         _ruralCount = stats['total_rural_users'] ?? 0;
 
+        if (kDebugMode) {
+          debugPrint('│ ✅ Statistics loaded successfully');
+          debugPrint('│ 👥 Total Users: $_totalUsers');
+          debugPrint('│ ✨ Active Users: $_activeUsers');
+          debugPrint('│ 🏙️ Urban Count: $_urbanCount');
+          debugPrint('│ 🏡 Rural Count: $_ruralCount');
+          debugPrint('└─────────────────────────────────────────');
+        }
+
         notifyListeners();
       } else if (response.statusCode == 401) {
         // Don't redirect here - HttpClient already handles it
         if (kDebugMode) {
-          debugPrint('Unauthorized access to stats');
+          debugPrint('│ 🔒 Unauthorized access to stats');
+          debugPrint('└─────────────────────────────────────────');
         }
       } else {
         if (kDebugMode) {
-          debugPrint('Failed to load stats: ${response.statusCode}');
+          debugPrint('│ ❌ Failed to load stats');
+          debugPrint('│ 📊 Status: ${response.statusCode}');
+          debugPrint('└─────────────────────────────────────────');
         }
       }
     } catch (e) {
+      if (kDebugMode) {
+        debugPrint('│ ❌ Exception caught!');
+        debugPrint('│ 🔴 Type: ${e.runtimeType}');
+        debugPrint('│ 💬 Message: ${e.toString()}');
+        debugPrint('└─────────────────────────────────────────');
+      }
+
       CustomAlert.show(
         context,
         'Tidak ada Koneksi Internet\nTidak Bisa Mendapatkan Statistik',

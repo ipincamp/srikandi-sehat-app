@@ -39,6 +39,15 @@ class MenstrualHistoryProvider with ChangeNotifier {
     int? limit,
     bool isRefresh = false,
   }) async {
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 📅 [MenstrualHistoryProvider] Fetch cycles');
+      debugPrint('│ 📅 Date: ${date != null ? DateFormat('yyyy-MM-dd').format(date) : "All dates"}');
+      debugPrint('│ 📄 Page: $page');
+      debugPrint('│ 📊 Limit: ${limit ?? _limit}');
+      debugPrint('│ 🔄 Refresh: $isRefresh');
+    }
+    
     if (!isRefresh) _isLoading = true;
     _selectedDate = date;
     if (limit != null) _limit = limit;
@@ -49,10 +58,19 @@ class MenstrualHistoryProvider with ChangeNotifier {
       final token = prefs.getString('token');
       final baseUrl = dotenv.env['API_URL'];
 
+      if (kDebugMode) {
+        debugPrint('│ 🔑 Token: ${token != null ? "✓ (${token.length} chars)" : "✗ Missing"}');
+      }
+
       String url = '$baseUrl/menstrual/cycles?page=$page&limit=$_limit';
       if (date != null) {
         final formattedDate = DateFormat('yyyy-MM-dd').format(date);
         url += '&date=$formattedDate';
+      }
+
+      if (kDebugMode) {
+        debugPrint('│ 🌐 API URL: $url');
+        debugPrint('│ 📡 Fetching cycles...');
       }
 
       final response = await http.get(
@@ -63,6 +81,10 @@ class MenstrualHistoryProvider with ChangeNotifier {
           'Accept': 'application/json',
         },
       );
+
+      if (kDebugMode) {
+        debugPrint('│ 📊 Response Status: ${response.statusCode}');
+      }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = json.decode(response.body);
@@ -78,6 +100,11 @@ class MenstrualHistoryProvider with ChangeNotifier {
               currentPage: 1,
             );
             _errorMessage = data['message'] ?? '';
+            
+            if (kDebugMode) {
+              debugPrint('│ 📭 No cycles found');
+              debugPrint('│ 💬 Message: $_errorMessage');
+            }
           }
           // Case 2: Data ada (response berupa object dengan data dan metadata)
           else if (data['data'] is Map && data['data']['data'] is List) {
@@ -85,19 +112,55 @@ class MenstrualHistoryProvider with ChangeNotifier {
             _cycles = cycleResponse.cycles;
             _metadata = cycleResponse.metadata;
             _errorMessage = '';
+            
+            if (kDebugMode) {
+              debugPrint('│ ✅ Fetched ${_cycles.length} cycles');
+              debugPrint('│ 📊 Total Data: ${_metadata.totalData}');
+              debugPrint('│ 📄 Current Page: ${_metadata.currentPage}/${_metadata.totalPages}');
+            }
           }
           // Case 3: Format response tidak dikenali
           else {
             _errorMessage = 'Format response tidak valid';
+            
+            if (kDebugMode) {
+              debugPrint('│ ❌ Invalid response format');
+              debugPrint('│ 📄 Data type: ${data['data'].runtimeType}');
+            }
+          }
+          
+          if (kDebugMode) {
+            debugPrint('│ ✅ Fetch completed successfully');
+            debugPrint('└─────────────────────────────────────────');
           }
         } else {
           _errorMessage = data['message'] ?? 'Gagal mengambil data siklus';
+          
+          if (kDebugMode) {
+            debugPrint('│ ❌ Status false in response');
+            debugPrint('│ 💬 Error: $_errorMessage');
+            debugPrint('└─────────────────────────────────────────');
+          }
         }
       } else {
         _errorMessage = 'Gagal memuat data: ${response.statusCode}';
+        
+        if (kDebugMode) {
+          debugPrint('│ ❌ Failed to fetch cycles');
+          debugPrint('│ 📊 Status: ${response.statusCode}');
+          debugPrint('│ 💬 Error: $_errorMessage');
+          debugPrint('└─────────────────────────────────────────');
+        }
       }
     } catch (e) {
       _errorMessage = 'Terjadi kesalahan: $e';
+      
+      if (kDebugMode) {
+        debugPrint('│ ❌ Exception caught');
+        debugPrint('│ 🔥 Error type: ${e.runtimeType}');
+        debugPrint('│ 💬 Error: $_errorMessage');
+        debugPrint('└─────────────────────────────────────────');
+      }
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -20,7 +20,17 @@ class HealthProvider with ChangeNotifier {
   String? get error => _error;
 
   Future<void> checkHealth() async {
-    if (_isLoading) return;
+    if (_isLoading) {
+      if (kDebugMode) {
+        debugPrint('⚠️ [HealthProvider] Already checking health, skipping');
+      }
+      return;
+    }
+
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 🏥 [HealthProvider] Check health');
+    }
 
     _isLoading = true;
     _hasError = false;
@@ -29,13 +39,27 @@ class HealthProvider with ChangeNotifier {
 
     try {
       final baseUrl = dotenv.env['API_URL'];
+      
+      if (kDebugMode) {
+        debugPrint('│ 🌐 API URL: ${baseUrl ?? "✗ Missing"}');
+      }
+      
       if (baseUrl == null || baseUrl.isEmpty) {
+        if (kDebugMode) {
+          debugPrint('│ ❌ API_URL not configured');
+          debugPrint('└─────────────────────────────────────────');
+        }
         throw Exception('API_URL tidak dikonfigurasi');
       }
 
       final url = '$baseUrl/health';
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
+
+      if (kDebugMode) {
+        debugPrint('│ 🔑 Token: ${token != null ? "✓ (${token.length} chars)" : "✗ Not logged in"}');
+        debugPrint('│ 📡 Checking server health...');
+      }
 
       final response = await http
           .get(
@@ -49,6 +73,10 @@ class HealthProvider with ChangeNotifier {
 
       _lastCheckedAt = DateTime.now();
 
+      if (kDebugMode) {
+        debugPrint('│ 📊 Response Status: ${response.statusCode}');
+      }
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final status = data['status'] as String?;
@@ -56,13 +84,13 @@ class HealthProvider with ChangeNotifier {
         if (status == 'OK') {
           _isMaintenance = false;
           if (kDebugMode) {
-            debugPrint('Server status: ONLINE');
+            debugPrint('│ ✅ Server status: ONLINE');
           }
         } else {
           // Jika status bukan 'OK', anggap maintenance
           _isMaintenance = true;
           if (kDebugMode) {
-            debugPrint('Server status: MAINTENANCE (Status: $status)');
+            debugPrint('│ ⚠️ Server status: MAINTENANCE (Status: $status)');
           }
         }
         _error = null;
@@ -73,7 +101,7 @@ class HealthProvider with ChangeNotifier {
 
         _isMaintenance = true;
         if (kDebugMode) {
-          debugPrint('Server status: MAINTENANCE (503 - $status)');
+          debugPrint('│ ⚠️ Server status: MAINTENANCE (503 - $status)');
         }
         _error = null;
       } else {
@@ -83,8 +111,14 @@ class HealthProvider with ChangeNotifier {
         _isMaintenance =
             false; // Pada error, biarkan user tetap bisa menggunakan app
         if (kDebugMode) {
-          debugPrint('Health check error: ${response.statusCode}');
+          debugPrint('│ ❌ Health check error: ${response.statusCode}');
         }
+      }
+      
+      if (kDebugMode) {
+        debugPrint('│ ✅ Health check completed');
+        debugPrint('│ 🏥 Is Maintenance: $_isMaintenance');
+        debugPrint('└─────────────────────────────────────────');
       }
     } catch (e) {
       _hasError = true;
@@ -92,8 +126,13 @@ class HealthProvider with ChangeNotifier {
       // Pada error koneksi, jangan set maintenance=true
       // agar user tetap bisa menggunakan app offline
       _isMaintenance = false;
+      
       if (kDebugMode) {
-        debugPrint('Health check exception: $e');
+        debugPrint('│ ❌ Exception caught');
+        debugPrint('│ 🔥 Error type: ${e.runtimeType}');
+        debugPrint('│ 💬 Error: ${e.toString()}');
+        debugPrint('│ ⚠️ Allowing offline usage');
+        debugPrint('└─────────────────────────────────────────');
       }
     } finally {
       _isLoading = false;

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -118,6 +119,12 @@ class ProfileChangeProvider with ChangeNotifier {
 
   // Update user profile
   Future<bool> updateProfile(Map<String, dynamic> profileData) async {
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 👤 [ProfileChangeProvider] Update profile');
+      debugPrint('│ 📦 Fields to update: ${profileData.keys.join(", ")}');
+    }
+    
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
@@ -126,13 +133,28 @@ class ProfileChangeProvider with ChangeNotifier {
       await init(); // Ensure prefs is initialized
       final token = _prefs?.getString('token');
 
+      if (kDebugMode) {
+        debugPrint('│ 🔑 Token: ${token != null ? "✓ (${token.length} chars)" : "✗ Missing"}');
+      }
+
       if (token == null || token.isEmpty) {
         _errorMessage = 'Authentication token not found';
+        
+        if (kDebugMode) {
+          debugPrint('│ ❌ Token not found');
+          debugPrint('└─────────────────────────────────────────');
+        }
+        
         return false;
       }
 
       final baseUrl = dotenv.env['API_URL'] ?? '';
       final url = '$baseUrl/me/details';
+
+      if (kDebugMode) {
+        debugPrint('│ 🌐 API URL: $url');
+        debugPrint('│ 📦 Processing profile data...');
+      }
 
       final cleanedData = <String, dynamic>{};
 
@@ -193,6 +215,11 @@ class ProfileChangeProvider with ChangeNotifier {
         cleanedData['job_parent'] = profileData['job_parent'].toString();
       }
 
+      if (kDebugMode) {
+        debugPrint('│ 📦 Cleaned data fields: ${cleanedData.keys.join(", ")}');
+        debugPrint('│ 📡 Sending PUT request...');
+      }
+
       final response = await http.put(
         Uri.parse(url),
         headers: {
@@ -203,7 +230,16 @@ class ProfileChangeProvider with ChangeNotifier {
         body: jsonEncode(cleanedData),
       );
 
+      if (kDebugMode) {
+        debugPrint('│ 📊 Response Status: ${response.statusCode}');
+      }
+
       if (response.statusCode == 200) {
+        if (kDebugMode) {
+          debugPrint('│ ✅ Profile update successful');
+          debugPrint('│ 📦 Parsing server response...');
+        }
+        
         try {
           final responseData = jsonDecode(response.body);
           final serverData = responseData is Map && responseData['data'] != null
@@ -214,9 +250,17 @@ class ProfileChangeProvider with ChangeNotifier {
             // Parse full user/profile data from server if available
             _parseProfileData(serverData);
             _updateLocalProfile(serverData);
+            
+            if (kDebugMode) {
+              debugPrint('│ ✅ Parsed server data');
+            }
           } else {
             // Fallback: update local profile from the cleaned request data
             _updateLocalProfile(cleanedData);
+            
+            if (kDebugMode) {
+              debugPrint('│ ✅ Updated from local cleaned data');
+            }
           }
 
           // Mark profile complete locally and in prefs
@@ -224,6 +268,13 @@ class ProfileChangeProvider with ChangeNotifier {
           await _prefs?.setBool('profile_complete', true);
           if (_name != null && _name!.isNotEmpty) {
             await _prefs?.setString('name', _name!);
+          }
+
+          if (kDebugMode) {
+            debugPrint('│ 💾 Saved to SharedPreferences');
+            debugPrint('│ ✅ Profile complete: $_profileComplete');
+            debugPrint('│ ✅ Update process completed');
+            debugPrint('└─────────────────────────────────────────');
           }
 
           return true;

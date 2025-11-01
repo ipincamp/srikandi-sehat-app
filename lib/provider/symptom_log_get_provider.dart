@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/models/symptom_model.dart';
@@ -38,6 +39,11 @@ class SymptomProvider with ChangeNotifier {
   }
 
   Future<void> fetchSymptoms() async {
+    if (kDebugMode) {
+      debugPrint('┌─────────────────────────────────────────');
+      debugPrint('│ 📋 [SymptomProvider] Fetch symptoms master');
+    }
+    
     _isLoading = true;
     _errorMessage = '';
     _usingFallbackData = false;
@@ -49,6 +55,12 @@ class SymptomProvider with ChangeNotifier {
       final baseUrl = dotenv.env['API_URL'];
       final url = '$baseUrl/menstrual/symptoms/master';
 
+      if (kDebugMode) {
+        debugPrint('│ 🔑 Token: ${token.isNotEmpty ? "✓ (${token.length} chars)" : "✗ Missing"}');
+        debugPrint('│ 🌐 API URL: $url');
+        debugPrint('│ 📡 Fetching symptoms...');
+      }
+
       final response = await http
           .get(
             Uri.parse(url),
@@ -59,17 +71,51 @@ class SymptomProvider with ChangeNotifier {
           )
           .timeout(const Duration(seconds: 10));
 
+      if (kDebugMode) {
+        debugPrint('│ 📊 Response Status: ${response.statusCode}');
+      }
+
       if (response.statusCode == 200) {
         final jsonBody = json.decode(response.body);
         final List<dynamic> data = jsonBody['data'] ?? [];
         _symptoms = data.map((e) => Symptom.fromJson(e)).toList();
+        
+        if (kDebugMode) {
+          debugPrint('│ ✅ Fetched ${_symptoms.length} symptoms');
+          debugPrint('│ ✅ Fetch completed successfully');
+          debugPrint('└─────────────────────────────────────────');
+        }
       } else {
         _errorMessage = 'Gagal mengambil data gejala (${response.statusCode}).';
+        
+        if (kDebugMode) {
+          debugPrint('│ ❌ Failed to fetch symptoms');
+          debugPrint('│ 📊 Status: ${response.statusCode}');
+          debugPrint('│ 💬 Error: $_errorMessage');
+          debugPrint('│ 🔄 Using fallback data...');
+        }
+        
         _useFallbackData();
+        
+        if (kDebugMode) {
+          debugPrint('└─────────────────────────────────────────');
+        }
       }
     } catch (e) {
       _errorMessage = 'Terjadi kesalahan: ${e.toString()}';
+      
+      if (kDebugMode) {
+        debugPrint('│ ❌ Exception caught');
+        debugPrint('│ 🔥 Error type: ${e.runtimeType}');
+        debugPrint('│ 💬 Error: $_errorMessage');
+        debugPrint('│ 🔄 Using fallback data...');
+      }
+      
       _useFallbackData();
+      
+      if (kDebugMode) {
+        debugPrint('└─────────────────────────────────────────');
+      }
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -79,6 +125,10 @@ class SymptomProvider with ChangeNotifier {
   void _useFallbackData() {
     _symptoms = fallbackSymptoms;
     _usingFallbackData = true;
+    
+    if (kDebugMode) {
+      debugPrint('│ 📦 Loaded ${_symptoms.length} fallback symptoms');
+    }
   }
 
   // Untuk testing: force menggunakan data fallback
