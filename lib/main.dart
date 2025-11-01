@@ -1,12 +1,15 @@
 import 'dart:async';
-
-import 'package:device_preview/device_preview.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+// Packages
+import 'package:device_preview/device_preview.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/firebase_options.dart';
+
+// Providers
 import 'package:app/provider/auth_provider.dart';
 import 'package:app/provider/csv_download_provider.dart';
 import 'package:app/provider/cycle_tracking_provider.dart';
@@ -26,27 +29,35 @@ import 'package:app/provider/user_data_stats_provider.dart';
 import 'package:app/provider/user_detail_provider.dart';
 import 'package:app/provider/user_profile_provider.dart';
 import 'package:app/provider/village_provider.dart';
+import 'package:app/provider/notification_provider.dart';
 
+// Core
+import 'package:app/core/auth/auth_wrapper.dart';
+import 'package:app/core/auth/route_observer.dart';
+import 'package:app/core/auth/notification_service.dart';
+
+// Screens
+// - Auth
 import 'package:app/screens/auth/login_screen.dart';
 import 'package:app/screens/auth/register_screen.dart';
 import 'package:app/screens/splash/maintenance_screen.dart';
 import 'package:app/screens/splash/splash_screen.dart';
+import 'package:app/screens/user/verify_otp_screen.dart' as user;
+// - Profile
 import 'package:app/screens/user/change_password_screen.dart' as user;
 import 'package:app/screens/user/edit_profile_screen.dart' as user;
 import 'package:app/screens/user/main_screen.dart' as user;
 import 'package:app/screens/user/profile_detail_screen.dart' as user;
 import 'package:app/screens/user/symptom_history_screen.dart' as user;
 import 'package:app/screens/user/menstrual_history_screen.dart' as user;
-import 'package:app/screens/admin/main_screen.dart' as admin;
-import 'package:app/core/auth/route_observer.dart';
-import 'package:app/core/auth/auth_wrapper.dart';
-import 'package:app/core/auth/notification_service.dart';
-import 'package:flutter/foundation.dart';
-import 'package:app/provider/notification_provider.dart';
 import 'package:app/screens/user/notification_history_screen.dart' as user;
-import 'package:app/screens/user/verify_otp_screen.dart' as user;
+// - Admin
+import 'package:app/screens/admin/main_screen.dart' as admin;
+
+// Widgets
 import 'package:app/widgets/markdown_screen.dart';
 
+// GlobalKey untuk Navigator
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
@@ -95,36 +106,8 @@ class AppProviders extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => HealthProvider()),
       ],
       child: const MainAppInitializer(),
-      /*
-      child: FutureBuilder(
-        future: _checkInitialAuthState(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return MaterialApp(
-              debugShowCheckedModeBanner: false,
-              home: SplashScreen(onInitializationComplete: () {}),
-            );
-          }
-          return MyApp(
-            initialAuthState:
-                snapshot.data ?? AuthState(isLoggedIn: false, role: null),
-          );
-        },
-      ),
-      */
     );
   }
-
-  /*
-  Future<AuthState> _checkInitialAuthState() async {
-    final prefs = await SharedPreferences.getInstance();
-    await Future.delayed(const Duration(seconds: 3));
-    return AuthState(
-      isLoggedIn: prefs.getBool('isLoggedIn') ?? false,
-      role: prefs.getString('role'),
-    );
-  }
-  */
 }
 
 class MainAppInitializer extends StatelessWidget {
@@ -142,7 +125,7 @@ class MainAppInitializer extends StatelessWidget {
     // 2. Cek status server (maintenance, dll)
     await healthProvider.checkHealth();
 
-    // 3. Tahan splash screen selama 3 detik (sesuai kode asli Anda)
+    // 3. Tahan splash screen selama 3 detik
     await Future.delayed(const Duration(seconds: 3));
   }
 
@@ -221,14 +204,6 @@ class _MyAppState extends State<MyApp> {
             ),
             useMaterial3: true,
           ),
-          /*
-          home: AuthWrapper(
-            initialAuthState: widget.initialAuthState,
-            adminChild: const admin.MainScreen(),
-            userChild: const user.MainScreen(),
-            guestChild: const LoginScreen(),
-          ),
-          */
           initialRoute: '/',
           routes: {
             '/': (context) => AuthWrapper(
