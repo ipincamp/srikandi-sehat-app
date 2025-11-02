@@ -1,10 +1,10 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/models/recommendation_model.dart';
+import 'package:app/utils/logger.dart';
 
 class RecommendationProvider with ChangeNotifier {
   List<Recommendation> _recommendations = [];
@@ -20,16 +20,14 @@ class RecommendationProvider with ChangeNotifier {
 
   Future<void> fetchRecommendations() async {
     if (_hasFetched) {
-      if (kDebugMode) {
-        debugPrint('⚠️ [RecommendationProvider] Already fetched, skipping');
-      }
+      AppLogger.warning('RecommendationProvider', 'Already fetched, skipping');
       return; // Hindari fetch berulang
     }
 
-    if (kDebugMode) {
-      debugPrint('┌─────────────────────────────────────────');
-      debugPrint('│ 💡 [RecommendationProvider] Fetch recommendations');
-    }
+    AppLogger.startSection(
+      'RecommendationProvider - Fetch recommendations',
+      emoji: '💡',
+    );
 
     _isLoading = true;
     _errorMessage = '';
@@ -41,11 +39,11 @@ class RecommendationProvider with ChangeNotifier {
       final baseUrl = dotenv.env['API_URL'];
       final url = '$baseUrl/menstrual/recommendations';
 
-      if (kDebugMode) {
-        debugPrint('│ 🔑 Token: ${token != null ? "✓ (${token.length} chars)" : "✗ Missing"}');
-        debugPrint('│ 🌐 API URL: $url');
-        debugPrint('│ 📡 Fetching recommendations...');
-      }
+      AppLogger.apiRequest(
+        method: 'GET',
+        endpoint: '/menstrual/recommendations',
+        token: token,
+      );
 
       final response = await http.get(
         Uri.parse(url),
@@ -56,10 +54,6 @@ class RecommendationProvider with ChangeNotifier {
         },
       );
 
-      if (kDebugMode) {
-        debugPrint('│ 📊 Response Status: ${response.statusCode}');
-      }
-
       if (response.statusCode == 200) {
         final jsonBody = json.decode(response.body);
         final List<dynamic> data = jsonBody['data'];
@@ -67,31 +61,32 @@ class RecommendationProvider with ChangeNotifier {
             .map((json) => Recommendation.fromJson(json))
             .toList();
         _hasFetched = true;
-        
-        if (kDebugMode) {
-          debugPrint('│ ✅ Fetched ${_recommendations.length} recommendations');
-          debugPrint('│ ✅ Fetch completed successfully');
-          debugPrint('└─────────────────────────────────────────');
-        }
+
+        AppLogger.apiResponse(
+          statusCode: response.statusCode,
+          endpoint: '/menstrual/recommendations',
+          data: data,
+        );
+        AppLogger.success(
+          'RecommendationProvider',
+          'Fetched ${_recommendations.length} recommendations',
+        );
+        AppLogger.endSection(message: '✅ Fetch completed successfully');
       } else {
         _errorMessage = 'Gagal memuat data rekomendasi';
-        
-        if (kDebugMode) {
-          debugPrint('│ ❌ Failed to fetch recommendations');
-          debugPrint('│ 📊 Status: ${response.statusCode}');
-          debugPrint('│ 💬 Error: $_errorMessage');
-          debugPrint('└─────────────────────────────────────────');
-        }
+
+        AppLogger.apiResponse(
+          statusCode: response.statusCode,
+          endpoint: '/menstrual/recommendations',
+          errorMessage: _errorMessage,
+        );
+        AppLogger.endSection();
       }
     } catch (e) {
       _errorMessage = 'Terjadi kesalahan: $e';
-      
-      if (kDebugMode) {
-        debugPrint('│ ❌ Exception caught');
-        debugPrint('│ 🔥 Error type: ${e.runtimeType}');
-        debugPrint('│ 💬 Error: $_errorMessage');
-        debugPrint('└─────────────────────────────────────────');
-      }
+
+      AppLogger.exception(category: 'RecommendationProvider', error: e);
+      AppLogger.endSection();
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -99,20 +94,18 @@ class RecommendationProvider with ChangeNotifier {
   }
 
   void reset() {
-    if (kDebugMode) {
-      debugPrint('┌─────────────────────────────────────────');
-      debugPrint('│ 🔄 [RecommendationProvider] Reset');
-      debugPrint('│ 📊 Previous count: ${_recommendations.length}');
-    }
-    
+    AppLogger.startSection('RecommendationProvider - Reset', emoji: '🔄');
+    AppLogger.log(
+      'RecommendationProvider',
+      'Previous count: ${_recommendations.length}',
+      emoji: '📊',
+    );
+
     _hasFetched = false;
     _recommendations = [];
     _errorMessage = '';
     notifyListeners();
-    
-    if (kDebugMode) {
-      debugPrint('│ ✅ Reset completed');
-      debugPrint('└─────────────────────────────────────────');
-    }
+
+    AppLogger.endSection(message: '✅ Reset completed');
   }
 }

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/provider/auth_provider.dart';
 import 'package:app/provider/notification_provider.dart';
+import 'package:app/utils/logger.dart';
 
 // Initialize flutter local notifications plugin
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -17,9 +18,11 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Pastikan Firebase diinisialisasi di background handler
   await Firebase.initializeApp();
-  if (kDebugMode) {
-    debugPrint("Handling a background message: ${message.messageId}");
-  }
+  AppLogger.log(
+    'NotificationService',
+    'Handling a background message: ${message.messageId}',
+    emoji: '🔔',
+  );
 
   // DO NOT show notification here!
   // When app is in background/terminated, Firebase Messaging automatically
@@ -32,13 +35,17 @@ Future<void> _showNotification(RemoteMessage message) async {
   if (kIsWeb) {
     // For web, use browser's notification API or just log
     // flutter_local_notifications doesn't work on web
-    if (kDebugMode) {
-      debugPrint('=== WEB NOTIFICATION RECEIVED ===');
-      debugPrint('Title: ${message.notification?.title ?? 'No title'}');
-      debugPrint('Body: ${message.notification?.body ?? 'No body'}');
-      debugPrint('Data: ${message.data}');
-      debugPrint('================================');
-    }
+    AppLogger.startSection('WEB NOTIFICATION RECEIVED', emoji: '🌐');
+    AppLogger.log(
+      'Notification',
+      'Title: ${message.notification?.title ?? 'No title'}',
+    );
+    AppLogger.log(
+      'Notification',
+      'Body: ${message.notification?.body ?? 'No body'}',
+    );
+    AppLogger.log('Notification', 'Data: ${message.data}');
+    AppLogger.endSection();
     // Web notifications are handled by the service worker
     // Or you can show a custom in-app notification UI
     return;
@@ -79,11 +86,11 @@ class NotificationService {
   ) async {
     // Skip local notifications on web - they're handled by service worker
     if (kIsWeb) {
-      if (kDebugMode) {
-        debugPrint(
-          'Web platform detected - using service worker for notifications',
-        );
-      }
+      AppLogger.log(
+        'NotificationService',
+        'Web platform detected - using service worker for notifications',
+        emoji: '🌐',
+      );
       return;
     }
 
@@ -97,9 +104,11 @@ class NotificationService {
     await flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) async {
-        if (kDebugMode) {
-          debugPrint('Notification tapped with payload: ${response.payload}');
-        }
+        AppLogger.log(
+          'NotificationService',
+          'Notification tapped with payload: ${response.payload}',
+          emoji: '👆',
+        );
         // Handle notification tap - navigate to appropriate screen
         // You can parse the payload and navigate accordingly
         final context = navigatorKey.currentState?.context;
@@ -135,35 +144,37 @@ class NotificationService {
         // For now, try to get token without VAPID (might work in some cases)
         token = await _firebaseMessaging.getToken();
 
-        if (kDebugMode) {
-          debugPrint("===================================");
-          debugPrint("FCM Token (Web): $token");
-          debugPrint("===================================");
-          if (token == null) {
-            debugPrint("Note: Web FCM might need VAPID key configuration");
-            debugPrint(
-              "Go to Firebase Console > Project Settings > Cloud Messaging",
-            );
-            debugPrint("Generate Web Push certificates if not done yet");
-          }
+        AppLogger.startSection('FCM Token (Web)', emoji: '🔑');
+        AppLogger.log('FCM', 'Token: $token');
+        if (token == null) {
+          AppLogger.warning(
+            'FCM',
+            'Web FCM might need VAPID key configuration',
+          );
+          AppLogger.log(
+            'FCM',
+            'Go to Firebase Console > Project Settings > Cloud Messaging',
+          );
+          AppLogger.log(
+            'FCM',
+            'Generate Web Push certificates if not done yet',
+          );
         }
+        AppLogger.endSection();
       } else {
         token = await _firebaseMessaging.getToken();
-        if (kDebugMode) {
-          debugPrint("===================================");
-          debugPrint("FCM Token (Mobile): $token");
-          debugPrint("===================================");
-        }
+        AppLogger.startSection('FCM Token (Mobile)', emoji: '🔑');
+        AppLogger.log('FCM', 'Token: $token');
+        AppLogger.endSection();
       }
       return token;
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint("Failed to get FCM token: $e");
-        if (kIsWeb) {
-          debugPrint(
-            "Web platform detected - check service worker registration",
-          );
-        }
+      AppLogger.error('NotificationService', 'Failed to get FCM token: $e');
+      if (kIsWeb) {
+        AppLogger.warning(
+          'NotificationService',
+          'Web platform detected - check service worker registration',
+        );
       }
       return null;
     }
@@ -183,31 +194,39 @@ class NotificationService {
             sound: true,
           );
 
-      if (kDebugMode) {
-        if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-          debugPrint('User granted notification permission');
-        } else if (settings.authorizationStatus ==
-            AuthorizationStatus.provisional) {
-          debugPrint('User granted provisional notification permission');
-        } else {
-          debugPrint(
-            'User declined or has not accepted notification permission',
-          );
-        }
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        AppLogger.success(
+          'NotificationService',
+          'User granted notification permission',
+        );
+      } else if (settings.authorizationStatus ==
+          AuthorizationStatus.provisional) {
+        AppLogger.warning(
+          'NotificationService',
+          'User granted provisional notification permission',
+        );
+      } else {
+        AppLogger.warning(
+          'NotificationService',
+          'User declined or has not accepted notification permission',
+        );
       }
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('Error requesting notification permission: $e');
-      }
+      AppLogger.error(
+        'NotificationService',
+        'Error requesting notification permission: $e',
+      );
     }
   }
 
   // Fungsi inisialisasi utama
   Future<void> initialize(GlobalKey<NavigatorState> navigatorKey) async {
-    if (kDebugMode) {
-      debugPrint('=== Initializing Notification Service ===');
-      debugPrint('Platform: ${kIsWeb ? 'Web' : 'Mobile'}');
-    }
+    AppLogger.startSection('Initializing Notification Service', emoji: '🔔');
+    AppLogger.log(
+      'NotificationService',
+      'Platform: ${kIsWeb ? 'Web' : 'Mobile'}',
+      emoji: '📱',
+    );
 
     // 0. Initialize local notifications first (skipped on web)
     await _initializeLocalNotifications(navigatorKey);
@@ -224,17 +243,35 @@ class NotificationService {
 
     // 3. Handler untuk notifikasi saat aplikasi di foreground
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
-      if (kDebugMode) {
-        debugPrint('=== FOREGROUND MESSAGE RECEIVED ===');
-        debugPrint('Platform: ${kIsWeb ? 'Web' : 'Mobile'}');
-        debugPrint('Message ID: ${message.messageId}');
-        debugPrint('Message data: ${message.data}');
-        if (message.notification != null) {
-          debugPrint('Notification Title: ${message.notification!.title}');
-          debugPrint('Notification Body: ${message.notification!.body}');
-        }
-        debugPrint('===================================');
+      AppLogger.startSection('FOREGROUND MESSAGE RECEIVED', emoji: '📨');
+      AppLogger.log(
+        'NotificationService',
+        'Platform: ${kIsWeb ? 'Web' : 'Mobile'}',
+        emoji: '📱',
+      );
+      AppLogger.log(
+        'NotificationService',
+        'Message ID: ${message.messageId}',
+        emoji: '🆔',
+      );
+      AppLogger.log(
+        'NotificationService',
+        'Message data: ${message.data}',
+        emoji: '📦',
+      );
+      if (message.notification != null) {
+        AppLogger.log(
+          'NotificationService',
+          'Notification Title: ${message.notification!.title}',
+          emoji: '📰',
+        );
+        AppLogger.log(
+          'NotificationService',
+          'Notification Body: ${message.notification!.body}',
+          emoji: '📝',
+        );
       }
+      AppLogger.endSection();
 
       // Show notification (web will just log, mobile will show popup)
       await _showNotification(message);
@@ -249,17 +286,18 @@ class NotificationService {
           );
           await notificationProvider.refreshNotifications();
         } catch (e) {
-          if (kDebugMode) {
-            debugPrint('Failed to refresh notifications: $e');
-          }
+          AppLogger.error(
+            'NotificationService',
+            'Failed to refresh notifications: $e',
+          );
         }
 
         if (message.notification != null) {
-          if (kDebugMode) {
-            debugPrint(
-              "FCM Foreground: ${message.notification!.title} - ${message.notification!.body}",
-            );
-          }
+          AppLogger.log(
+            'NotificationService',
+            'FCM Foreground: ${message.notification!.title} - ${message.notification!.body}',
+            emoji: '🔔',
+          );
 
           // For web, show an in-app notification using SnackBar
           if (kIsWeb) {
@@ -295,12 +333,18 @@ class NotificationService {
 
     // 4. Handler saat notifikasi di-tap (dari background/terminated)
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      if (kDebugMode) {
-        debugPrint('=== MESSAGE OPENED FROM BACKGROUND ===');
-        debugPrint('Message ID: ${message.messageId}');
-        debugPrint('Message data: ${message.data}');
-        debugPrint('======================================');
-      }
+      AppLogger.startSection('MESSAGE OPENED FROM BACKGROUND', emoji: '📲');
+      AppLogger.log(
+        'NotificationService',
+        'Message ID: ${message.messageId}',
+        emoji: '🆔',
+      );
+      AppLogger.log(
+        'NotificationService',
+        'Message data: ${message.data}',
+        emoji: '📦',
+      );
+      AppLogger.endSection();
 
       // Refresh notification list when opening from background
       final context = navigatorKey.currentState?.context;
@@ -312,9 +356,10 @@ class NotificationService {
           );
           notificationProvider.refreshNotifications();
         } catch (e) {
-          if (kDebugMode) {
-            debugPrint('Failed to refresh notifications: $e');
-          }
+          AppLogger.error(
+            'NotificationService',
+            'Failed to refresh notifications: $e',
+          );
         }
       }
 
@@ -339,30 +384,34 @@ class NotificationService {
 
     // 5. Handler untuk refresh token
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
-      if (kDebugMode) {
-        debugPrint(">>>>> FCM Token Refreshed by Firebase: $newToken <<<<<");
-      }
+      AppLogger.log(
+        'NotificationService',
+        'FCM Token Refreshed by Firebase: $newToken',
+        emoji: '🔄',
+      );
       final context = navigatorKey.currentState?.context;
       if (context != null) {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final prefs = await SharedPreferences.getInstance();
         if (prefs.getBool('isLoggedIn') == true) {
-          if (kDebugMode) {
-            debugPrint(
-              "Mencoba update token FCM yang di-refresh ke backend...",
-            );
-          }
+          AppLogger.log(
+            'NotificationService',
+            'Updating refreshed FCM token to backend...',
+            emoji: '📡',
+          );
           // Kirim token baru ke backend
           await authProvider.updateFcmToken(newToken: newToken);
         } else {
-          if (kDebugMode) {
-            debugPrint("Pengguna tidak login, token refresh diabaikan.");
-          }
+          AppLogger.warning(
+            'NotificationService',
+            'User not logged in, token refresh ignored',
+          );
         }
       } else {
-        if (kDebugMode) {
-          debugPrint("Konteks tidak tersedia untuk update token refresh.");
-        }
+        AppLogger.warning(
+          'NotificationService',
+          'Context not available for token refresh update',
+        );
       }
     });
 
@@ -370,10 +419,16 @@ class NotificationService {
     RemoteMessage? initialMessage = await FirebaseMessaging.instance
         .getInitialMessage();
     if (initialMessage != null) {
-      if (kDebugMode) {
-        debugPrint('App opened from terminated state via notification!');
-        debugPrint('Initial message data: ${initialMessage.data}');
-      }
+      AppLogger.log(
+        'NotificationService',
+        'App opened from terminated state via notification!',
+        emoji: '🚀',
+      );
+      AppLogger.log(
+        'NotificationService',
+        'Initial message data: ${initialMessage.data}',
+        emoji: '📦',
+      );
       // Logika navigasi berdasarkan initialMessage.data (mirip onMessageOpenedApp)
       if (initialMessage.data['status'] == 'success') {
         WidgetsBinding.instance.addPostFrameCallback((_) {

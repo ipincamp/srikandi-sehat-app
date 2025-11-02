@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/models/cycle_history_model.dart';
+import 'package:app/utils/logger.dart';
 
 class CycleTrackingProvider with ChangeNotifier {
   List<CycleData> _cycleHistory = [];
@@ -24,29 +24,33 @@ class CycleTrackingProvider with ChangeNotifier {
     bool refresh = false,
     required BuildContext context,
   }) async {
-    if (kDebugMode) {
-      debugPrint('┌─────────────────────────────────────────');
-      debugPrint('│ 🔄 [CycleTrackingProvider] Fetch cycle history');
-      debugPrint('│ 🔄 Refresh: $refresh');
-      debugPrint('│ 📄 Current Page: $_currentPage');
-      debugPrint('│ 📊 Has More: $_hasMore');
-    }
-    
+    AppLogger.startSection(
+      'CycleTrackingProvider - Fetch cycle history',
+      emoji: '🔄',
+    );
+    AppLogger.log('CycleTrackingProvider', 'Refresh: $refresh', emoji: '🔄');
+    AppLogger.log(
+      'CycleTrackingProvider',
+      'Current Page: $_currentPage',
+      emoji: '📄',
+    );
+    AppLogger.log('CycleTrackingProvider', 'Has More: $_hasMore', emoji: '📊');
+
     if (refresh) {
       _currentPage = 1;
       _hasMore = true;
       _emptyMessage = null;
-      
-      if (kDebugMode) {
-        debugPrint('│ ♻️ Reset pagination state');
-      }
+
+      AppLogger.log(
+        'CycleTrackingProvider',
+        'Reset pagination state',
+        emoji: '♻️',
+      );
     }
 
     if (!_hasMore && !refresh) {
-      if (kDebugMode) {
-        debugPrint('│ ⚠️ No more data to fetch');
-        debugPrint('└─────────────────────────────────────────');
-      }
+      AppLogger.warning('CycleTrackingProvider', 'No more data to fetch');
+      AppLogger.endSection();
       return;
     }
 
@@ -55,37 +59,44 @@ class CycleTrackingProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      if (kDebugMode) {
-        debugPrint('│ 🔑 Retrieving auth token...');
-      }
-      
+      AppLogger.log(
+        'CycleTrackingProvider',
+        'Retrieving auth token...',
+        emoji: '🔑',
+      );
+
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
       final apiUrl = dotenv.env['API_URL'];
 
-      if (kDebugMode) {
-        debugPrint('│ 🔑 Token: ${token != null ? "✓ (${token.length} chars)" : "✗ Missing"}');
-        debugPrint('│ 🌐 API URL: ${apiUrl ?? "✗ Missing"}');
-      }
+      AppLogger.log(
+        'CycleTrackingProvider',
+        'Token: ${token != null ? "✓ (${token.length} chars)" : "✗ Missing"}',
+        emoji: '🔑',
+      );
+      AppLogger.log(
+        'CycleTrackingProvider',
+        'API URL: ${apiUrl ?? "✗ Missing"}',
+        emoji: '🌐',
+      );
 
       if (token == null || apiUrl == null) {
         _error = 'Token autentikasi atau URL API tidak ditemukan';
         _isLoading = false;
         notifyListeners();
-        
-        if (kDebugMode) {
-          debugPrint('│ ❌ Missing token or API URL');
-          debugPrint('└─────────────────────────────────────────');
-        }
+
+        AppLogger.error('CycleTrackingProvider', 'Missing token or API URL');
+        AppLogger.endSection();
         return;
       }
 
       final url = '$apiUrl/menstrual/cycles?page=$_currentPage&limit=10';
-      
-      if (kDebugMode) {
-        debugPrint('│ 🌐 Request URL: $url');
-        debugPrint('│ 📡 Fetching data...');
-      }
+
+      AppLogger.apiRequest(
+        method: 'GET',
+        endpoint: '/menstrual/cycles?page=$_currentPage&limit=10',
+        token: token,
+      );
 
       final response = await http
           .get(
@@ -97,73 +108,83 @@ class CycleTrackingProvider with ChangeNotifier {
           )
           .timeout(const Duration(seconds: 10));
 
-      if (kDebugMode) {
-        debugPrint('│ 📊 Response Status: ${response.statusCode}');
-      }
-
       final responseData = json.decode(response.body) as Map<String, dynamic>;
       final cycleResponse = CycleHistoryResponse.fromJson(responseData);
 
       if (response.statusCode == 200) {
-        if (kDebugMode) {
-          debugPrint('│ ✅ Request successful');
-          debugPrint('│ 📦 Received ${cycleResponse.data.length} cycles');
-          debugPrint('│ 📊 Total Data: ${cycleResponse.metadata.totalData}');
-        }
-        
+        AppLogger.apiResponse(
+          statusCode: response.statusCode,
+          endpoint: '/menstrual/cycles',
+          data: cycleResponse.data,
+        );
+        AppLogger.log(
+          'CycleTrackingProvider',
+          'Received ${cycleResponse.data.length} cycles',
+          emoji: '📦',
+        );
+        AppLogger.log(
+          'CycleTrackingProvider',
+          'Total Data: ${cycleResponse.metadata.totalData}',
+          emoji: '📊',
+        );
+
         if (cycleResponse.data.isEmpty && refresh) {
           _emptyMessage = 'Belum ada data siklus';
-          
-          if (kDebugMode) {
-            debugPrint('│ 📭 No cycle data available');
-          }
+          AppLogger.warning('CycleTrackingProvider', 'No cycle data available');
         }
 
         if (refresh) {
           _cycleHistory = cycleResponse.data;
-          
-          if (kDebugMode) {
-            debugPrint('│ 🔄 Replaced cycle history (refresh)');
-          }
+          AppLogger.log(
+            'CycleTrackingProvider',
+            'Replaced cycle history (refresh)',
+            emoji: '🔄',
+          );
         } else {
           _cycleHistory.addAll(cycleResponse.data);
-          
-          if (kDebugMode) {
-            debugPrint('│ ➕ Appended to cycle history');
-          }
+          AppLogger.log(
+            'CycleTrackingProvider',
+            'Appended to cycle history',
+            emoji: '➕',
+          );
         }
 
         _hasMore = _cycleHistory.length < cycleResponse.metadata.totalData;
         _currentPage++;
-        
-        if (kDebugMode) {
-          debugPrint('│ 📊 Current Total: ${_cycleHistory.length}');
-          debugPrint('│ 📄 Next Page: $_currentPage');
-          debugPrint('│ 📊 Has More: $_hasMore');
-          debugPrint('│ ✅ Fetch completed successfully');
-          debugPrint('└─────────────────────────────────────────');
-        }
+
+        AppLogger.log(
+          'CycleTrackingProvider',
+          'Current Total: ${_cycleHistory.length}',
+          emoji: '📊',
+        );
+        AppLogger.log(
+          'CycleTrackingProvider',
+          'Next Page: $_currentPage',
+          emoji: '📄',
+        );
+        AppLogger.log(
+          'CycleTrackingProvider',
+          'Has More: $_hasMore',
+          emoji: '📊',
+        );
+        AppLogger.endSection(message: '✅ Fetch completed successfully');
       } else {
         _error = cycleResponse.message.isNotEmpty
             ? cycleResponse.message
             : 'Gagal memuat riwayat siklus: ${response.statusCode}';
-        
-        if (kDebugMode) {
-          debugPrint('│ ❌ Request failed');
-          debugPrint('│ 📊 Status: ${response.statusCode}');
-          debugPrint('│ 💬 Error: $_error');
-          debugPrint('└─────────────────────────────────────────');
-        }
+
+        AppLogger.apiResponse(
+          statusCode: response.statusCode,
+          endpoint: '/menstrual/cycles',
+          errorMessage: _error,
+        );
+        AppLogger.endSection();
       }
     } catch (e) {
       _error = 'Error: ${e.toString()}';
-      
-      if (kDebugMode) {
-        debugPrint('│ ❌ Exception caught');
-        debugPrint('│ 🔥 Error type: ${e.runtimeType}');
-        debugPrint('│ 💬 Error: $_error');
-        debugPrint('└─────────────────────────────────────────');
-      }
+
+      AppLogger.exception(category: 'CycleTrackingProvider', error: e);
+      AppLogger.endSection();
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -176,23 +197,21 @@ class CycleTrackingProvider with ChangeNotifier {
   }
 
   void resetState() {
-    if (kDebugMode) {
-      debugPrint('┌─────────────────────────────────────────');
-      debugPrint('│ 🔄 [CycleTrackingProvider] Reset state');
-      debugPrint('│ 📊 Previous cycle count: ${_cycleHistory.length}');
-    }
-    
+    AppLogger.startSection('CycleTrackingProvider - Reset state', emoji: '🔄');
+    AppLogger.log(
+      'CycleTrackingProvider',
+      'Previous cycle count: ${_cycleHistory.length}',
+      emoji: '📊',
+    );
+
     _cycleHistory.clear();
     _currentPage = 1;
     _hasMore = true;
     _isLoading = false;
     _error = null;
     _emptyMessage = null;
-    
-    if (kDebugMode) {
-      debugPrint('│ ✅ State reset completed');
-      debugPrint('└─────────────────────────────────────────');
-    }
+
+    AppLogger.endSection(message: '✅ State reset completed');
     notifyListeners();
   }
 }

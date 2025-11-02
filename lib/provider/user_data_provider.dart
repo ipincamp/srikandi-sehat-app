@@ -1,9 +1,9 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:app/core/network/http_client.dart';
 import 'package:app/models/user_model.dart';
 import 'package:app/widgets/custom_alert.dart';
+import 'package:app/utils/logger.dart';
 
 class UserDataProvider with ChangeNotifier {
   List<UserModel> _allUsers = [];
@@ -25,13 +25,18 @@ class UserDataProvider with ChangeNotifier {
     int page = 1,
     int? classification, // 1 for urban, 2 for rural
   }) async {
-    if (kDebugMode) {
-      debugPrint('┌─────────────────────────────────────────');
-      debugPrint('│ 👥 [UserDataProvider] Fetch users');
-      debugPrint('│ 📄 Page: $page');
-      debugPrint('│ 🏙️ Classification: ${classification == null ? "All" : (classification == 1 ? "Urban" : classification == 2 ? "Rural" : "All")}');
-    }
-    
+    AppLogger.startSection('UserDataProvider - Fetch users', emoji: '👥');
+    AppLogger.log('UserDataProvider', 'Page: $page', emoji: '📄');
+    AppLogger.log(
+      'UserDataProvider',
+      'Classification: ${classification == null ? "All" : (classification == 1
+                ? "Urban"
+                : classification == 2
+                ? "Rural"
+                : "All")}',
+      emoji: '🏙️',
+    );
+
     _isLoading = true;
     _selectedClassification = classification;
     notifyListeners();
@@ -49,49 +54,52 @@ class UserDataProvider with ChangeNotifier {
       final queryString = Uri(queryParameters: queryParams).query;
       final endpoint = 'admin/users?$queryString';
 
-      if (kDebugMode) {
-        debugPrint('│ 🌐 Endpoint: $endpoint');
-        debugPrint('│ 📡 Fetching users...');
-      }
+      AppLogger.log('UserDataProvider', 'Endpoint: $endpoint', emoji: '🌐');
+      AppLogger.log('UserDataProvider', 'Fetching users...', emoji: '📡');
 
       // Use HttpClient
       final response = await HttpClient.get(context, endpoint, body: {});
 
-      if (kDebugMode) {
-        debugPrint('│ 📊 Response Status: ${response.statusCode}');
-      }
+      AppLogger.apiResponse(
+        statusCode: response.statusCode,
+        endpoint: endpoint,
+      );
 
       final jsonData = jsonDecode(response.body);
-      
+
       // Handle case when data is null
       if (jsonData['data']['data'] == null) {
         _allUsers = []; // Set empty list instead of null
         _currentPage = 1;
         _totalPages = 1;
-        
-        if (kDebugMode) {
-          debugPrint('│ 📭 No user data available');
-        }
+
+        AppLogger.warning('UserDataProvider', 'No user data available');
       } else {
         final List<dynamic> userList = jsonData['data']['data'];
         _allUsers = userList.map((json) => UserModel.fromJson(json)).toList();
         _currentPage = jsonData['data']['meta']['current_page'] ?? 1;
         _totalPages = jsonData['data']['meta']['total_pages'] ?? 1;
-        
-        if (kDebugMode) {
-          debugPrint('│ ✅ Fetched ${_allUsers.length} users');
-          debugPrint('│ 📄 Current Page: $_currentPage');
-          debugPrint('│ 📊 Total Pages: $_totalPages');
-        }
+
+        AppLogger.success(
+          'UserDataProvider',
+          'Fetched ${_allUsers.length} users',
+        );
+        AppLogger.log(
+          'UserDataProvider',
+          'Current Page: $_currentPage',
+          emoji: '📄',
+        );
+        AppLogger.log(
+          'UserDataProvider',
+          'Total Pages: $_totalPages',
+          emoji: '📊',
+        );
       }
-      
+
       _isLoading = false;
-      
-      if (kDebugMode) {
-        debugPrint('│ ✅ Fetch completed successfully');
-        debugPrint('└─────────────────────────────────────────');
-      }
-      
+
+      AppLogger.endSection(message: '✅ Fetch completed successfully');
+
       notifyListeners();
     } catch (e) {
       _isLoading = false;
@@ -100,20 +108,13 @@ class UserDataProvider with ChangeNotifier {
       _currentPage = 1;
       _totalPages = 1;
 
-      if (kDebugMode) {
-        debugPrint('│ ❌ Exception caught');
-        debugPrint('│ 🔥 Error type: ${e.runtimeType}');
-        debugPrint('│ 💬 Error: ${e.toString()}');
-      }
+      AppLogger.exception(category: 'UserDataProvider', error: e);
 
       // Only show error for actual connection issues, not for empty data
       if (e.toString().contains('Connection') ||
           e.toString().contains('Socket')) {
-        
-        if (kDebugMode) {
-          debugPrint('│ 🌐 Network error detected');
-        }
-        
+        AppLogger.warning('UserDataProvider', 'Network error detected');
+
         CustomAlert.show(
           context,
           'Tidak ada Koneksi Internet\nTidak Bisa Mendapatkan Data User',
@@ -122,9 +123,7 @@ class UserDataProvider with ChangeNotifier {
         );
       }
 
-      if (kDebugMode) {
-        debugPrint('└─────────────────────────────────────────');
-      }
+      AppLogger.endSection();
 
       notifyListeners();
     }
