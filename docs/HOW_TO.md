@@ -93,6 +93,20 @@ For web development, ensure you have the following files in place:
 └── pubspec.yaml
 ```
 
+Currently, Google login support is not available on the web. However, if you want to test the initialization, you can add the value of `GOOGLE_CLIENT_ID` in the `web/index.html` file.
+
+**Method 1:** Add the following line inside the `<head>` tag in `web/index.html`:
+
+```html
+<meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID">
+```
+
+**Method 2:** Use the `sed` command in the terminal to replace the placeholder with your client ID value:
+
+```bash
+sed -i 's|YOUR_GOOGLE_CLIENT_ID|YOUR_CLIENT_ID_VALUE_HERE|g' web/index.html
+```
+
 ## Logging
 
 To enable detailed logging for Flutter commands, you can pipe the output through `grep` to filter for specific keywords. For example, to see all log entries related to "flutter", you can use the following command:
