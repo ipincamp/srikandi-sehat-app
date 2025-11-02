@@ -93,6 +93,14 @@ For web development, ensure you have the following files in place:
 └── pubspec.yaml
 ```
 
+## Logging
+
+To enable detailed logging for Flutter commands, you can pipe the output through `grep` to filter for specific keywords. For example, to see all log entries related to "flutter", you can use the following command:
+
+```bash
+flutter run | grep -i "flutter"
+```
+
 ## Contact Information
 
 For any questions or assistance, please mention @ipincamp on GitHub or reach out via [email](mailto:support@nur-arifin.my.id). If you don't receive a response within 24 hours, feel free to send a follow-up message.
