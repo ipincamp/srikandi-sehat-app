@@ -1,10 +1,11 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/models/symptom_history_model.dart';
+import 'package:app/utils/logger.dart';
 
 class SymptomHistoryProvider with ChangeNotifier {
   List<Symptom> _symptoms = [];
@@ -38,6 +39,13 @@ class SymptomHistoryProvider with ChangeNotifier {
     int? limit,
     bool isRefresh = false,
   }) async {
+    if (kDebugMode) {
+      AppLogger.startSection('SymptomHistoryProvider - Fetch', emoji: '📊');
+      AppLogger.info('SymptomHistory', 'Date: ${date != null ? DateFormat('yyyy-MM-dd').format(date) : "All dates"}');
+      AppLogger.info('SymptomHistory', 'Page: $page, Limit: ${limit ?? _limit}');
+      AppLogger.info('SymptomHistory', 'Refresh: $isRefresh');
+    }
+    
     if (!isRefresh) _isLoading = true;
     _selectedDate = date;
     if (limit != null) _limit = limit;
@@ -55,6 +63,15 @@ class SymptomHistoryProvider with ChangeNotifier {
         url += '&date=$formattedDate';
       }
 
+      if (kDebugMode) {
+        AppLogger.apiRequest(
+          method: 'GET',
+          endpoint: '/menstrual/symptoms/history',
+          token: token,
+        );
+        AppLogger.info('SymptomHistory', 'Full URL: $url');
+      }
+
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -64,24 +81,62 @@ class SymptomHistoryProvider with ChangeNotifier {
         },
       );
 
+      if (kDebugMode) {
+        AppLogger.apiResponse(
+          statusCode: response.statusCode,
+          endpoint: '/menstrual/symptoms/history',
+        );
+      }
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = SymptomHistoryResponse.fromJson(jsonDecode(response.body));
         _symptoms = data.data.data;
         _metadata = data.data.metadata;
         _errorMessage = '';
+        
+        if (kDebugMode) {
+          AppLogger.success('SymptomHistory', 'Fetched ${_symptoms.length} symptoms');
+          AppLogger.info('SymptomHistory', 'Total: ${_metadata.totalData}, Pages: ${_metadata.totalPages}');
+          AppLogger.endSection(message: '│ ✅ Fetch completed successfully');
+        }
       } else if (response.statusCode == 401) {
         _errorMessage = 'Unauthorized access. Please log in again.';
+        
+        if (kDebugMode) {
+          AppLogger.error('SymptomHistory', _errorMessage);
+          AppLogger.endSection();
+        }
+        
         throw Exception(_errorMessage);
       } else if (response.statusCode == 404) {
         _errorMessage = 'No symptom history found for the selected date.';
         _symptoms = [];
+        
+        if (kDebugMode) {
+          AppLogger.warning('SymptomHistory', _errorMessage);
+          AppLogger.endSection();
+        }
       } else {
-        throw Exception(
-          'Failed to load symptom history: ${response.statusCode}',
-        );
+        final errorMsg = 'Failed to load symptom history: ${response.statusCode}';
+        
+        if (kDebugMode) {
+          AppLogger.error('SymptomHistory', errorMsg);
+          AppLogger.endSection();
+        }
+        
+        throw Exception(errorMsg);
       }
     } catch (e) {
       _errorMessage = 'Error fetching symptom history: $e';
+      
+      if (kDebugMode) {
+        AppLogger.exception(
+          category: 'SymptomHistory',
+          error: e,
+        );
+        AppLogger.endSection();
+      }
+      
       rethrow;
     } finally {
       _isLoading = false;
@@ -90,18 +145,30 @@ class SymptomHistoryProvider with ChangeNotifier {
   }
 
   Future<void> setLimit(int newLimit) async {
+    if (kDebugMode) {
+      AppLogger.info('SymptomHistory', 'Setting limit to: $newLimit');
+    }
     await fetchSymptomHistory(limit: newLimit, page: 1);
   }
 
   Future<void> goToPage(int page) async {
+    if (kDebugMode) {
+      AppLogger.info('SymptomHistory', 'Going to page: $page');
+    }
     await fetchSymptomHistory(page: page);
   }
 
   Future<void> refreshData() async {
+    if (kDebugMode) {
+      AppLogger.info('SymptomHistory', 'Refreshing data');
+    }
     await fetchSymptomHistory(isRefresh: true);
   }
 
   Future<void> clearDateFilter() async {
+    if (kDebugMode) {
+      AppLogger.info('SymptomHistory', 'Clearing date filter');
+    }
     _selectedDate = null;
     await fetchSymptomHistory(page: 1);
   }

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:app/utils/logger.dart';
 
 class MarkdownScreen extends StatefulWidget {
   final String title;
@@ -32,11 +33,11 @@ class _MarkdownScreenState extends State<MarkdownScreen> {
   Future<void> _loadMarkdown() async {
     try {
       if (kDebugMode) {
-        debugPrint('✅ Loading markdown from: ${widget.assetPath}');
+        AppLogger.info('Markdown', 'Loading from: ${widget.assetPath}');
       }
       final data = await rootBundle.loadString(widget.assetPath);
       if (kDebugMode) {
-        debugPrint('✅ Markdown loaded successfully: ${data.length} characters');
+        AppLogger.success('Markdown', 'Loaded successfully: ${data.length} chars');
       }
 
       if (mounted) {
@@ -47,7 +48,10 @@ class _MarkdownScreenState extends State<MarkdownScreen> {
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('❌ Error loading markdown: $e');
+        AppLogger.exception(
+          category: 'Markdown',
+          error: e,
+        );
       }
       if (mounted) {
         setState(() {

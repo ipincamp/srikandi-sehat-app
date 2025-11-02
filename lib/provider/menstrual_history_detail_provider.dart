@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/models/menstural_history_detail_model.dart';
+import 'package:app/utils/logger.dart';
 
 class MenstrualHistoryDetailProvider with ChangeNotifier {
   MenstrualCycleDetail? _detail;
@@ -19,15 +20,14 @@ class MenstrualHistoryDetailProvider with ChangeNotifier {
   Future<void> fetchCycleDetail(int cycleId) async {
     if (_isLoading) {
       if (kDebugMode) {
-        debugPrint('⚠️ [MenstrualHistoryDetailProvider] Already loading, skipping');
+        AppLogger.warning('MenstrualHistoryDetail', 'Already loading, skipping');
       }
       return;
     }
 
     if (kDebugMode) {
-      debugPrint('┌─────────────────────────────────────────');
-      debugPrint('│ 📋 [MenstrualHistoryDetailProvider] Fetch cycle detail');
-      debugPrint('│ 🆔 Cycle ID: $cycleId');
+      AppLogger.startSection('MenstrualHistoryDetail - Fetch', emoji: '📋');
+      AppLogger.info('MenstrualHistoryDetail', 'Cycle ID: $cycleId');
     }
 
     _isLoading = true;
@@ -41,9 +41,12 @@ class MenstrualHistoryDetailProvider with ChangeNotifier {
       final url = '$baseUrl/menstrual/cycles/$cycleId';
 
       if (kDebugMode) {
-        debugPrint('│ 🔑 Token: ${token.isNotEmpty ? "✓ (${token.length} chars)" : "✗ Missing"}');
-        debugPrint('│ 🌐 API URL: $url');
-        debugPrint('│ 📡 Fetching detail...');
+        AppLogger.apiRequest(
+          method: 'GET',
+          endpoint: '/menstrual/cycles/$cycleId',
+          token: token,
+        );
+        AppLogger.info('MenstrualHistoryDetail', 'Full URL: $url');
       }
 
       final response = await http.get(
@@ -55,7 +58,10 @@ class MenstrualHistoryDetailProvider with ChangeNotifier {
       );
 
       if (kDebugMode) {
-        debugPrint('│ 📊 Response Status: ${response.statusCode}');
+        AppLogger.apiResponse(
+          statusCode: response.statusCode,
+          endpoint: '/menstrual/cycles/$cycleId',
+        );
       }
 
       if (response.statusCode == 200) {
@@ -64,39 +70,36 @@ class MenstrualHistoryDetailProvider with ChangeNotifier {
           _detail = MenstrualCycleDetail.fromJson(jsonData['data']);
           
           if (kDebugMode) {
-            debugPrint('│ ✅ Detail fetched successfully');
-            debugPrint('│ 📅 Start Date: ${_detail?.startDate}');
-            debugPrint('│ 📅 Finish Date: ${_detail?.finishDate ?? "Ongoing"}');
-            debugPrint('│ ✅ Fetch completed');
-            debugPrint('└─────────────────────────────────────────');
+            AppLogger.success('MenstrualHistoryDetail', 'Detail fetched successfully');
+            AppLogger.info('MenstrualHistoryDetail', 'Start: ${_detail?.startDate}');
+            AppLogger.info('MenstrualHistoryDetail', 'Finish: ${_detail?.finishDate ?? "Ongoing"}');
+            AppLogger.endSection(message: '│ ✅ Fetch completed');
           }
         } else {
           _error = 'Data tidak tersedia';
           
           if (kDebugMode) {
-            debugPrint('│ ❌ No data in response');
-            debugPrint('│ 💬 Error: $_error');
-            debugPrint('└─────────────────────────────────────────');
+            AppLogger.error('MenstrualHistoryDetail', 'No data in response');
+            AppLogger.endSection();
           }
         }
       } else {
         _error = 'Gagal memuat data: ${response.statusCode}';
         
         if (kDebugMode) {
-          debugPrint('│ ❌ Failed to fetch detail');
-          debugPrint('│ 📊 Status: ${response.statusCode}');
-          debugPrint('│ 💬 Error: $_error');
-          debugPrint('└─────────────────────────────────────────');
+          AppLogger.error('MenstrualHistoryDetail', _error ?? 'Unknown error');
+          AppLogger.endSection();
         }
       }
     } catch (e) {
       _error = 'Error: ${e.toString()}';
       
       if (kDebugMode) {
-        debugPrint('│ ❌ Exception caught');
-        debugPrint('│ 🔥 Error type: ${e.runtimeType}');
-        debugPrint('│ 💬 Error: $_error');
-        debugPrint('└─────────────────────────────────────────');
+        AppLogger.exception(
+          category: 'MenstrualHistoryDetail',
+          error: e,
+        );
+        AppLogger.endSection();
       }
     } finally {
       _isLoading = false;
@@ -107,16 +110,15 @@ class MenstrualHistoryDetailProvider with ChangeNotifier {
   Future<void> deleteCycleDetail(int cycleId, String reason) async {
     if (_isLoading) {
       if (kDebugMode) {
-        debugPrint('⚠️ [MenstrualHistoryDetailProvider] Already loading, skipping delete');
+        AppLogger.warning('MenstrualHistoryDetail', 'Already loading, skipping delete');
       }
       return;
     }
 
     if (kDebugMode) {
-      debugPrint('┌─────────────────────────────────────────');
-      debugPrint('│ 🗑️ [MenstrualHistoryDetailProvider] Delete cycle');
-      debugPrint('│ 🆔 Cycle ID: $cycleId');
-      debugPrint('│ 📝 Reason: $reason');
+      AppLogger.startSection('MenstrualHistoryDetail - Delete', emoji: '🗑️');
+      AppLogger.info('MenstrualHistoryDetail', 'Cycle ID: $cycleId');
+      AppLogger.info('MenstrualHistoryDetail', 'Reason: $reason');
     }
 
     _isLoading = true;
@@ -130,9 +132,12 @@ class MenstrualHistoryDetailProvider with ChangeNotifier {
       final url = '$baseUrl/menstrual/cycles/$cycleId';
 
       if (kDebugMode) {
-        debugPrint('│ 🔑 Token: ${token.isNotEmpty ? "✓ (${token.length} chars)" : "✗ Missing"}');
-        debugPrint('│ 🌐 API URL: $url');
-        debugPrint('│ 📡 Sending delete request...');
+        AppLogger.apiRequest(
+          method: 'DELETE',
+          endpoint: '/menstrual/cycles/$cycleId',
+          token: token,
+          body: {'reason': reason},
+        );
       }
 
       final response = await http.delete(
@@ -145,17 +150,19 @@ class MenstrualHistoryDetailProvider with ChangeNotifier {
       );
 
       if (kDebugMode) {
-        debugPrint('│ 📊 Response Status: ${response.statusCode}');
+        AppLogger.apiResponse(
+          statusCode: response.statusCode,
+          endpoint: '/menstrual/cycles/$cycleId',
+        );
       }
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         _detail = null;
         
         if (kDebugMode) {
-          debugPrint('│ ✅ Cycle deleted successfully');
-          debugPrint('│ 🗑️ Detail cleared from state');
-          debugPrint('│ ✅ Delete completed');
-          debugPrint('└─────────────────────────────────────────');
+          AppLogger.success('MenstrualHistoryDetail', 'Cycle deleted successfully');
+          AppLogger.info('MenstrualHistoryDetail', 'Detail cleared from state');
+          AppLogger.endSection(message: '│ ✅ Delete completed');
         }
         
         // message:
@@ -164,20 +171,19 @@ class MenstrualHistoryDetailProvider with ChangeNotifier {
         _error = 'Gagal Menghapus Siklus';
         
         if (kDebugMode) {
-          debugPrint('│ ❌ Failed to delete cycle');
-          debugPrint('│ 📊 Status: ${response.statusCode}');
-          debugPrint('│ 💬 Error: $_error');
-          debugPrint('└─────────────────────────────────────────');
+          AppLogger.error('MenstrualHistoryDetail', _error ?? 'Unknown error');
+          AppLogger.endSection();
         }
       }
     } catch (e) {
       _error = 'Error: ${e.toString()}';
       
       if (kDebugMode) {
-        debugPrint('│ ❌ Exception caught');
-        debugPrint('│ 🔥 Error type: ${e.runtimeType}');
-        debugPrint('│ 💬 Error: $_error');
-        debugPrint('└─────────────────────────────────────────');
+        AppLogger.exception(
+          category: 'MenstrualHistoryDetail',
+          error: e,
+        );
+        AppLogger.endSection();
       }
     } finally {
       _isLoading = false;
@@ -187,9 +193,8 @@ class MenstrualHistoryDetailProvider with ChangeNotifier {
 
   void clear() {
     if (kDebugMode) {
-      debugPrint('┌─────────────────────────────────────────');
-      debugPrint('│ 🧹 [MenstrualHistoryDetailProvider] Clear state');
-      debugPrint('│ 📊 Had detail: ${_detail != null}');
+      AppLogger.startSection('MenstrualHistoryDetail - Clear', emoji: '🧹');
+      AppLogger.info('MenstrualHistoryDetail', 'Had detail: ${_detail != null}');
     }
     
     _detail = null;
@@ -198,8 +203,8 @@ class MenstrualHistoryDetailProvider with ChangeNotifier {
     notifyListeners();
     
     if (kDebugMode) {
-      debugPrint('│ ✅ State cleared');
-      debugPrint('└─────────────────────────────────────────');
+      AppLogger.success('MenstrualHistoryDetail', 'State cleared');
+      AppLogger.endSection();
     }
   }
 }

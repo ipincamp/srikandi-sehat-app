@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/models/notification_model.dart';
+import 'package:app/utils/logger.dart';
 
 class NotificationProvider with ChangeNotifier {
   List<NotificationModel> _notifications = [];
@@ -21,7 +22,7 @@ class NotificationProvider with ChangeNotifier {
   // Method to refresh notifications when FCM message received
   Future<void> refreshNotifications() async {
     if (kDebugMode) {
-      debugPrint('🔄 Refreshing notifications after FCM message...');
+      AppLogger.info('Notification', 'Refreshing after FCM message');
     }
     await fetchNotifications();
   }
@@ -30,20 +31,19 @@ class NotificationProvider with ChangeNotifier {
   Future<void> loadInitialNotifications() async {
     if (_hasLoadedOnce) {
       if (kDebugMode) {
-        debugPrint('⏭️ Notifications already loaded, skipping fetch');
+        AppLogger.info('Notification', 'Already loaded, skipping');
       }
       return;
     }
     if (kDebugMode) {
-      debugPrint('📥 Loading initial notifications...');
+      AppLogger.info('Notification', 'Loading initial notifications');
     }
     await fetchNotifications();
   }
 
   Future<void> fetchNotifications() async {
     if (kDebugMode) {
-      debugPrint('┌─────────────────────────────────────────');
-      debugPrint('│ 📡 [NotificationProvider] Fetching notifications...');
+      AppLogger.startSection('Notification - Fetch', emoji: '📡');
     }
     
     _isLoading = true;
@@ -57,8 +57,12 @@ class NotificationProvider with ChangeNotifier {
       final url = '$baseUrl/notifications';
 
       if (kDebugMode) {
-        debugPrint('│ 🌐 API URL: $url');
-        debugPrint('│ 🔑 Token: ${token != null ? "Present (${token.length} chars)" : "Missing"}');
+        AppLogger.apiRequest(
+          method: 'GET',
+          endpoint: '/notifications',
+          token: token,
+        );
+        AppLogger.info('Notification', 'Full URL: $url');
       }
 
       final response = await http.get(
@@ -70,7 +74,10 @@ class NotificationProvider with ChangeNotifier {
       );
 
       if (kDebugMode) {
-        debugPrint('│ 📊 Response Status: ${response.statusCode}');
+        AppLogger.apiResponse(
+          statusCode: response.statusCode,
+          endpoint: '/notifications',
+        );
       }
 
       if (response.statusCode == 200) {
@@ -84,24 +91,25 @@ class NotificationProvider with ChangeNotifier {
         _hasLoadedOnce = true;
 
         if (kDebugMode) {
-          debugPrint('│ ✅ Success: Fetched ${_notifications.length} notifications');
-          debugPrint('│ 📬 Unread: $_unreadCount');
-          debugPrint('│ 📭 Read: ${_notifications.length - _unreadCount}');
-          debugPrint('└─────────────────────────────────────────');
+          AppLogger.success('Notification', 'Fetched ${_notifications.length} notifications');
+          AppLogger.info('Notification', 'Unread: $_unreadCount, Read: ${_notifications.length - _unreadCount}');
+          AppLogger.endSection();
         }
       } else {
         _error = 'Gagal memuat notifikasi';
         if (kDebugMode) {
-          debugPrint('│ ❌ Error: HTTP ${response.statusCode}');
-          debugPrint('│ 📄 Response: ${response.body}');
-          debugPrint('└─────────────────────────────────────────');
+          AppLogger.error('Notification', 'HTTP ${response.statusCode}');
+          AppLogger.endSection();
         }
       }
     } catch (e) {
       _error = 'Terjadi kesalahan: ${e.toString()}';
       if (kDebugMode) {
-        debugPrint('│ ❌ Exception: $e');
-        debugPrint('└─────────────────────────────────────────');
+        AppLogger.exception(
+          category: 'Notification',
+          error: e,
+        );
+        AppLogger.endSection();
       }
     } finally {
       _isLoading = false;
@@ -111,9 +119,8 @@ class NotificationProvider with ChangeNotifier {
 
   Future<void> markAsRead(int notificationId) async {
     if (kDebugMode) {
-      debugPrint('┌─────────────────────────────────────────');
-      debugPrint('│ 📖 [NotificationProvider] Marking notification as read');
-      debugPrint('│ 🆔 Notification ID: $notificationId');
+      AppLogger.startSection('Notification - Mark Read', emoji: '📖');
+      AppLogger.info('Notification', 'ID: $notificationId');
     }
     
     // Cari notifikasi di list lokal
@@ -121,11 +128,11 @@ class NotificationProvider with ChangeNotifier {
     if (index == -1 || _notifications[index].isRead) {
       if (kDebugMode) {
         if (index == -1) {
-          debugPrint('│ ⚠️ Notification not found in local list');
+          AppLogger.warning('Notification', 'Not found in local list');
         } else {
-          debugPrint('│ ⏭️ Notification already marked as read');
+          AppLogger.info('Notification', 'Already marked as read');
         }
-        debugPrint('└─────────────────────────────────────────');
+        AppLogger.endSection();
       }
       return;
     }
@@ -135,8 +142,8 @@ class NotificationProvider with ChangeNotifier {
     _unreadCount = _notifications.where((n) => !n.isRead).length;
     
     if (kDebugMode) {
-      debugPrint('│ ✅ Optimistically updated UI');
-      debugPrint('│ 📬 Unread count: $_unreadCount');
+      AppLogger.success('Notification', 'Optimistically updated UI');
+      AppLogger.info('Notification', 'Unread count: $_unreadCount');
     }
     
     notifyListeners();
@@ -148,7 +155,11 @@ class NotificationProvider with ChangeNotifier {
       final url = '$baseUrl/notifications/$notificationId/read';
 
       if (kDebugMode) {
-        debugPrint('│ 🌐 API URL: $url');
+        AppLogger.apiRequest(
+          method: 'PATCH',
+          endpoint: '/notifications/$notificationId/read',
+          token: token,
+        );
       }
 
       final response = await http.patch(
@@ -160,7 +171,10 @@ class NotificationProvider with ChangeNotifier {
       );
 
       if (kDebugMode) {
-        debugPrint('│ 📊 Response Status: ${response.statusCode}');
+        AppLogger.apiResponse(
+          statusCode: response.statusCode,
+          endpoint: '/notifications/$notificationId/read',
+        );
       }
 
       if (response.statusCode != 200) {
@@ -170,14 +184,13 @@ class NotificationProvider with ChangeNotifier {
         notifyListeners();
         
         if (kDebugMode) {
-          debugPrint('│ ❌ Failed to mark as read - reverting state');
-          debugPrint('│ 📄 Response: ${response.body}');
-          debugPrint('└─────────────────────────────────────────');
+          AppLogger.warning('Notification', 'Failed - reverting state');
+          AppLogger.endSection();
         }
       } else {
         if (kDebugMode) {
-          debugPrint('│ ✅ Successfully marked as read on server');
-          debugPrint('└─────────────────────────────────────────');
+          AppLogger.success('Notification', 'Marked as read on server');
+          AppLogger.endSection();
         }
       }
     } catch (e) {
@@ -187,9 +200,12 @@ class NotificationProvider with ChangeNotifier {
       notifyListeners();
       
       if (kDebugMode) {
-        debugPrint('│ ❌ Exception: $e');
-        debugPrint('│ 🔄 Reverted to unread state');
-        debugPrint('└─────────────────────────────────────────');
+        AppLogger.exception(
+          category: 'Notification',
+          error: e,
+        );
+        AppLogger.info('Notification', 'Reverted to unread state');
+        AppLogger.endSection();
       }
     }
   }

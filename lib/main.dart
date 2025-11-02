@@ -57,16 +57,38 @@ import 'package:app/screens/admin/main_screen.dart' as admin;
 // Widgets
 import 'package:app/widgets/markdown_screen.dart';
 
+// Utils
+import 'package:app/utils/logger.dart';
+
 // GlobalKey untuk Navigator
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (kDebugMode) {
+    AppLogger.startSection('App Initialization', emoji: '🚀');
+    AppLogger.info('Main', 'Flutter binding initialized');
+  }
+
   await dotenv.load(fileName: ".env");
+
+  if (kDebugMode) {
+    AppLogger.success('Main', 'Environment variables loaded');
+  }
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
+  if (kDebugMode) {
+    AppLogger.success('Main', 'Firebase initialized');
+  }
+
   await NotificationService().initialize(navigatorKey);
+
+  if (kDebugMode) {
+    AppLogger.success('Main', 'Notification service initialized');
+    AppLogger.endSection(message: '│ ✅ App initialization completed');
+  }
 
   runApp(
     DevicePreview(

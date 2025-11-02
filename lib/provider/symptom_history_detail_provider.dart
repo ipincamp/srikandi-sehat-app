@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/models/symptom_detail_model.dart';
+import 'package:app/utils/logger.dart';
 
 class SymptomDetailProvider with ChangeNotifier {
   SymptomDetail? _detail;
@@ -18,15 +19,14 @@ class SymptomDetailProvider with ChangeNotifier {
   Future<void> fetchDetail(int id) async {
     if (_isLoading) {
       if (kDebugMode) {
-        debugPrint('⚠️ [SymptomDetailProvider] Already loading, skipping');
+        AppLogger.warning('SymptomDetail', 'Already loading, skipping');
       }
       return;
     }
 
     if (kDebugMode) {
-      debugPrint('┌─────────────────────────────────────────');
-      debugPrint('│ 📋 [SymptomDetailProvider] Fetch symptom detail');
-      debugPrint('│ 🆔 Log ID: $id');
+      AppLogger.startSection('SymptomDetail - Fetch', emoji: '📋');
+      AppLogger.info('SymptomDetail', 'Log ID: $id');
     }
 
     _isLoading = true;
@@ -40,9 +40,12 @@ class SymptomDetailProvider with ChangeNotifier {
       final url = '$baseUrl/menstrual/symptoms/log/$id';
 
       if (kDebugMode) {
-        debugPrint('│ 🔑 Token: ${token.isNotEmpty ? "✓ (${token.length} chars)" : "✗ Missing"}');
-        debugPrint('│ 🌐 API URL: $url');
-        debugPrint('│ 📡 Fetching detail...');
+        AppLogger.apiRequest(
+          method: 'GET',
+          endpoint: '/menstrual/symptoms/log/$id',
+          token: token,
+        );
+        AppLogger.info('SymptomDetail', 'Full URL: $url');
       }
 
       final response = await http.get(
@@ -54,7 +57,10 @@ class SymptomDetailProvider with ChangeNotifier {
       );
 
       if (kDebugMode) {
-        debugPrint('│ 📊 Response Status: ${response.statusCode}');
+        AppLogger.apiResponse(
+          statusCode: response.statusCode,
+          endpoint: '/menstrual/symptoms/log/$id',
+        );
       }
 
       if (response.statusCode == 200) {
@@ -62,30 +68,28 @@ class SymptomDetailProvider with ChangeNotifier {
         _detail = SymptomDetail.fromJson(jsonData['data']);
         
         if (kDebugMode) {
-          debugPrint('│ ✅ Detail fetched successfully');
-          debugPrint('│ 📅 Log Date: ${_detail?.logDate}');
-          debugPrint('│ 🔢 Symptom Count: ${_detail?.details.length ?? 0}');
-          debugPrint('│ ✅ Fetch completed');
-          debugPrint('└─────────────────────────────────────────');
+          AppLogger.success('SymptomDetail', 'Detail fetched successfully');
+          AppLogger.info('SymptomDetail', 'Log Date: ${_detail?.logDate}');
+          AppLogger.info('SymptomDetail', 'Symptom Count: ${_detail?.details.length ?? 0}');
+          AppLogger.endSection(message: '│ ✅ Fetch completed');
         }
       } else {
         _error = 'Failed to load data: ${response.statusCode}';
         
         if (kDebugMode) {
-          debugPrint('│ ❌ Failed to fetch detail');
-          debugPrint('│ 📊 Status: ${response.statusCode}');
-          debugPrint('│ 💬 Error: $_error');
-          debugPrint('└─────────────────────────────────────────');
+          AppLogger.error('SymptomDetail', _error ?? 'Unknown error');
+          AppLogger.endSection();
         }
       }
     } catch (e) {
       _error = 'Error: ${e.toString()}';
       
       if (kDebugMode) {
-        debugPrint('│ ❌ Exception caught');
-        debugPrint('│ 🔥 Error type: ${e.runtimeType}');
-        debugPrint('│ 💬 Error: $_error');
-        debugPrint('└─────────────────────────────────────────');
+        AppLogger.exception(
+          category: 'SymptomDetail',
+          error: e,
+        );
+        AppLogger.endSection();
       }
     } finally {
       _isLoading = false;
@@ -95,9 +99,8 @@ class SymptomDetailProvider with ChangeNotifier {
 
   void clear() {
     if (kDebugMode) {
-      debugPrint('┌─────────────────────────────────────────');
-      debugPrint('│ 🧹 [SymptomDetailProvider] Clear state');
-      debugPrint('│ 📊 Had detail: ${_detail != null}');
+      AppLogger.startSection('SymptomDetail - Clear', emoji: '🧹');
+      AppLogger.info('SymptomDetail', 'Had detail: ${_detail != null}');
     }
     
     _detail = null;
@@ -106,8 +109,8 @@ class SymptomDetailProvider with ChangeNotifier {
     notifyListeners();
     
     if (kDebugMode) {
-      debugPrint('│ ✅ State cleared');
-      debugPrint('└─────────────────────────────────────────');
+      AppLogger.success('SymptomDetail', 'State cleared');
+      AppLogger.endSection();
     }
   }
 }
