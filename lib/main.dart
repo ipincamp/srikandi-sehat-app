@@ -83,10 +83,18 @@ void main() async {
     AppLogger.success('Main', 'Firebase initialized');
   }
 
-  await NotificationService().initialize(navigatorKey);
+  // DO NOT block app startup on notification initialization.
+  // Initialize NotificationService in background while SplashScreen is shown
+  // so FCM token and handlers are set up without delaying health check / UI.
+  unawaited(NotificationService().initialize(navigatorKey).then((_) {
+    if (kDebugMode) {
+      AppLogger.success('Main', 'Notification service initialized (background)');
+    }
+  }).catchError((e) {
+    AppLogger.error('Main', 'NotificationService init failed: $e');
+  }));
 
   if (kDebugMode) {
-    AppLogger.success('Main', 'Notification service initialized');
     AppLogger.endSection(message: '│ ✅ App initialization completed');
   }
 
