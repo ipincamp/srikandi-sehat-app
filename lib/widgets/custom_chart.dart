@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
-import 'package:app/provider/csv_download_provider.dart';
+import 'package:app/provider/xlsx_report_provider.dart';
 
 class CustomChart extends StatelessWidget {
   final int urbanCount;
@@ -210,8 +210,8 @@ class CustomChart extends StatelessWidget {
     int total, {
     required bool isSmallScreen,
   }) {
-    return Consumer<CsvDownloadProvider>(
-      builder: (context, csv, _) {
+    return Consumer<XlsxReportProvider>(
+      builder: (context, report, _) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -273,12 +273,9 @@ class CustomChart extends StatelessWidget {
                 children: [
                   ElevatedButton.icon(
                     // Ganti onPressed agar menggunakan state baru (misal: isLoadingLink)
-                    onPressed: csv.isDownloading ? null : onDownloadPressed,
+                    onPressed: report.isDownloading ? null : onDownloadPressed,
                     style: ElevatedButton.styleFrom(
-                      // Ganti backgroundColor agar menggunakan state baru
-                      backgroundColor: csv.isDownloading
-                          ? Colors.grey
-                          : Colors.teal,
+                      backgroundColor: report.isDownloading ? Colors.grey : Colors.teal,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -288,47 +285,33 @@ class CustomChart extends StatelessWidget {
                       ),
                     ),
                     icon: Icon(
-                      // Ganti icon jika perlu, atau biarkan sama
-                      csv.isDownloading
-                          ? Icons.hourglass_top
-                          : Icons.link, // Contoh ikon baru
+                      report.isDownloading ? Icons.hourglass_top : Icons.download,
                       size: isSmallScreen ? 14 : 16,
                       color: Colors.white,
                     ),
                     label: Text(
-                      // Ganti label saat loading
-                      csv.isDownloading ? 'Meminta...' : 'Download Data',
+                      report.isDownloading ? 'Generating...' : 'Download Report',
                       style: TextStyle(
                         fontSize: isSmallScreen ? 12 : 14,
                         color: Colors.white,
                       ),
                     ),
                   ),
-                  // Hapus LinearProgressIndicator karena progress tidak lagi dilacak di app
-                  // if (csv.isDownloading) ...[
-                  //   const SizedBox(height: 8),
-                  //   LinearProgressIndicator(value: csv.downloadProgress),
-                  // ],
-                  if (csv.downloadStatus.isNotEmpty && !csv.isDownloading) ...[
-                    // Tampilkan status terakhir jika tidak sedang loading
+                  if (report.downloadStatus.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Text(
-                      csv.downloadStatus, // Tampilkan pesan status dari provider
+                      report.downloadStatus,
                       style: TextStyle(
                         fontSize: 12,
-                        color: csv.errorMessage.isNotEmpty
-                            ? Colors
-                                  .red // Tampilkan error jika ada
-                            : Colors.blueGrey,
+                        color: report.errorMessage.isNotEmpty ? Colors.red : Colors.blueGrey,
                       ),
-                      textAlign: TextAlign.center, // Pusatkan teks status
+                      textAlign: TextAlign.center,
                     ),
                   ],
-                  // Tampilkan pesan error jika ada dan tidak sedang loading
-                  if (csv.errorMessage.isNotEmpty && !csv.isDownloading) ...[
+                  if (report.errorMessage.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Text(
-                      csv.errorMessage,
+                      report.errorMessage,
                       style: const TextStyle(fontSize: 12, color: Colors.red),
                       textAlign: TextAlign.center,
                     ),

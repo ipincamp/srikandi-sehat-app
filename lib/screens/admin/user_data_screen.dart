@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:app/provider/csv_download_provider.dart';
+import 'package:app/provider/xlsx_report_provider.dart';
 import 'package:app/provider/user_data_provider.dart';
 import 'package:app/provider/user_data_stats_provider.dart';
 import 'package:app/widgets/custom_chart.dart';
@@ -69,12 +69,15 @@ class _UserDataScreenState extends State<UserDataScreen> {
                     CustomChart(
                       urbanCount: urbanCount,
                       ruralCount: ruralCount,
-                      onDownloadPressed: () {
-                        final provider = Provider.of<CsvDownloadProvider>(
+                      onDownloadPressed: () async {
+                        final provider = Provider.of<XlsxReportProvider>(
                           context,
                           listen: false,
                         );
-                        provider.downloadUserCsv(context);
+                        await provider.generateReport(context);
+                        if (provider.errorMessage.isEmpty && context.mounted) {
+                          await provider.downloadReport(context);
+                        }
                       },
                     ),
                     const SizedBox(height: 20),

@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -7,6 +8,7 @@ import 'package:app/core/network/http_client.dart';
 import 'package:app/widgets/custom_alert.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+@Deprecated('Use XlsxReportProvider instead. Will be removed in future versions.')
 class CsvDownloadProvider with ChangeNotifier {
   bool _isDownloading = false;
   String _downloadStatus = '';
@@ -16,10 +18,11 @@ class CsvDownloadProvider with ChangeNotifier {
   String get downloadStatus => _downloadStatus;
   String get errorMessage => _errorMessage;
 
+  @Deprecated('Use XlsxReportProvider.generateReport() instead.')
   Future<void> downloadUserCsv(BuildContext context) async {
     if (kDebugMode) {
       debugPrint('┌─────────────────────────────────────────');
-      debugPrint('│ 📥 [CSVDownloadProvider] Download user CSV');
+      debugPrint('│ ⚠️ [DEPRECATED] CSV Download Provider');
     }
     
     _isDownloading = true;

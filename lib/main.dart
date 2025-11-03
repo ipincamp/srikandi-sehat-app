@@ -11,7 +11,8 @@ import 'package:app/firebase_options.dart';
 
 // Providers
 import 'package:app/provider/auth_provider.dart';
-import 'package:app/provider/csv_download_provider.dart';
+// import 'package:app/provider/csv_download_provider.dart';
+import 'package:app/provider/xlsx_report_provider.dart';
 import 'package:app/provider/cycle_tracking_provider.dart';
 import 'package:app/provider/cycle_provider.dart';
 import 'package:app/provider/district_provider.dart';
@@ -131,7 +132,8 @@ class AppProviders extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => DistrictProvider()),
         ChangeNotifierProvider(create: (_) => VillageProvider()),
         ChangeNotifierProvider(create: (_) => ProfileChangeProvider()),
-        ChangeNotifierProvider(create: (_) => CsvDownloadProvider()),
+        // ChangeNotifierProvider(create: (_) => CsvDownloadProvider()),
+        ChangeNotifierProvider(create: (_) => XlsxReportProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => HealthProvider()),
       ],
