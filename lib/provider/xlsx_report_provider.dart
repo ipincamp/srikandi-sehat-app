@@ -3,7 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:app/core/network/http_client.dart';
 import 'package:app/models/xlsx_report_model.dart';
 import 'package:app/widgets/custom_alert.dart';
@@ -120,9 +121,42 @@ class XlsxReportProvider with ChangeNotifier {
 
       if (response.statusCode == 200) {
         try {
-          // Get the application documents directory
-          final directory = await getApplicationDocumentsDirectory();
-          final filePath = '${directory.path}/srikandisehat_report_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+          // Request appropriate permissions based on Android version
+          bool permissionGranted = false;
+          if (Platform.isAndroid) {
+            if (await Permission.storage.request().isGranted) {
+              permissionGranted = true;
+            } else {
+              // For Android 13 and above, request the new permissions
+              final androidInfo = await DeviceInfoPlugin().androidInfo;
+              if (androidInfo.version.sdkInt >= 33) {
+                // Request media permissions for Android 13+
+                await Permission.photos.request();
+                await Permission.videos.request();
+                await Permission.audio.request();
+                permissionGranted = await Permission.photos.isGranted;
+              } else {
+                // For older Android versions
+                permissionGranted = await Permission.storage.request().isGranted;
+              }
+            }
+          } else {
+            // For iOS or other platforms, we'll use the documents directory
+            permissionGranted = true;
+          }
+
+          if (!permissionGranted) {
+            throw Exception('Storage permission is required to save the file');
+          }
+
+          // Create custom directory in Downloads folder
+          final baseDir = Directory('/storage/emulated/0/Download/SrikandiSehat');
+          if (!await baseDir.exists()) {
+            await baseDir.create(recursive: true);
+          }
+          
+          final fileName = 'report_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+          final filePath = '${baseDir.path}/$fileName';
           final file = File(filePath);
 
           // Save response bytes directly to file
