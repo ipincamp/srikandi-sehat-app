@@ -20,7 +20,10 @@ class MenstrualHistoryDetailProvider with ChangeNotifier {
   Future<void> fetchCycleDetail(int cycleId) async {
     if (_isLoading) {
       if (kDebugMode) {
-        AppLogger.warning('MenstrualHistoryDetail', 'Already loading, skipping');
+        AppLogger.warning(
+          'MenstrualHistoryDetail',
+          'Already loading, skipping',
+        );
       }
       return;
     }
@@ -68,16 +71,25 @@ class MenstrualHistoryDetailProvider with ChangeNotifier {
         final jsonData = jsonDecode(response.body);
         if (jsonData['data'] != null) {
           _detail = MenstrualCycleDetail.fromJson(jsonData['data']);
-          
+
           if (kDebugMode) {
-            AppLogger.success('MenstrualHistoryDetail', 'Detail fetched successfully');
-            AppLogger.info('MenstrualHistoryDetail', 'Start: ${_detail?.startDate}');
-            AppLogger.info('MenstrualHistoryDetail', 'Finish: ${_detail?.finishDate ?? "Ongoing"}');
+            AppLogger.success(
+              'MenstrualHistoryDetail',
+              'Detail fetched successfully',
+            );
+            AppLogger.info(
+              'MenstrualHistoryDetail',
+              'Start: ${_detail?.startDate}',
+            );
+            AppLogger.info(
+              'MenstrualHistoryDetail',
+              'Finish: ${_detail?.finishDate ?? "Ongoing"}',
+            );
             AppLogger.endSection(message: '│ ✅ Fetch completed');
           }
         } else {
           _error = 'Data tidak tersedia';
-          
+
           if (kDebugMode) {
             AppLogger.error('MenstrualHistoryDetail', 'No data in response');
             AppLogger.endSection();
@@ -85,7 +97,7 @@ class MenstrualHistoryDetailProvider with ChangeNotifier {
         }
       } else {
         _error = 'Gagal memuat data: ${response.statusCode}';
-        
+
         if (kDebugMode) {
           AppLogger.error('MenstrualHistoryDetail', _error ?? 'Unknown error');
           AppLogger.endSection();
@@ -93,12 +105,9 @@ class MenstrualHistoryDetailProvider with ChangeNotifier {
       }
     } catch (e) {
       _error = 'Error: ${e.toString()}';
-      
+
       if (kDebugMode) {
-        AppLogger.exception(
-          category: 'MenstrualHistoryDetail',
-          error: e,
-        );
+        AppLogger.exception(category: 'MenstrualHistoryDetail', error: e);
         AppLogger.endSection();
       }
     } finally {
@@ -110,7 +119,10 @@ class MenstrualHistoryDetailProvider with ChangeNotifier {
   Future<void> deleteCycleDetail(int cycleId, String reason) async {
     if (_isLoading) {
       if (kDebugMode) {
-        AppLogger.warning('MenstrualHistoryDetail', 'Already loading, skipping delete');
+        AppLogger.warning(
+          'MenstrualHistoryDetail',
+          'Already loading, skipping delete',
+        );
       }
       return;
     }
@@ -158,18 +170,21 @@ class MenstrualHistoryDetailProvider with ChangeNotifier {
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         _detail = null;
-        
+
         if (kDebugMode) {
-          AppLogger.success('MenstrualHistoryDetail', 'Cycle deleted successfully');
+          AppLogger.success(
+            'MenstrualHistoryDetail',
+            'Cycle deleted successfully',
+          );
           AppLogger.info('MenstrualHistoryDetail', 'Detail cleared from state');
           AppLogger.endSection(message: '│ ✅ Delete completed');
         }
-        
+
         // message:
         'Siklus berhasil dihapus';
       } else {
         _error = 'Gagal Menghapus Siklus';
-        
+
         if (kDebugMode) {
           AppLogger.error('MenstrualHistoryDetail', _error ?? 'Unknown error');
           AppLogger.endSection();
@@ -177,12 +192,9 @@ class MenstrualHistoryDetailProvider with ChangeNotifier {
       }
     } catch (e) {
       _error = 'Error: ${e.toString()}';
-      
+
       if (kDebugMode) {
-        AppLogger.exception(
-          category: 'MenstrualHistoryDetail',
-          error: e,
-        );
+        AppLogger.exception(category: 'MenstrualHistoryDetail', error: e);
         AppLogger.endSection();
       }
     } finally {
@@ -194,14 +206,17 @@ class MenstrualHistoryDetailProvider with ChangeNotifier {
   void clear() {
     if (kDebugMode) {
       AppLogger.startSection('MenstrualHistoryDetail - Clear', emoji: '🧹');
-      AppLogger.info('MenstrualHistoryDetail', 'Had detail: ${_detail != null}');
+      AppLogger.info(
+        'MenstrualHistoryDetail',
+        'Had detail: ${_detail != null}',
+      );
     }
-    
+
     _detail = null;
     _isLoading = false;
     _error = null;
     notifyListeners();
-    
+
     if (kDebugMode) {
       AppLogger.success('MenstrualHistoryDetail', 'State cleared');
       AppLogger.endSection();

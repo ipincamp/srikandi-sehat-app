@@ -146,7 +146,7 @@ class CycleProvider with ChangeNotifier {
       debugPrint('│ 🔄 [CycleProvider] Synchronize state');
       debugPrint('│ 📱 Context provided: ${context != null}');
     }
-    
+
     _isLoading = true;
     _hasNetworkError = false;
     notifyListeners();
@@ -157,7 +157,7 @@ class CycleProvider with ChangeNotifier {
       if (kDebugMode) {
         debugPrint('│ 📡 Fetching cycle status from server...');
       }
-      
+
       final responses = await Future.wait([
         _fetchDataFromServer(prefs, 'status'),
       ]);
@@ -173,7 +173,9 @@ class CycleProvider with ChangeNotifier {
       final statusResponseData = responses[0];
 
       if (kDebugMode) {
-        debugPrint('│ 📦 Status data received: ${statusResponseData != null ? "✓" : "✗ Null"}');
+        debugPrint(
+          '│ 📦 Status data received: ${statusResponseData != null ? "✓" : "✗ Null"}',
+        );
       }
 
       // Prioritize status response for isOnCycle
@@ -181,14 +183,14 @@ class CycleProvider with ChangeNotifier {
         _isOnCycle = statusResponseData['is_on_cycle'] ?? false;
         statusResponseData['is_on_cycle'] = _isOnCycle;
         _cycleStatus = CycleStatus.fromJson(statusResponseData);
-        
+
         if (kDebugMode) {
           debugPrint('│ 🔄 Is On Cycle: $_isOnCycle (from server)');
         }
       } else {
         // Fallback to local storage if no summary data
         _isOnCycle = prefs.getBool('isOnCycle') ?? _isOnCycle;
-        
+
         if (kDebugMode) {
           debugPrint('│ 🔄 Is On Cycle: $_isOnCycle (from local storage)');
         }
@@ -196,7 +198,7 @@ class CycleProvider with ChangeNotifier {
 
       // Save the state to local storage
       await prefs.setBool('isOnCycle', _isOnCycle);
-      
+
       if (kDebugMode) {
         debugPrint('│ 💾 Saved state to local storage');
         debugPrint('│ ✅ Synchronization completed successfully');
@@ -204,15 +206,15 @@ class CycleProvider with ChangeNotifier {
       }
     } catch (e) {
       _hasNetworkError = true;
-      
+
       if (kDebugMode) {
         debugPrint('│ ❌ Exception caught during synchronization');
         debugPrint('│ 🔥 Error type: ${e.runtimeType}');
         debugPrint('│ 💬 Error: ${e.toString()}');
       }
-      
+
       await _handleError(prefs);
-      
+
       if (kDebugMode) {
         debugPrint('└─────────────────────────────────────────');
       }
@@ -258,7 +260,7 @@ class CycleProvider with ChangeNotifier {
       debugPrint('│ 🎬 [CycleProvider] Start cycle');
       debugPrint('│ 📅 Start Date: $startDate');
     }
-    
+
     final prefs = await SharedPreferences.getInstance();
     final isProfileComplete = prefs.getBool('profile_complete') ?? false;
 
@@ -271,7 +273,7 @@ class CycleProvider with ChangeNotifier {
         debugPrint('│ ⚠️ Profile incomplete, showing completion dialog');
         debugPrint('└─────────────────────────────────────────');
       }
-      
+
       await _checkProfileCompletion(context);
       return 'Silakan lengkapi profil terlebih dahulu';
     }
@@ -281,7 +283,7 @@ class CycleProvider with ChangeNotifier {
         debugPrint('│ ⚠️ Already on cycle, cannot start new cycle');
         debugPrint('└─────────────────────────────────────────');
       }
-      
+
       return 'Anda sudah dalam siklus menstruasi. Tidak bisa memulai siklus baru.';
     }
 
@@ -289,14 +291,14 @@ class CycleProvider with ChangeNotifier {
     if (kDebugMode) {
       debugPrint('│ 🌐 Checking internet connection...');
     }
-    
+
     final hasConnection = await _checkInternetConnection();
     if (!hasConnection) {
       if (kDebugMode) {
         debugPrint('│ ❌ No internet connection');
         debugPrint('└─────────────────────────────────────────');
       }
-      
+
       await _showNetworkErrorAlert(context);
       return 'Tidak ada koneksi internet';
     }
@@ -311,12 +313,14 @@ class CycleProvider with ChangeNotifier {
     try {
       final token = prefs.getString('token');
       final apiUrl = dotenv.env['API_URL'];
-      
+
       if (kDebugMode) {
-        debugPrint('│ 🔑 Token: ${token != null ? "✓ (${token.length} chars)" : "✗ Missing"}');
+        debugPrint(
+          '│ 🔑 Token: ${token != null ? "✓ (${token.length} chars)" : "✗ Missing"}',
+        );
         debugPrint('│ 🌐 API URL: ${apiUrl ?? "✗ Missing"}');
       }
-      
+
       if (token == null || token.isEmpty || apiUrl == null || apiUrl.isEmpty) {
         if (kDebugMode) {
           debugPrint('│ ❌ Missing token or API URL');
@@ -327,13 +331,13 @@ class CycleProvider with ChangeNotifier {
 
       final formattedDate = startDate.toLocalIso8601String();
       final url = '$apiUrl/menstrual/cycles';
-      
+
       if (kDebugMode) {
         debugPrint('│ 🌐 API URL: $url');
         debugPrint('│ 📅 Formatted Date: $formattedDate');
         debugPrint('│ 📡 Sending start cycle request...');
       }
-      
+
       final response = await http.post(
         Uri.parse(url),
         headers: {
@@ -353,54 +357,57 @@ class CycleProvider with ChangeNotifier {
           debugPrint('│ ✅ Cycle started successfully');
           debugPrint('│ 🔄 Synchronizing state...');
         }
-        
+
         await synchronizeState(context: context); // This will update isOnCycle
         final responseData = json.decode(response.body);
-        final message = responseData['message']?.toString() ?? 'Siklus berhasil dimulai.';
-        
+        final message =
+            responseData['message']?.toString() ?? 'Siklus berhasil dimulai.';
+
         if (kDebugMode) {
           debugPrint('│ 💬 Message: $message');
           debugPrint('│ ✅ Start cycle process completed');
           debugPrint('└─────────────────────────────────────────');
         }
-        
+
         return message;
       }
       if (response.statusCode == 409) {
         final responseData = json.decode(response.body);
-        final errorMessage = responseData['message']?.toString() ?? 'Siklus sudah dimulai.';
-        
+        final errorMessage =
+            responseData['message']?.toString() ?? 'Siklus sudah dimulai.';
+
         if (kDebugMode) {
           debugPrint('│ ⚠️ Conflict: Cycle already started');
           debugPrint('│ 💬 Error: $errorMessage');
           debugPrint('└─────────────────────────────────────────');
         }
-        
+
         throw Exception(errorMessage);
       } else {
         final responseData = json.decode(response.body);
-        final errorMessage = responseData['message']?.toString() ?? 'Gagal memulai siklus.';
-        
+        final errorMessage =
+            responseData['message']?.toString() ?? 'Gagal memulai siklus.';
+
         if (kDebugMode) {
           debugPrint('│ ❌ Failed to start cycle');
           debugPrint('│ 📊 Status: ${response.statusCode}');
           debugPrint('│ 💬 Error: $errorMessage');
           debugPrint('└─────────────────────────────────────────');
         }
-        
+
         throw Exception(errorMessage);
       }
     } catch (e) {
       _isLoading = false;
       notifyListeners();
-      
+
       if (kDebugMode) {
         debugPrint('│ ❌ Exception caught');
         debugPrint('│ 🔥 Error type: ${e.runtimeType}');
         debugPrint('│ 💬 Error: ${e.toString()}');
         debugPrint('└─────────────────────────────────────────');
       }
-      
+
       rethrow;
     }
   }
@@ -411,19 +418,19 @@ class CycleProvider with ChangeNotifier {
       debugPrint('│ 🏁 [CycleProvider] End cycle');
       debugPrint('│ 📅 Finish Date: $finishDate');
     }
-    
+
     // Check internet connection - Hanya untuk operasi POST
     if (kDebugMode) {
       debugPrint('│ 🌐 Checking internet connection...');
     }
-    
+
     final hasConnection = await _checkInternetConnection();
     if (!hasConnection) {
       if (kDebugMode) {
         debugPrint('│ ❌ No internet connection');
         debugPrint('└─────────────────────────────────────────');
       }
-      
+
       await _showNetworkErrorAlert(context);
       return 'Tidak ada koneksi internet';
     }

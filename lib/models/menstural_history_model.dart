@@ -6,6 +6,9 @@ class MenstrualCycle {
   final int? cycleLength;
   final bool isPeriodNormal;
   final bool? isCycleNormal;
+  final bool? isDeleted;
+  final String? deletionReason;
+  final DateTime? deletedAt;
 
   MenstrualCycle({
     required this.id,
@@ -15,6 +18,9 @@ class MenstrualCycle {
     this.cycleLength,
     required this.isPeriodNormal,
     this.isCycleNormal,
+    this.isDeleted,
+    this.deletionReason,
+    this.deletedAt,
   });
 
   factory MenstrualCycle.fromJson(Map<String, dynamic> json) {
@@ -26,6 +32,13 @@ class MenstrualCycle {
       cycleLength: json['cycle_length'],
       isPeriodNormal: json['is_period_normal'],
       isCycleNormal: json['is_cycle_normal'],
+      isDeleted: json.containsKey('is_deleted') ? json['is_deleted'] : null,
+      deletionReason: json.containsKey('deletion_reason')
+          ? json['deletion_reason']
+          : null,
+      deletedAt: json.containsKey('deleted_at') && json['deleted_at'] != null
+          ? DateTime.parse(json['deleted_at'])
+          : null,
     );
   }
 }

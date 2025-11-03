@@ -425,7 +425,7 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
         elevation: 2,
         shadowColor: Colors.black.withOpacity(0.08),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: InkWell(
+          child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
             Navigator.push(
@@ -435,6 +435,9 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
                   cycleId: item.id,
                   itemNumber: itemNumber,
                   totalItems: provider.totalData,
+                  isDeleted: item.isDeleted ?? false,
+                  deletionReason: item.deletionReason,
+                  deletedAt: item.deletedAt,
                 ),
               ),
             );
@@ -516,6 +519,7 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
                         ),
                         const SizedBox(height: 8),
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Container(
                               padding: const EdgeInsets.all(6),
@@ -530,22 +534,45 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              '${item.periodLength} hari menstruasi',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${item.periodLength} hari menstruasi',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  if (item.isDeleted == true &&
+                                      (item.deletionReason != null && item.deletionReason!.isNotEmpty))
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 6.0),
+                                      child: Text(
+                                        'Dihapus: ${item.deletionReason}',
+                                        style: const TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
-                            const Spacer(),
-                            Icon(
-                              item.isPeriodNormal
-                                  ? Icons.check_circle
-                                  : Icons.warning,
-                              color: item.isPeriodNormal
-                                  ? Colors.green
-                                  : Colors.orange,
-                            ),
+                            const SizedBox(width: 8),
+                            // status / deleted indicator
+                            if (item.isDeleted == true)
+                              Column(
+                                children: const [
+                                  Icon(Icons.delete_forever, color: Colors.red),
+                                ],
+                              )
+                            else
+                              Icon(
+                                item.isPeriodNormal ? Icons.check_circle : Icons.warning,
+                                color: item.isPeriodNormal ? Colors.green : Colors.orange,
+                              ),
                           ],
                         ),
                       ],
@@ -569,7 +596,7 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
                         ),
                       ],
                     ),
-                    child: ElevatedButton.icon(
+                      child: ElevatedButton.icon(
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -578,6 +605,9 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
                               cycleId: item.id,
                               itemNumber: itemNumber,
                               totalItems: provider.totalData,
+                              isDeleted: item.isDeleted ?? false,
+                              deletionReason: item.deletionReason,
+                              deletedAt: item.deletedAt,
                             ),
                           ),
                         );

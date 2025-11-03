@@ -82,10 +82,6 @@ class MenstrualHistoryProvider with ChangeNotifier {
         },
       );
 
-      if (kDebugMode) {
-        debugPrint('│ 📊 Response Status: ${response.statusCode}');
-      }
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = json.decode(response.body);
 

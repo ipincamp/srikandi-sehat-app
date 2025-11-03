@@ -10,12 +10,18 @@ class MenstrualHistoryDetailScreen extends StatefulWidget {
   final int cycleId;
   final int itemNumber;
   final int totalItems;
+  final bool isDeleted;
+  final String? deletionReason;
+  final DateTime? deletedAt;
 
   const MenstrualHistoryDetailScreen({
     super.key,
     required this.cycleId,
     required this.itemNumber,
     required this.totalItems,
+    this.isDeleted = false,
+    this.deletionReason,
+    this.deletedAt,
   });
 
   @override
@@ -45,9 +51,10 @@ class _MenstrualHistoryDetailScreenState
         backgroundColor: Colors.pink,
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: () async {
+          if (!widget.isDeleted)
+            IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: () async {
               final TextEditingController reasonController =
                   TextEditingController();
 
@@ -102,8 +109,8 @@ class _MenstrualHistoryDetailScreenState
                   );
                 }
               }
-            },
-          ),
+              },
+            ),
         ],
       ),
 
@@ -143,6 +150,46 @@ class _MenstrualHistoryDetailScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (widget.isDeleted)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12.0),
+              child: Card(
+                color: Colors.red.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.delete_forever, color: Colors.red),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Siklus ini telah dihapus',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red,
+                              ),
+                            ),
+                            if (widget.deletionReason != null)
+                              Text(
+                                widget.deletionReason!,
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            if (widget.deletedAt != null)
+                              Text(
+                                DateFormat('dd MMM yyyy HH:mm').format(widget.deletedAt!),
+                                style: const TextStyle(color: Colors.grey),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           _buildCycleInfoCard(detail),
           const SizedBox(height: 20),
           _buildSymptomsList(detail.symptoms),
