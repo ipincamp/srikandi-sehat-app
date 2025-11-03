@@ -12,15 +12,36 @@ class CycleHistoryResponse {
   });
 
   factory CycleHistoryResponse.fromJson(Map<String, dynamic> json) {
+    // The API may return two shapes:
+    // 1) { status, message, data: { data: [...], metadata: {...} } }
+    // 2) { status, message, data: [...] }
+    final status = json['status'] ?? false;
+    final message = json['message'] ?? '';
+
+    List<CycleData> cycles = [];
+    Map<String, dynamic> metadataJson = {};
+
+    final dataField = json['data'];
+    if (dataField is List) {
+      // Shape 2: data is directly a list of cycles
+      cycles = List<CycleData>.from(
+        dataField.map((x) => CycleData.fromJson(x)),
+      );
+    } else if (dataField is Map) {
+      // Shape 1: data contains { data: [...], metadata: {...} }
+      final inner = dataField['data'];
+      if (inner is List) {
+        cycles = List<CycleData>.from(inner.map((x) => CycleData.fromJson(x)));
+      }
+      final meta = dataField['metadata'];
+      if (meta is Map<String, dynamic>) metadataJson = meta;
+    }
+
     return CycleHistoryResponse(
-      status: json['status'] ?? false,
-      message: json['message'] ?? '',
-      data: json['data']['data'] != null
-          ? List<CycleData>.from(
-              json['data']['data'].map((x) => CycleData.fromJson(x)),
-            )
-          : [],
-      metadata: CycleMetadata.fromJson(json['data']['metadata'] ?? {}),
+      status: status,
+      message: message,
+      data: cycles,
+      metadata: CycleMetadata.fromJson(metadataJson),
     );
   }
 }
