@@ -64,12 +64,47 @@ class CycleData {
   });
 
   factory CycleData.fromJson(Map<String, dynamic> json) {
+    // Safe parsing with fallbacks for nullable/missing fields
+    final rawId = json['id'];
+    final id = rawId != null ? rawId.toString() : '';
+
+    DateTime parseDate(dynamic value) {
+      if (value == null) return DateTime.now();
+      try {
+        return DateTime.parse(value.toString()).toLocal();
+      } catch (_) {
+        return DateTime.now();
+      }
+    }
+
+    final startDate = parseDate(json['start_date']);
+    final finishDate = parseDate(json['finish_date']);
+
+    int parseInt(dynamic value, {int fallback = 0}) {
+      if (value == null) return fallback;
+      if (value is int) return value;
+      try {
+        return int.parse(value.toString());
+      } catch (_) {
+        return fallback;
+      }
+    }
+
+    final periodLength = parseInt(json['period_length'], fallback: 0);
+
+    int? cycleLength;
+    if (json.containsKey('cycle_length') && json['cycle_length'] != null) {
+      cycleLength = parseInt(json['cycle_length'], fallback: 0);
+    } else {
+      cycleLength = null;
+    }
+
     return CycleData(
-      id: json['id'].toString(),
-      startDate: DateTime.parse(json['start_date']).toLocal(),
-      finishDate: DateTime.parse(json['finish_date']).toLocal(),
-      periodLength: json['period_length'] as int,
-      cycleLength: json['cycle_length'] as int?,
+      id: id,
+      startDate: startDate,
+      finishDate: finishDate,
+      periodLength: periodLength,
+      cycleLength: cycleLength,
     );
   }
 
