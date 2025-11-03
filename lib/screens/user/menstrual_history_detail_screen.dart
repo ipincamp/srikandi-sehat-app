@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:app/models/menstural_history_detail_model.dart';
 import 'package:app/provider/menstrual_history_detail_provider.dart';
 import 'package:app/widgets/custom_alert.dart';
-import 'package:app/widgets/custom_popup.dart';
 
 class MenstrualHistoryDetailScreen extends StatefulWidget {
   final int cycleId;
@@ -31,6 +30,7 @@ class MenstrualHistoryDetailScreen extends StatefulWidget {
 
 class _MenstrualHistoryDetailScreenState
     extends State<MenstrualHistoryDetailScreen> {
+  bool _isDeleting = false;
   @override
   void initState() {
     super.initState();
@@ -53,63 +53,48 @@ class _MenstrualHistoryDetailScreenState
         actions: [
           if (!widget.isDeleted)
             IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () async {
-              final TextEditingController reasonController =
-                  TextEditingController();
+              icon: _isDeleting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.delete),
+              onPressed: _isDeleting
+                  ? null
+                  : () async {
+                      final reason = await _showDeleteReasonDialog();
+                      if (reason == null) return;
 
-              final confirm = await CustomConfirmationPopup.show(
-                context,
-                title: 'Hapus Siklus',
-                message:
-                    'Berikan alasan mengapa kamu ingin menghapus siklus ini:',
-                confirmText: 'Hapus',
-                cancelText: 'Batal',
-                confirmColor: Colors.pink,
-                icon: Icons.delete_forever,
-                additionalWidget: TextField(
-                  controller: reasonController,
-                  decoration: const InputDecoration(
-                    hintText: 'Tulis alasan di sini...',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                  ),
-                  maxLines: 2,
-                ),
-              );
+                      setState(() => _isDeleting = true);
+                      final provider = Provider.of<MenstrualHistoryDetailProvider>(
+                        context,
+                        listen: false,
+                      );
 
-              if (confirm == true) {
-                final reason = reasonController.text.trim().isEmpty
-                    ? 'Tidak ada alasan diberikan'
-                    : reasonController.text.trim();
+                      await provider.deleteCycleDetail(widget.cycleId, reason);
 
-                final provider = Provider.of<MenstrualHistoryDetailProvider>(
-                  context,
-                  listen: false,
-                );
+                      setState(() => _isDeleting = false);
 
-                await provider.deleteCycleDetail(widget.cycleId, reason);
-
-                if (provider.error == null) {
-                  CustomAlert.show(
-                    context,
-                    'Siklus berhasil dihapus',
-                    type: AlertType.success,
-                  );
-                  Navigator.pop(context, true);
-                  return;
-                } else {
-                  CustomAlert.show(
-                    context,
-                    provider.error!,
-                    type: AlertType.error,
-                  );
-                }
-              }
-              },
+                      if (provider.error == null) {
+                        CustomAlert.show(
+                          context,
+                          'Siklus berhasil dihapus',
+                          type: AlertType.success,
+                        );
+                        Navigator.pop(context, true);
+                        return;
+                      } else {
+                        CustomAlert.show(
+                          context,
+                          provider.error!,
+                          type: AlertType.error,
+                        );
+                      }
+                    },
             ),
         ],
       ),
@@ -141,6 +126,79 @@ class _MenstrualHistoryDetailScreenState
           return _buildDetailContent(provider.detail!);
         },
       ),
+    );
+  }
+
+  Future<String?> _showDeleteReasonDialog() async {
+    final TextEditingController controller = TextEditingController();
+    String? errorText;
+    return await showDialog<String?>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: Row(
+              children: const [
+                Icon(Icons.delete_forever, color: Colors.red),
+                SizedBox(width: 8),
+                Expanded(child: Text('Hapus Siklus')),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Berikan alasan mengapa kamu ingin menghapus siklus ini (minimal 5 karakter):',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: controller,
+                  maxLines: 3,
+                  maxLength: 250,
+                  decoration: InputDecoration(
+                    hintText: 'Tulis alasan di sini...',
+                    border: const OutlineInputBorder(),
+                    errorText: errorText,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(null);
+                },
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () {
+                  final text = controller.text.trim();
+                  if (text.isEmpty) {
+                    setState(() => errorText = 'Alasan wajib diisi');
+                    return;
+                  }
+                  if (text.length < 5) {
+                    setState(() => errorText = 'Minimal 5 karakter');
+                    return;
+                  }
+                  Navigator.of(context).pop(text);
+                },
+                child: const Text('Hapus'),
+              ),
+            ],
+          );
+        });
+      },
     );
   }
 
