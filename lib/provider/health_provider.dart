@@ -39,11 +39,11 @@ class HealthProvider with ChangeNotifier {
 
     try {
       final baseUrl = dotenv.env['API_URL'];
-      
+
       if (kDebugMode) {
         debugPrint('│ 🌐 API URL: ${baseUrl ?? "✗ Missing"}');
       }
-      
+
       if (baseUrl == null || baseUrl.isEmpty) {
         if (kDebugMode) {
           debugPrint('│ ❌ API_URL not configured');
@@ -57,7 +57,9 @@ class HealthProvider with ChangeNotifier {
       final token = prefs.getString('token');
 
       if (kDebugMode) {
-        debugPrint('│ 🔑 Token: ${token != null ? "✓ (${token.length} chars)" : "✗ Not logged in"}');
+        debugPrint(
+          '│ 🔑 Token: ${token != null ? "✓ (${token.length} chars)" : "✗ Not logged in"}',
+        );
         debugPrint('│ 📡 Checking server health...');
       }
 
@@ -94,14 +96,21 @@ class HealthProvider with ChangeNotifier {
           }
         }
         _error = null;
-      } else if (response.statusCode == 503) {
-        // Service Unavailable - maintenance mode
-        final data = jsonDecode(response.body);
-        final status = data['status'] as String?;
+      } else if (response.statusCode == 503 || response.statusCode == 502) {
+        // 502 Bad Gateway or 503 Service Unavailable - treat as maintenance mode
+        String? status;
+        try {
+          final data = jsonDecode(response.body);
+          status = data['status'] as String?;
+        } catch (_) {
+          status = null;
+        }
 
         _isMaintenance = true;
         if (kDebugMode) {
-          debugPrint('│ ⚠️ Server status: MAINTENANCE (503 - $status)');
+          debugPrint(
+            '│ ⚠️ Server status: MAINTENANCE (${response.statusCode} - $status)',
+          );
         }
         _error = null;
       } else {
@@ -114,7 +123,7 @@ class HealthProvider with ChangeNotifier {
           debugPrint('│ ❌ Health check error: ${response.statusCode}');
         }
       }
-      
+
       if (kDebugMode) {
         debugPrint('│ ✅ Health check completed');
         debugPrint('│ 🏥 Is Maintenance: $_isMaintenance');
@@ -126,7 +135,7 @@ class HealthProvider with ChangeNotifier {
       // Pada error koneksi, jangan set maintenance=true
       // agar user tetap bisa menggunakan app offline
       _isMaintenance = false;
-      
+
       if (kDebugMode) {
         debugPrint('│ ❌ Exception caught');
         debugPrint('│ 🔥 Error type: ${e.runtimeType}');
