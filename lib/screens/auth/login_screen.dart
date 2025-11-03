@@ -95,12 +95,15 @@ class _LoginScreenState extends State<LoginScreen> {
       CustomAlert.show(context, 'Login berhasil!', type: AlertType.success);
 
       await Future.delayed(const Duration(seconds: 1));
+      // Ensure the State is still mounted after the delay
+      if (!mounted) return;
 
       if (role == 'user' && !isVerified) {
         if (kDebugMode) {
           debugPrint('│ 🔄 Navigating to OTP verification');
           debugPrint('└─────────────────────────────────────────');
         }
+        if (!mounted) return;
         Navigator.pushNamedAndRemoveUntil(
           context,
           '/verify-otp',
@@ -112,12 +115,14 @@ class _LoginScreenState extends State<LoginScreen> {
           debugPrint('└─────────────────────────────────────────');
         }
         await prefs.setBool('showLoginModal', true);
+        if (!mounted) return;
         Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
       } else if (role == 'admin') {
         if (kDebugMode) {
           debugPrint('│ 🔄 Navigating to admin screen');
           debugPrint('└─────────────────────────────────────────');
         }
+        if (!mounted) return;
         Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
       } else {
         if (kDebugMode) {
@@ -129,6 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
           'Role tidak dikenali: $role',
           type: AlertType.error,
         );
+        if (!mounted) return;
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
     } else {
@@ -176,6 +182,8 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       await Future.delayed(const Duration(seconds: 1));
+      // Re-check mounted after awaiting the delay to ensure the State is still active
+      if (!mounted) return;
 
       if (role == 'user' && !isVerified) {
         if (kDebugMode) {
@@ -193,12 +201,14 @@ class _LoginScreenState extends State<LoginScreen> {
           debugPrint('└─────────────────────────────────────────');
         }
         await prefs.setBool('showLoginModal', true);
+        if (!mounted) return;
         Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
       } else if (role == 'admin') {
         if (kDebugMode) {
           debugPrint('│ 🔄 Navigating to admin screen');
           debugPrint('└─────────────────────────────────────────');
         }
+        if (!mounted) return;
         Navigator.pushNamedAndRemoveUntil(context, '/admin', (route) => false);
       } else {
         if (kDebugMode) {
@@ -210,6 +220,7 @@ class _LoginScreenState extends State<LoginScreen> {
           'Role tidak dikenali: $role',
           type: AlertType.error,
         );
+        if (!mounted) return;
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
     } else {
