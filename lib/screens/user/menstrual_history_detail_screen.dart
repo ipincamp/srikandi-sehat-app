@@ -44,90 +44,98 @@ class _MenstrualHistoryDetailScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: const Text('Detail Siklus Menstruasi'),
-        backgroundColor: Colors.pink,
-        foregroundColor: Colors.white,
-        actions: [
-          if (!widget.isDeleted)
-            IconButton(
-              icon: _isDeleting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(Icons.delete),
-              onPressed: _isDeleting
-                  ? null
-                  : () async {
-                      final reason = await _showDeleteReasonDialog();
-                      if (reason == null) return;
+    return Consumer<MenstrualHistoryDetailProvider>(
+      builder: (context, provider, _) {
+        // Menentukan apakah siklus aktif (belum selesai)
+        final bool isCycleActive =
+            !widget.isDeleted &&
+            (provider.detail == null || provider.detail?.cycleLength == null);
 
-                      setState(() => _isDeleting = true);
-                      final provider =
-                          Provider.of<MenstrualHistoryDetailProvider>(
-                            context,
-                            listen: false,
+        // Tombol hapus hanya muncul jika TIDAK dihapus DAN TIDAK aktif
+        final bool showDeleteButton = !widget.isDeleted && !isCycleActive;
+
+        return Scaffold(
+          backgroundColor: Colors.grey[50],
+          appBar: AppBar(
+            title: const Text('Detail Siklus Menstruasi'),
+            backgroundColor: Colors.pink,
+            foregroundColor: Colors.white,
+            actions: [
+              if (showDeleteButton)
+                IconButton(
+                  icon: _isDeleting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.delete),
+                  onPressed: _isDeleting
+                      ? null
+                      : () async {
+                          final reason = await _showDeleteReasonDialog();
+                          if (reason == null) return;
+
+                          setState(() => _isDeleting = true);
+                          await provider.deleteCycleDetail(
+                            widget.cycleId,
+                            reason,
                           );
 
-                      await provider.deleteCycleDetail(widget.cycleId, reason);
+                          setState(() => _isDeleting = false);
 
-                      setState(() => _isDeleting = false);
-
-                      if (provider.error == null) {
-                        CustomAlert.show(
-                          context,
-                          'Siklus berhasil dihapus',
-                          type: AlertType.success,
-                        );
-                        Navigator.pop(context, true);
-                        return;
-                      } else {
-                        CustomAlert.show(
-                          context,
-                          provider.error!,
-                          type: AlertType.error,
-                        );
-                      }
-                    },
-            ),
-        ],
-      ),
-
-      body: Consumer<MenstrualHistoryDetailProvider>(
-        builder: (context, provider, _) {
-          if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (provider.error != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton(
-                    onPressed: () => provider.fetchCycleDetail(widget.cycleId),
-                    child: const Text('Coba Lagi'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          if (provider.detail == null) {
-            return const Center(child: Text('Data tidak tersedia'));
-          }
-
-          return _buildDetailContent(provider.detail!);
-        },
-      ),
+                          if (provider.error == null) {
+                            CustomAlert.show(
+                              context,
+                              'Siklus berhasil dihapus',
+                              type: AlertType.success,
+                            );
+                            Navigator.pop(context, true);
+                            return;
+                          } else {
+                            CustomAlert.show(
+                              context,
+                              provider.error!,
+                              type: AlertType.error,
+                            );
+                          }
+                        },
+                ),
+            ],
+          ),
+          body: _buildBody(provider),
+        );
+      },
     );
+  }
+
+  Widget _buildBody(MenstrualHistoryDetailProvider provider) {
+    if (provider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (provider.error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: () => provider.fetchCycleDetail(widget.cycleId),
+              child: const Text('Coba Lagi'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (provider.detail == null) {
+      return const Center(child: Text('Data tidak tersedia'));
+    }
+
+    return _buildDetailContent(provider.detail!);
   }
 
   Future<String?> _showDeleteReasonDialog() async {
@@ -262,6 +270,9 @@ class _MenstrualHistoryDetailScreenState
   }
 
   Widget _buildCycleInfoCard(MenstrualCycleDetail detail) {
+    // Tentukan apakah siklus aktif (jika cycleLength masih null)
+    final bool isCycleActive = detail.cycleLength == null;
+
     return Card(
       color: Colors.pink[50],
       child: Padding(
@@ -301,7 +312,11 @@ class _MenstrualHistoryDetailScreenState
             _buildInfoRow(
               icon: Icons.calendar_today,
               label: 'Tanggal Selesai',
-              value: DateFormat('dd MMMM yyyy').format(detail.finishDate),
+              // Jika aktif, tampilkan "Sedang Berlangsung", jika tidak, format tanggal
+              value: isCycleActive
+                  ? 'Sedang Berlangsung'
+                  : DateFormat('dd MMMM yyyy').format(detail.finishDate),
+              valueColor: isCycleActive ? Colors.orange[700] : null,
             ),
             _buildInfoRow(
               icon: Icons.timelapse,
@@ -311,15 +326,17 @@ class _MenstrualHistoryDetailScreenState
             _buildInfoRow(
               icon: Icons.cyclone,
               label: 'Panjang Siklus',
+              // Jika aktif, tampilkan "Belum Selesai"
               value: detail.cycleLength != null
                   ? '${detail.cycleLength} hari'
-                  : 'Sedang Berlangsung',
+                  : 'Belum Selesai',
             ),
             _buildInfoRow(
               icon: Icons.health_and_safety,
               label: 'Status Siklus',
+              // Jika aktif, tampilkan "Belum Selesai"
               value: detail.isCycleNormal == null
-                  ? 'Sedang Berlangsung'
+                  ? 'Belum Selesai'
                   : detail.isCycleNormal!
                   ? 'Normal'
                   : 'Tidak Normal',
@@ -336,6 +353,7 @@ class _MenstrualHistoryDetailScreenState
     required String label,
     required String value,
     bool isWarning = false,
+    Color? valueColor,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -353,7 +371,7 @@ class _MenstrualHistoryDetailScreenState
             value,
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: isWarning ? Colors.orange : Colors.black,
+              color: valueColor ?? (isWarning ? Colors.orange : Colors.black),
             ),
           ),
         ],
