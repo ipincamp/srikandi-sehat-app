@@ -8,7 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:app/core/network/http_client.dart';
 import 'package:app/models/xlsx_report_model.dart';
 import 'package:app/widgets/custom_alert.dart';
-import 'package:open_file/open_file.dart';
+import 'package:intl/intl.dart';
 
 class XlsxReportProvider with ChangeNotifier {
   bool _isDownloading = false;
@@ -45,7 +45,8 @@ class XlsxReportProvider with ChangeNotifier {
           jsonDecode(response.body),
         );
 
-        if (reportResponse.status && reportResponse.data.downloadUrl.isNotEmpty) {
+        if (reportResponse.status &&
+            reportResponse.data.downloadUrl.isNotEmpty) {
           // Extract data from response
           _password = reportResponse.message.split('Password: ').last;
           _encryptedToken = reportResponse.data.encryptedToken;
@@ -137,7 +138,9 @@ class XlsxReportProvider with ChangeNotifier {
                 permissionGranted = await Permission.photos.isGranted;
               } else {
                 // For older Android versions
-                permissionGranted = await Permission.storage.request().isGranted;
+                permissionGranted = await Permission.storage
+                    .request()
+                    .isGranted;
               }
             }
           } else {
@@ -150,12 +153,19 @@ class XlsxReportProvider with ChangeNotifier {
           }
 
           // Create custom directory in Downloads folder
-          final baseDir = Directory('/storage/emulated/0/Download/SrikandiSehat');
+          final baseDir = Directory(
+            '/storage/emulated/0/Download/SrikandiSehat',
+          );
           if (!await baseDir.exists()) {
             await baseDir.create(recursive: true);
           }
-          
-          final fileName = 'report_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+
+          // --- PERUBAHAN REQUEST 2: Format nama file ---
+          final now = DateTime.now();
+          final formattedDate = DateFormat('yyyy-MM-dd_HH-mm-ss').format(now);
+          final fileName = '${formattedDate}_report.xlsx';
+          // --- AKHIR PERUBAHAN REQUEST 2 ---
+
           final filePath = '${baseDir.path}/$fileName';
           final file = File(filePath);
 
@@ -163,21 +173,14 @@ class XlsxReportProvider with ChangeNotifier {
           await file.writeAsBytes(response.bodyBytes);
           _downloadStatus = 'File saved successfully';
 
-          // Open the file
-          final result = await OpenFile.open(filePath);
-          if (result.type == ResultType.done) {
-            _downloadStatus = 'File opened successfully';
-            if (kDebugMode) {
-              debugPrint('│ ✅ File opened successfully');
-            }
-          } else {
-            CustomAlert.show(
-              context,
-              'File saved to: $filePath',
-              type: AlertType.success,
-              duration: const Duration(seconds: 5),
-            );
-          }
+          // --- PERUBAHAN REQUEST 1: Jangan buka file, tampilkan alert ---
+          CustomAlert.show(
+            context,
+            'File disimpan di: $filePath',
+            type: AlertType.success,
+            duration: const Duration(seconds: 5),
+          );
+          // --- AKHIR PERUBAHAN REQUEST 1 ---
 
           if (kDebugMode) {
             debugPrint('│ ✅ File saved successfully');
