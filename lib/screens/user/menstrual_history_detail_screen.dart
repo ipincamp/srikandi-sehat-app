@@ -70,10 +70,11 @@ class _MenstrualHistoryDetailScreenState
                       if (reason == null) return;
 
                       setState(() => _isDeleting = true);
-                      final provider = Provider.of<MenstrualHistoryDetailProvider>(
-                        context,
-                        listen: false,
-                      );
+                      final provider =
+                          Provider.of<MenstrualHistoryDetailProvider>(
+                            context,
+                            listen: false,
+                          );
 
                       await provider.deleteCycleDetail(widget.cycleId, reason);
 
@@ -136,68 +137,70 @@ class _MenstrualHistoryDetailScreenState
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        return StatefulBuilder(builder: (context, setState) {
-          return AlertDialog(
-            title: Row(
-              children: const [
-                Icon(Icons.delete_forever, color: Colors.red),
-                SizedBox(width: 8),
-                Expanded(child: Text('Hapus Siklus')),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Berikan alasan mengapa kamu ingin menghapus siklus ini (minimal 5 karakter):',
-                    style: TextStyle(fontSize: 13),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: controller,
-                  maxLines: 3,
-                  maxLength: 250,
-                  decoration: InputDecoration(
-                    hintText: 'Tulis alasan di sini...',
-                    border: const OutlineInputBorder(),
-                    errorText: errorText,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Row(
+                children: const [
+                  Icon(Icons.delete_forever, color: Colors.red),
+                  SizedBox(width: 8),
+                  Expanded(child: Text('Hapus Siklus')),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Berikan alasan mengapa kamu ingin menghapus siklus ini (minimal 5 karakter):',
+                      style: TextStyle(fontSize: 13),
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: controller,
+                    maxLines: 3,
+                    maxLength: 250,
+                    decoration: InputDecoration(
+                      hintText: 'Tulis alasan di sini...',
+                      border: const OutlineInputBorder(),
+                      errorText: errorText,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(null);
+                  },
+                  child: const Text('Batal'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  onPressed: () {
+                    final text = controller.text.trim();
+                    if (text.isEmpty) {
+                      setState(() => errorText = 'Alasan wajib diisi');
+                      return;
+                    }
+                    if (text.length < 5) {
+                      setState(() => errorText = 'Minimal 5 karakter');
+                      return;
+                    }
+                    Navigator.of(context).pop(text);
+                  },
+                  child: const Text('Hapus'),
                 ),
               ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(null);
-                },
-                child: const Text('Batal'),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                onPressed: () {
-                  final text = controller.text.trim();
-                  if (text.isEmpty) {
-                    setState(() => errorText = 'Alasan wajib diisi');
-                    return;
-                  }
-                  if (text.length < 5) {
-                    setState(() => errorText = 'Minimal 5 karakter');
-                    return;
-                  }
-                  Navigator.of(context).pop(text);
-                },
-                child: const Text('Hapus'),
-              ),
-            ],
-          );
-        });
+            );
+          },
+        );
       },
     );
   }
@@ -237,7 +240,9 @@ class _MenstrualHistoryDetailScreenState
                               ),
                             if (widget.deletedAt != null)
                               Text(
-                                DateFormat('dd MMM yyyy HH:mm').format(widget.deletedAt!),
+                                DateFormat(
+                                  'dd MMM yyyy HH:mm',
+                                ).format(widget.deletedAt!),
                                 style: const TextStyle(color: Colors.grey),
                               ),
                           ],
@@ -306,13 +311,19 @@ class _MenstrualHistoryDetailScreenState
             _buildInfoRow(
               icon: Icons.cyclone,
               label: 'Panjang Siklus',
-              value: '${detail.cycleLength} hari',
+              value: detail.cycleLength != null
+                  ? '${detail.cycleLength} hari'
+                  : 'Sedang Berlangsung',
             ),
             _buildInfoRow(
               icon: Icons.health_and_safety,
               label: 'Status Siklus',
-              value: detail.isCycleNormal ? 'Normal' : 'Tidak Normal',
-              isWarning: !detail.isCycleNormal,
+              value: detail.isCycleNormal == null
+                  ? 'Sedang Berlangsung'
+                  : detail.isCycleNormal!
+                  ? 'Normal'
+                  : 'Tidak Normal',
+              isWarning: detail.isCycleNormal == false,
             ),
           ],
         ),

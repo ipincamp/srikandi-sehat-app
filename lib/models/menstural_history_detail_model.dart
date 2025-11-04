@@ -3,9 +3,9 @@ class MenstrualCycleDetail {
   final DateTime startDate;
   final DateTime finishDate;
   final int periodLength;
-  final int cycleLength;
+  final int? cycleLength;
   final bool isPeriodNormal;
-  final bool isCycleNormal;
+  final bool? isCycleNormal;
   final List<CycleSymptom> symptoms;
 
   MenstrualCycleDetail({
@@ -13,21 +13,36 @@ class MenstrualCycleDetail {
     required this.startDate,
     required this.finishDate,
     required this.periodLength,
-    required this.cycleLength,
+    this.cycleLength,
     required this.isPeriodNormal,
-    required this.isCycleNormal,
+    this.isCycleNormal,
     required this.symptoms,
   });
 
   factory MenstrualCycleDetail.fromJson(Map<String, dynamic> json) {
+    DateTime safeParseDate(dynamic dateString) {
+      if (dateString == null) {
+        // Jika tanggal null (misal siklus aktif),
+        // gunakan tanggal hari ini sebagai fallback
+        return DateTime.now();
+      }
+      try {
+        // Konversi ke string dulu untuk keamanan ekstra
+        return DateTime.parse(dateString.toString());
+      } catch (e) {
+        // Fallback jika format tanggal tidak valid
+        return DateTime.now();
+      }
+    }
+
     return MenstrualCycleDetail(
       id: json['id'] as int? ?? 0,
-      startDate: DateTime.parse(json['start_date'] as String? ?? ''),
-      finishDate: DateTime.parse(json['finish_date'] as String? ?? ''),
+      startDate: safeParseDate(json['start_date']),
+      finishDate: safeParseDate(json['finish_date']),
       periodLength: json['period_length'] as int? ?? 0,
-      cycleLength: json['cycle_length'] as int? ?? 0,
+      cycleLength: json['cycle_length'] as int?,
       isPeriodNormal: json['is_period_normal'] as bool? ?? false,
-      isCycleNormal: json['is_cycle_normal'] as bool? ?? false,
+      isCycleNormal: json['is_cycle_normal'] as bool?,
       symptoms:
           (json['symptoms'] as List<dynamic>?)
               ?.map((e) => CycleSymptom.fromJson(e as Map<String, dynamic>))
@@ -51,9 +66,20 @@ class CycleSymptom {
   });
 
   factory CycleSymptom.fromJson(Map<String, dynamic> json) {
+    DateTime safeParseDate(dynamic dateString) {
+      if (dateString == null) {
+        return DateTime.now();
+      }
+      try {
+        return DateTime.parse(dateString.toString());
+      } catch (e) {
+        return DateTime.now();
+      }
+    }
+
     return CycleSymptom(
       id: json['id'] as int? ?? 0,
-      loggedAt: DateTime.parse(json['logged_at'] as String? ?? ''),
+      loggedAt: safeParseDate(json['logged_at']),
       note: json['note'] as String?,
       details:
           (json['details'] as List<dynamic>?)
