@@ -24,13 +24,28 @@ class MenstrualCycle {
   });
 
   factory MenstrualCycle.fromJson(Map<String, dynamic> json) {
+    DateTime safeParseDate(dynamic dateString) {
+      if (dateString == null) {
+        // Jika tanggal null (misal siklus aktif),
+        // gunakan tanggal hari ini sebagai fallback
+        return DateTime.now();
+      }
+      try {
+        // Konversi ke string dulu untuk keamanan ekstra
+        return DateTime.parse(dateString.toString());
+      } catch (e) {
+        // Fallback jika format tanggal tidak valid
+        return DateTime.now();
+      }
+    }
+
     return MenstrualCycle(
-      id: json['id'],
-      startDate: DateTime.parse(json['start_date']),
-      finishDate: DateTime.parse(json['finish_date']),
-      periodLength: json['period_length'],
+      id: json['id'] ?? 0,
+      startDate: safeParseDate(json['start_date']),
+      finishDate: safeParseDate(json['finish_date']),
+      periodLength: json['period_length'] ?? 0,
       cycleLength: json['cycle_length'],
-      isPeriodNormal: json['is_period_normal'],
+      isPeriodNormal: json['is_period_normal'] ?? false,
       isCycleNormal: json['is_cycle_normal'],
       isDeleted: json.containsKey('is_deleted') ? json['is_deleted'] : null,
       deletionReason: json.containsKey('deletion_reason')
@@ -74,10 +89,10 @@ class Metadata {
 
   factory Metadata.fromJson(Map<String, dynamic> json) {
     return Metadata(
-      limit: json['limit'],
-      totalData: json['total_data'],
-      totalPages: json['total_pages'],
-      currentPage: json['current_page'],
+      limit: json['limit'] ?? 10,
+      totalData: json['total_data'] ?? 0,
+      totalPages: json['total_pages'] ?? 1,
+      currentPage: json['current_page'] ?? 1,
     );
   }
 }
