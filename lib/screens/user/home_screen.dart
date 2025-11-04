@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/provider/cycle_provider.dart';
+import 'package:app/provider/profile_change_provider.dart';
 import 'package:app/provider/symptom_log_get_provider.dart';
 import 'package:app/screens/user/cycle_status_card.dart';
 import 'package:app/widgets/anomaly_recommendation_card.dart';
@@ -29,9 +30,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeData();
-      _checkProfileStatus();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _initializeData();
+      await _checkProfileStatus();
     });
   }
 
@@ -49,11 +50,40 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkProfileStatus();
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    // Check status when screen becomes active again
+    _checkProfileStatus();
+  }
+
   Future<void> _checkProfileStatus() async {
+    if (!mounted) return;
+
+    // Get profile status from provider and ensure it's up to date
+    final profileProvider = Provider.of<ProfileChangeProvider>(
+      context,
+      listen: false,
+    );
+    await profileProvider.fetchProfile(); // Refresh the provider's state
+    final isComplete = profileProvider.profileComplete;
+
+    // Then check SharedPreferences as backup
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _showProfileCard = !(prefs.getBool('profile_complete') ?? false);
-    });
+    final prefsComplete = prefs.getBool('profile_complete') ?? false;
+
+    // Use either source that indicates completion
+    if (mounted) {
+      setState(() {
+        _showProfileCard = !(isComplete || prefsComplete);
+      });
+    }
   }
 
   Future<void> _handleStartCycle() async {
@@ -316,9 +346,7 @@ class _HomeScreenState extends State<HomeScreen> {
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: Colors.pink,
-        actions: [
-         const NotificationIconButton(),
-        ],
+        actions: [const NotificationIconButton()],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),

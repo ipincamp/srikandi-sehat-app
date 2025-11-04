@@ -84,14 +84,23 @@ class ProfileChangeProvider with ChangeNotifier {
     };
   }
 
-  // Parse profile data from API response
-  void _parseProfileData(Map<String, dynamic> userData) {
+  // Parse profile data from API response and update SharedPreferences
+  Future<void> _parseProfileData(Map<String, dynamic> userData) async {
     try {
       _id = userData['id']?.toString();
       _name = userData['name']?.toString();
       _email = userData['email']?.toString();
       _role = userData['role']?.toString();
-      _profileComplete = userData['profile_complete'] == true;
+      
+      final hasCompleteProfile = userData['profile_complete'] == true;
+      _profileComplete = hasCompleteProfile;
+
+      // Always update SharedPreferences when profile data changes
+      await init(); // Ensure _prefs is initialized
+      await _prefs?.setBool('profile_complete', hasCompleteProfile);
+      if (_name != null && _name!.isNotEmpty) {
+        await _prefs?.setString('name', _name!);
+      }
 
       final profile = userData['profile'] ?? {};
       _phone = profile['phone']?.toString();
@@ -337,7 +346,7 @@ class ProfileChangeProvider with ChangeNotifier {
         try {
           final responseData = jsonDecode(response.body);
           if (responseData['data'] != null) {
-            _parseProfileData(responseData['data']);
+            await _parseProfileData(responseData['data']);
             return true;
           }
 

@@ -213,24 +213,35 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _isLoading = false);
 
     if (isSuccess) {
-      await context.read<UserProfileProvider>().loadProfile(
+      // Update both profile providers
+      await Future.wait([
+        context.read<UserProfileProvider>().loadProfile(
+          context,
+          forceRefresh: true,
+        ),
+        Provider.of<ProfileChangeProvider>(
+          context,
+          listen: false,
+        ).fetchProfile(),
+      ]);
+
+      if (!mounted) return;
+      
+      // Show success message
+      CustomAlert.show(
         context,
-        forceRefresh: true,
+        'Profil berhasil diperbarui',
+        type: AlertType.success,
       );
-      if (mounted) {
-        CustomAlert.show(
-          context,
-          'Profil berhasil diperbarui',
-          type: AlertType.success,
-        );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DetailProfileScreen(),
-            settings: RouteSettings(name: '/detail-profile'),
-          ),
-        );
-      }
+
+      // Replace current screen with DetailProfileScreen
+      await Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const DetailProfileScreen(),
+          settings: const RouteSettings(name: '/detail-profile'),
+        ),
+      );
     } else {
       if (mounted) {
         CustomAlert.show(

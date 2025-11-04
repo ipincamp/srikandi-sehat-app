@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/provider/profile_change_provider.dart';
+import 'package:app/screens/user/home_screen.dart';
 import 'package:app/utils/user_calc.dart';
 import 'package:app/widgets/connection_error_card.dart';
 
@@ -29,16 +31,21 @@ class _DetailProfileScreenState extends State<DetailProfileScreen> {
   }
 
   Future<void> _fetchProfileData() async {
-    // Pastikan cek mounted di awal async function juga
     if (!mounted) return;
 
     try {
       setState(() => _isRefreshing = true);
       final profileProvider = context.read<ProfileChangeProvider>();
-      // Panggil fetchProfile tanpa listen: false karena kita memang ingin UI update
-      await profileProvider.fetchProfile();
+      
+      // Fetch profile data
+      final success = await profileProvider.fetchProfile();
+      
+      // Update SharedPreferences with the latest status
+      if (success) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('profile_complete', true);
+      }
     } finally {
-      // Cek mounted lagi setelah await selesai
       if (mounted) {
         setState(() {
           _initialLoadComplete = true;
@@ -233,6 +240,17 @@ class _DetailProfileScreenState extends State<DetailProfileScreen> {
         centerTitle: true,
         backgroundColor: Colors.pink,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () async {
+            // Pop to remove this screen and go back to home
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => const HomeScreen(),
+              ),
+            );
+          },
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
