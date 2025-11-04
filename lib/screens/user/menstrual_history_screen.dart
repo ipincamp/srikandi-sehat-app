@@ -32,6 +32,33 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
     super.dispose();
   }
 
+  Future<void> _navigateToDetail(
+    MenstrualCycle item,
+    int itemNumber,
+    MenstrualHistoryProvider provider,
+  ) async {
+    // Tunggu hasil dari layar detail (kita akan dapat 'true' jika hapus sukses)
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MenstrualHistoryDetailScreen(
+          cycleId: item.id,
+          itemNumber: itemNumber,
+          totalItems: provider.totalData,
+          isDeleted: item.isDeleted ?? false,
+          deletionReason: item.deletionReason,
+          deletedAt: item.deletedAt,
+        ),
+      ),
+    );
+
+    // Jika hasilnya 'true' (artinya delete berhasil) dan widget masih ada
+    if (result == true && mounted) {
+      // Panggil fungsi refresh yang sudah ada
+      _handleRefresh();
+    }
+  }
+
   Future<bool> _checkInternetConnection() async {
     final connectivityResult = await Connectivity().checkConnectivity();
     return connectivityResult != ConnectivityResult.none;
@@ -425,23 +452,9 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
         elevation: 2,
         shadowColor: Colors.black.withOpacity(0.08),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: InkWell(
+        child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => MenstrualHistoryDetailScreen(
-                  cycleId: item.id,
-                  itemNumber: itemNumber,
-                  totalItems: provider.totalData,
-                  isDeleted: item.isDeleted ?? false,
-                  deletionReason: item.deletionReason,
-                  deletedAt: item.deletedAt,
-                ),
-              ),
-            );
-          },
+          onTap: () => _navigateToDetail(item, itemNumber, provider),
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
@@ -546,7 +559,8 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
                                     ),
                                   ),
                                   if (item.isDeleted == true &&
-                                      (item.deletionReason != null && item.deletionReason!.isNotEmpty))
+                                      (item.deletionReason != null &&
+                                          item.deletionReason!.isNotEmpty))
                                     Padding(
                                       padding: const EdgeInsets.only(top: 6.0),
                                       child: Text(
@@ -570,8 +584,12 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
                               )
                             else
                               Icon(
-                                item.isPeriodNormal ? Icons.check_circle : Icons.warning,
-                                color: item.isPeriodNormal ? Colors.green : Colors.orange,
+                                item.isPeriodNormal
+                                    ? Icons.check_circle
+                                    : Icons.warning,
+                                color: item.isPeriodNormal
+                                    ? Colors.green
+                                    : Colors.orange,
                               ),
                           ],
                         ),
@@ -596,22 +614,8 @@ class _MenstrualHistoryScreenState extends State<MenstrualHistoryScreen> {
                         ),
                       ],
                     ),
-                      child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => MenstrualHistoryDetailScreen(
-                              cycleId: item.id,
-                              itemNumber: itemNumber,
-                              totalItems: provider.totalData,
-                              isDeleted: item.isDeleted ?? false,
-                              deletionReason: item.deletionReason,
-                              deletedAt: item.deletedAt,
-                            ),
-                          ),
-                        );
-                      },
+                    child: ElevatedButton.icon(
+                      onPressed: () => _navigateToDetail(item, itemNumber, provider),
                       icon: const Icon(
                         Icons.visibility_rounded,
                         size: 16,
