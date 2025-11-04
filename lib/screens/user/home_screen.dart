@@ -93,7 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final pickedDate = await showDatePicker(
         context: context,
         initialDate: DateTime.now(),
-        firstDate: DateTime.now().subtract(const Duration(days: 30)),
+        firstDate: DateTime.now().subtract(const Duration(days: 90)),
         lastDate: DateTime.now(),
         helpText: 'Pilih tanggal mulai menstruasi',
         cancelText: 'Batal',
@@ -159,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final pickedDate = await showDatePicker(
         context: context,
         initialDate: DateTime.now(),
-        firstDate: DateTime.now().subtract(const Duration(days: 30)),
+        firstDate: DateTime.now().subtract(const Duration(days: 90)),
         lastDate: DateTime.now(),
         helpText: 'Pilih tanggal selesai menstruasi',
         cancelText: 'Batal',
