@@ -226,7 +226,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       ]);
 
       if (!mounted) return;
-      
+
       // Show success message
       CustomAlert.show(
         context,
@@ -234,13 +234,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         type: AlertType.success,
       );
 
-      // Replace current screen with DetailProfileScreen
-      await Navigator.pushReplacement(
+      // Navigate to detail profile screen without replacing
+      Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (context) => const DetailProfileScreen(),
-          settings: const RouteSettings(name: '/detail-profile'),
-        ),
+        MaterialPageRoute(builder: (context) => const DetailProfileScreen()),
       );
     } else {
       if (mounted) {

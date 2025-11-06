@@ -14,6 +14,7 @@ import 'package:app/widgets/log_symptom_button.dart';
 import 'package:app/widgets/notification_icon_button.dart';
 import 'package:app/widgets/reminder_tile.dart';
 import 'package:app/widgets/tips_education_list.dart';
+import 'package:app/screens/user/edit_profile_screen.dart' as user;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -221,7 +222,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildProfileCompletionCard() {
     return GestureDetector(
       onTap: () {
-        Navigator.pushNamed(context, '/edit-profile');
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const user.EditProfileScreen(),
+          ),
+        );
       },
       child: Container(
         width: double.infinity,
