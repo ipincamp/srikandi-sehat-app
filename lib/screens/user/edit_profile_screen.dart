@@ -235,7 +235,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
 
       // Navigate to detail profile screen without replacing
-      Navigator.push(
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const DetailProfileScreen()),
       );

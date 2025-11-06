@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:app/provider/recommendation_provider.dart';
 import 'package:app/widgets/accordion_list.dart';
-import 'package:app/widgets/notification_icon_button.dart';
 import 'package:app/widgets/recommendation_widget.dart';
 
 class EducationScreen extends StatelessWidget {
@@ -10,16 +9,9 @@ class EducationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.pink,
-        title: const Text('Edukasi', style: TextStyle(color: Colors.white)),
-        actions: [NotificationIconButton()],
-      ),
-      body: ChangeNotifierProvider(
-        create: (context) => RecommendationProvider(),
-        child: const EducationContent(),
-      ),
+    return ChangeNotifierProvider(
+      create: (context) => RecommendationProvider(),
+      child: const EducationContent(),
     );
   }
 }

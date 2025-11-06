@@ -11,7 +11,6 @@ import 'package:app/widgets/custom_alert.dart';
 import 'package:app/widgets/custom_popup.dart';
 import 'package:app/widgets/cycle_action_button.dart';
 import 'package:app/widgets/log_symptom_button.dart';
-import 'package:app/widgets/notification_icon_button.dart';
 import 'package:app/widgets/reminder_tile.dart';
 import 'package:app/widgets/tips_education_list.dart';
 import 'package:app/screens/user/edit_profile_screen.dart' as user;
@@ -343,77 +342,65 @@ class _HomeScreenState extends State<HomeScreen> {
     final cycleProvider = context.watch<CycleProvider>();
     final isOnCycle = cycleProvider.isOnCycle;
 
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text(
-          'Srikandi Sehat',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        backgroundColor: Colors.pink,
-        actions: [const NotificationIconButton()],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 10),
-            if (_showProfileCard) _buildProfileCompletionCard(),
-            const SizedBox(height: 4),
-            const CycleStatusCard(),
-            const SizedBox(height: 10),
-            const AnomalyRecommendationCard(),
-            const SizedBox(height: 20),
-            Text(
-              'Aksi Cepat',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
-              ),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 10),
+          if (_showProfileCard) _buildProfileCompletionCard(),
+          const SizedBox(height: 4),
+          const CycleStatusCard(),
+          const SizedBox(height: 10),
+          const AnomalyRecommendationCard(),
+          const SizedBox(height: 20),
+          Text(
+            'Aksi Cepat',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
             ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: CycleActionButtons(
-                    onStart: !isOnCycle ? () => _handleStartCycle() : null,
-                    onEnd: isOnCycle ? () => _handleEndCycle() : null,
-                    isMenstruating:
-                        cycleProvider.cycleStatus?.isMenstruating ?? false,
-                  ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: CycleActionButtons(
+                  onStart: !isOnCycle ? () => _handleStartCycle() : null,
+                  onEnd: isOnCycle ? () => _handleEndCycle() : null,
+                  isMenstruating:
+                      cycleProvider.cycleStatus?.isMenstruating ?? false,
                 ),
-                const SizedBox(width: 10),
-                const Expanded(flex: 1, child: SymptomLogButton()),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Tips & Edukasi Hari Ini',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
               ),
+              const SizedBox(width: 10),
+              const Expanded(flex: 1, child: SymptomLogButton()),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Tips & Edukasi Hari Ini',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
             ),
-            const SizedBox(height: 10),
-            const TipsEducationList(),
-            const SizedBox(height: 20),
-            Text(
-              'Pengingat',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
-              ),
+          ),
+          const SizedBox(height: 10),
+          const TipsEducationList(),
+          const SizedBox(height: 20),
+          Text(
+            'Pengingat',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
             ),
-            const SizedBox(height: 10),
-            // Ganti ReminderTile yang lama dengan widget baru kita
-            _buildAnomalyNotifications(),
-          ],
-        ),
+          ),
+          const SizedBox(height: 10),
+          _buildAnomalyNotifications(),
+        ],
       ),
     );
   }

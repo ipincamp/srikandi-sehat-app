@@ -9,6 +9,7 @@ import 'package:app/screens/user/support_screen.dart';
 import 'package:app/screens/user/cycle_tracking_screen.dart';
 import 'package:app/widgets/health_tips_modal.dart';
 import 'package:app/widgets/navbar_button.dart';
+import 'package:app/widgets/notification_icon_button.dart';
 
 class User {
   final String id;
@@ -28,12 +29,27 @@ class _MainScreenState extends State<MainScreen>
   int _selectedIndex = 0;
   late AnimationController _slideController;
 
+  // Halaman-halaman ini TIDAK BOLEH memiliki Scaffold-nya sendiri
   static const List<Widget> _widgetOptions = <Widget>[
     HomeScreen(),
     CycleTrackingScreen(),
     EducationScreen(),
     SupportScreen(),
     ProfileScreen(),
+  ];
+
+  // Tambahkan daftar AppBar untuk setiap halaman
+  static const List<PreferredSizeWidget?> _appBarOptions = <PreferredSizeWidget?>[
+    // 0: HomeScreen
+    _CustomAppBar(title: 'Srikandi Sehat'),
+    // 1: CycleTrackingScreen
+    _CustomAppBar(title: 'Pelacakan Siklus Haid'),
+    // 2: EducationScreen
+    _CustomAppBar(title: 'Edukasi'),
+    // 3: SupportScreen
+    _CustomAppBar(title: 'Dukungan'),
+    // 4: ProfileScreen
+    _CustomAppBar(title: 'Profile'),
   ];
 
   @override
@@ -174,7 +190,8 @@ class _MainScreenState extends State<MainScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(child: _widgetOptions.elementAt(_selectedIndex)),
+      appBar: _appBarOptions[_selectedIndex],
+      body: _widgetOptions.elementAt(_selectedIndex),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           boxShadow: [
@@ -243,4 +260,26 @@ class _MainScreenState extends State<MainScreen>
       ),
     );
   }
+}
+
+// Widget AppBar kustom yang bisa digunakan ulang
+class _CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final String title;
+  const _CustomAppBar({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      automaticallyImplyLeading: false,
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+      ),
+      backgroundColor: Colors.pink,
+      actions: const [NotificationIconButton()],
+    );
+  }
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }

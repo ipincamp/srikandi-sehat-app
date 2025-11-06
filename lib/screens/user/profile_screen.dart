@@ -3,10 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:app/provider/auth_provider.dart';
 import 'package:app/widgets/custom_alert.dart';
-import 'package:app/widgets/notification_icon_button.dart';
 import 'package:app/widgets/profile_tile.dart';
-import 'package:app/provider/user_profile_provider.dart';
-import 'package:app/widgets/custom_popup.dart';
+import 'package:app/widgets/logout_tile.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -61,293 +59,170 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Future<void> _showLogoutConfirmation(BuildContext context) async {
-    final bool? confirmed = await CustomConfirmationPopup.show(
-      context,
-      title: 'Konfirmasi Logout',
-      message: 'Apakah Anda yakin ingin keluar dari aplikasi?',
-      confirmText: 'Ya',
-      cancelText: 'Batal',
-      confirmColor: Colors.red,
-      icon: Icons.logout,
-    );
-
-    if (confirmed == true) {
-      await _logout(context);
-    }
-  }
-
-  Future<void> _logout(BuildContext context) async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final profileProvider = Provider.of<UserProfileProvider>(
-      context,
-      listen: false,
-    );
-
-    try {
-      // Clear profile cache terlebih dahulu
-      await profileProvider.clearCache();
-
-      // Lakukan logout
-      final success = await authProvider.logout(context);
-
-      if (success) {
-        CustomAlert.show(context, 'Berhasil logout', type: AlertType.success);
-        await Future.delayed(const Duration(milliseconds: 700));
-        if (context.mounted) {
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            '/login',
-            (route) => false,
-          );
-        }
-      } else {
-        if (authProvider.errorMessage.isNotEmpty && context.mounted) {
-          // Tambah cek mounted
-          CustomAlert.show(
-            context,
-            authProvider.errorMessage,
-            type: AlertType.error,
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        // Tambah cek mounted
-        CustomAlert.show(
-          context,
-          'Error saat logout: $e',
-          type: AlertType.error,
-        );
-      }
-    }
-  }
+  // --- Fungsi _showLogoutConfirmation dan _logout dipindahkan ke LogoutTile ---
+  // --- Anda bisa menghapusnya jika sudah ada di LogoutTile ---
+  // --- Tapi jika LogoutTile memanggilnya dari sini, biarkan saja ---
+  // --- Berdasarkan file logout_tile.dart, fungsi ini sudah ada di sana ---
+  // --- Jadi kita HAPUS fungsi _showLogoutConfirmation dan _logout dari SINI ---
 
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.pink,
-        actions: [NotificationIconButton()],
-        title: const Text(
-          'Profile',
-          style: TextStyle(
-            fontSize: 24,
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+    return SingleChildScrollView(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight:
+              MediaQuery.of(context).size.height -
+              kToolbarHeight - // Tinggi AppBar
+              MediaQuery.of(context).padding.top - // Tinggi Status bar
+              kBottomNavigationBarHeight - // Perkiraan tinggi Bottom Nav Bar
+              MediaQuery.of(
+                context,
+              ).padding.bottom, // Tinggi area bawah (jika ada notch/gestures)
         ),
-        automaticallyImplyLeading: false,
-      ),
-      body: SingleChildScrollView(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            // Pastikan Column mengisi setidaknya tinggi layar
-            minHeight:
-                MediaQuery.of(context).size.height -
-                (Scaffold.of(context).appBarMaxHeight ??
-                    kToolbarHeight) - // Tinggi AppBar
-                MediaQuery.of(context).padding.top - // Tinggi Status bar
-                kBottomNavigationBarHeight - // Perkiraan tinggi Bottom Nav Bar
-                MediaQuery.of(
-                  context,
-                ).padding.bottom, // Tinggi area bawah (jika ada notch/gestures)
-          ),
-          child: IntrinsicHeight(
-            child: Column(
-              children: [
-                const SizedBox(height: 16),
-                ProfileTile(
-                  name: _name,
-                  email: _email,
-                  onIconTap: () =>
-                      Navigator.pushNamed(context, '/detail-profile'),
-                ),
-                const Divider(),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Profile',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
+        child: IntrinsicHeight(
+          child: Column(
+            children: [
+              const SizedBox(height: 16),
+              ProfileTile(
+                name: _name,
+                email: _email,
+                onIconTap: () =>
+                    Navigator.pushNamed(context, '/detail-profile'),
+              ),
+              const Divider(),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Profile',
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
+              ),
+              buildListTile(
+                icon: Icons.book,
+                label: 'Riwayat Gejala',
+                color: Colors.red,
+                onTap: () => {Navigator.pushNamed(context, '/symptom-history')},
+              ),
+              buildListTile(
+                icon: Icons.history,
+                label: 'Riwayat Menstruasi',
+                color: Colors.pinkAccent,
+                onTap: () => {
+                  Navigator.pushNamed(context, '/menstrual-history'),
+                },
+              ),
+              buildListTile(
+                icon: Icons.person,
+                label: 'Ubah Profil',
+                color: Colors.orange,
+                onTap: () => {Navigator.pushNamed(context, '/edit-profile')},
+              ),
+              buildListTile(
+                icon: Icons.vpn_key,
+                label: 'Ubah Kata Sandi',
+                color: Colors.blue,
+                onTap: () => {Navigator.pushNamed(context, '/change-password')},
+              ),
+              if (!authProvider.isEmailVerified)
                 buildListTile(
-                  icon: Icons.book,
-                  label: 'Riwayat Gejala',
-                  color: Colors.red,
-                  onTap: () => {
-                    Navigator.pushNamed(context, '/symptom-history'),
-                  },
-                ),
-                buildListTile(
-                  icon: Icons.history,
-                  label: 'Riwayat Menstruasi',
-                  color: Colors.pinkAccent,
-                  onTap: () => {
-                    Navigator.pushNamed(context, '/menstrual-history'),
-                  },
-                ),
-                buildListTile(
-                  icon: Icons.person,
-                  label: 'Ubah Profil',
-                  color: Colors.orange,
-                  onTap: () => {Navigator.pushNamed(context, '/edit-profile')},
-                ),
-                buildListTile(
-                  icon: Icons.vpn_key,
-                  label: 'Ubah Kata Sandi',
-                  color: Colors.blue,
-                  onTap: () => {
-                    Navigator.pushNamed(context, '/change-password'),
-                  },
-                ),
-                if (!authProvider.isEmailVerified)
-                  buildListTile(
-                    icon: Icons.mark_email_read,
-                    label: 'Verifikasi Email',
-                    color: Colors.cyan,
-                    trailing: authProvider.isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.arrow_forward_ios, size: 16),
-                    onTap: authProvider.isLoading
-                        ? null
-                        : () async {
-                            // Ambil provider (listen: false) untuk aksi
-                            final auth = Provider.of<AuthProvider>(
-                              context,
-                              listen: false,
-                            );
+                  icon: Icons.mark_email_read,
+                  label: 'Verifikasi Email',
+                  color: Colors.cyan,
+                  trailing: authProvider.isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: authProvider.isLoading
+                      ? null
+                      : () async {
+                          // Ambil provider (listen: false) untuk aksi
+                          final auth = Provider.of<AuthProvider>(
+                            context,
+                            listen: false,
+                          );
 
-                            // 1. Panggil API untuk kirim email
-                            final success = await auth.resendVerificationEmail(
-                              context,
-                            );
+                          // 1. Panggil API untuk kirim email
+                          final success = await auth.resendVerificationEmail(
+                            context,
+                          );
 
-                            // 2. Jika kirim email sukses, navigasi ke halaman OTP
-                            if (success && mounted) {
-                              Navigator.pushNamed(context, '/verify-otp');
-                            }
-                            // Alert sukses/gagal sudah di-handle di dalam resendVerificationEmail
-                          },
-                  ),
-                buildListTile(
-                  icon: Icons.info_outline,
-                  label: 'Tentang Aplikasi',
-                  color: Colors.teal,
-                  onTap: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Tentang Aplikasi'),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // syarat ketentuan dan kebijakan privasi
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(context); // Tutup dialog
-                                Navigator.pushNamed(context, '/tos');
-                              },
-                              child: const Text('Syarat Ketentuan'),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(context); // Tutup dialog
-                                Navigator.pushNamed(context, '/privacy');
-                              },
-                              child: const Text('Kebijakan Privasi'),
-                            ),
-                            const SizedBox(height: 10),
-                            // versi aplikasi
-                            const Text('Versi Aplikasi: 1.0.0'),
-                          ],
-                        ),
-                        actions: [
+                          // 2. Jika kirim email sukses, navigasi ke halaman OTP
+                          if (success && mounted) {
+                            Navigator.pushNamed(context, '/verify-otp');
+                          }
+                          // Alert sukses/gagal sudah di-handle di dalam resendVerificationEmail
+                        },
+                ),
+              buildListTile(
+                icon: Icons.info_outline,
+                label: 'Tentang Aplikasi',
+                color: Colors.teal,
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Tentang Aplikasi'),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // syarat ketentuan dan kebijakan privasi
                           TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Tutup'),
+                            onPressed: () {
+                              Navigator.pop(context); // Tutup dialog
+                              Navigator.pushNamed(context, '/tos');
+                            },
+                            child: const Text('Syarat Ketentuan'),
                           ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context); // Tutup dialog
+                              Navigator.pushNamed(context, '/privacy');
+                            },
+                            child: const Text('Kebijakan Privasi'),
+                          ),
+                          const SizedBox(height: 10),
+                          // versi aplikasi
+                          const Text('Versi Aplikasi: 1.0.0'),
                         ],
                       ),
-                    );
-                    if (kDebugMode) {
-                      debugPrint('Navigasi ke halaman Tentang Aplikasi');
-                    }
-                  },
-                ),
-
-                // ✅ Checkbox Persetujuan
-                /*
-                const Spacer(),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Center(
-                    child: Wrap(
-                      alignment:
-                          WrapAlignment.center, // penting agar Wrap juga center
-                      children: [
-                        GestureDetector(
-                          onTap: () => Navigator.pushNamed(context, '/tos'),
-                          child: const Text(
-                            'Syarat Ketentuan',
-                            style: TextStyle(
-                              color: Colors.pink,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const Text(' dan '),
-                        GestureDetector(
-                          onTap: () => Navigator.pushNamed(context, '/privacy'),
-                          child: const Text(
-                            'Kebijakan Privasi',
-                            style: TextStyle(
-                              color: Colors.pink,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Tutup'),
                         ),
                       ],
                     ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const LogoutTile(),
-                */
-                const Spacer(),
+                  );
+                  if (kDebugMode) {
+                    debugPrint('Navigasi ke halaman Tentang Aplikasi');
+                  }
+                },
+              ),
 
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 16),
-                  child: Text(
-                    'App ver 1.0',
-                    style: TextStyle(color: Colors.grey),
-                  ),
+              const Spacer(),
+
+              const LogoutTile(),
+
+              const Padding(
+                padding: EdgeInsets.only(bottom: 16, top: 16),
+                child: Text(
+                  'App ver 1.0',
+                  style: TextStyle(color: Colors.grey),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showLogoutConfirmation(context), // Panggil konfirmasi
-        backgroundColor: Colors.red,
-        foregroundColor: Colors.white,
-        tooltip: 'Logout',
-        child: const Icon(Icons.logout),
-      ),
-      // Atur posisi FAB ke pojok kanan bawah
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/provider/profile_change_provider.dart';
-import 'package:app/screens/user/home_screen.dart';
 import 'package:app/utils/user_calc.dart';
 import 'package:app/widgets/connection_error_card.dart';
+import 'package:app/screens/user/edit_profile_screen.dart' as user;
 
 class DetailProfileScreen extends StatefulWidget {
   const DetailProfileScreen({super.key});
@@ -21,13 +21,10 @@ class _DetailProfileScreenState extends State<DetailProfileScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Cek mounted sebelum fetch, untuk keamanan ekstra jika screen ditutup cepat
       if (mounted) {
         _fetchProfileData();
       }
     });
-    // Jangan panggil _fetchProfileData() langsung di sini lagi
-    // _fetchProfileData();
   }
 
   Future<void> _fetchProfileData() async {
@@ -36,11 +33,9 @@ class _DetailProfileScreenState extends State<DetailProfileScreen> {
     try {
       setState(() => _isRefreshing = true);
       final profileProvider = context.read<ProfileChangeProvider>();
-      
-      // Fetch profile data
+
       final success = await profileProvider.fetchProfile();
-      
-      // Update SharedPreferences with the latest status
+
       if (success) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('profile_complete', true);
@@ -186,7 +181,12 @@ class _DetailProfileScreenState extends State<DetailProfileScreen> {
                 ),
               ),
               onPressed: () {
-                Navigator.pushNamed(context, '/edit-profile');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const user.EditProfileScreen(),
+                  ),
+                );
               },
               child: const Text('Lengkapi Profil Sekarang'),
             ),
@@ -211,6 +211,12 @@ class _DetailProfileScreenState extends State<DetailProfileScreen> {
           title: const Text(
             'Detail Profil',
             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
           ),
         ),
         body: Center(
@@ -240,17 +246,14 @@ class _DetailProfileScreenState extends State<DetailProfileScreen> {
         centerTitle: true,
         backgroundColor: Colors.pink,
         elevation: 0,
+
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () async {
-            // Pop to remove this screen and go back to home
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => const HomeScreen(),
-              ),
-            );
+          onPressed: () {
+            Navigator.of(context).pop();
           },
         ),
+
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(

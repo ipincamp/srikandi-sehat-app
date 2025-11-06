@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:app/models/cycle_history_model.dart';
 import 'package:app/provider/cycle_tracking_provider.dart';
-import 'package:app/widgets/notification_icon_button.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 
@@ -51,138 +50,113 @@ class _CycleTrackingScreenState extends State<CycleTrackingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Pelacakan Siklus Haid',
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: Colors.pink[400],
-        iconTheme: const IconThemeData(color: Colors.white),
-        elevation: 0,
-        actions: [
-          NotificationIconButton(),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => context
-                .read<CycleTrackingProvider>()
-                .fetchCycleHistory(refresh: true, context: context),
-          ),
-        ],
-      ),
-      backgroundColor: Colors.grey[50],
-      body: Consumer<CycleTrackingProvider>(
-        builder: (context, provider, child) {
-          return RefreshIndicator(
-            onRefresh: () async {
-              await provider.fetchCycleHistory(refresh: true, context: context);
-            },
-            child: CustomScrollView(
-              controller: _scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                SliverToBoxAdapter(child: _buildLegendaKalender()),
-                SliverToBoxAdapter(
-                  child: _buildKalender(provider.cycleHistory),
+    return Consumer<CycleTrackingProvider>(
+      builder: (context, provider, child) {
+        return RefreshIndicator(
+          onRefresh: () async {
+            await provider.fetchCycleHistory(refresh: true, context: context);
+          },
+          child: CustomScrollView(
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(child: _buildLegendaKalender()),
+              SliverToBoxAdapter(child: _buildKalender(provider.cycleHistory)),
+              if (provider.isLoading)
+                const SliverFillRemaining(
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.pink),
+                    ),
+                  ),
                 ),
-                if (provider.isLoading)
-                  const SliverFillRemaining(
+
+              if (provider.cycleHistory.isEmpty && !provider.isLoading)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.assignment_outlined,
+                            size: 48,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Container(
+                            width: double.infinity,
+                            constraints: const BoxConstraints(maxWidth: 400),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.1),
+                                  spreadRadius: 2,
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 24,
+                              horizontal: 16,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  provider.emptyMessage ??
+                                      'Tidak ada data siklus',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey[600],
+                                    height: 1.4,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              if (provider.emptyMessage != null &&
+                  provider.cycleHistory.isEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      provider.emptyMessage!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                  ),
+                ),
+              if (provider.cycleHistory.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: _buildStatistikSiklus(provider.cycleHistory),
+                ),
+              if (provider.isLoading && provider.cycleHistory.isNotEmpty)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
                     child: Center(
                       child: CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.pink),
                       ),
                     ),
                   ),
-
-                if (provider.cycleHistory.isEmpty && !provider.isLoading)
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.assignment_outlined,
-                              size: 48,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 16),
-                            Container(
-                              width: double.infinity,
-                              constraints: const BoxConstraints(maxWidth: 400),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.grey.withOpacity(0.1),
-                                    spreadRadius: 2,
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 24,
-                                horizontal: 16,
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    provider.emptyMessage ??
-                                        'Tidak ada data siklus',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey[600],
-                                      height: 1.4,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                if (provider.emptyMessage != null &&
-                    provider.cycleHistory.isEmpty)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Text(
-                        provider.emptyMessage!,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                    ),
-                  ),
-                if (provider.cycleHistory.isNotEmpty)
-                  SliverToBoxAdapter(
-                    child: _buildStatistikSiklus(provider.cycleHistory),
-                  ),
-                if (provider.isLoading && provider.cycleHistory.isNotEmpty)
-                  const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.pink,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          );
-        },
-      ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 
