@@ -120,7 +120,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           'Ubah Password',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        centerTitle: true,
+        centerTitle: false,
         backgroundColor: Colors.pink,
         foregroundColor: Colors.white,
         iconTheme: const IconThemeData(color: Colors.white),

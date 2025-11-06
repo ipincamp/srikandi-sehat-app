@@ -304,6 +304,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
           ),
           backgroundColor: Colors.pink,
+          centerTitle: false,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () async {
