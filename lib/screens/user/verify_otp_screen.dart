@@ -187,11 +187,20 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     final success = await authProvider.submitOtp(otp, context);
 
     if (success && mounted) {
-      // Jika sukses, arahkan ke halaman utama (/main)
-      // AuthWrapper akan otomatis mengarahkan ke user.MainScreen
-      // karena isEmailVerified di provider sudah true.
-      Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
-      // HAPUS: Navigator.of(context).pop();
+      // Cek status profile completion DARI PROVIDER
+      final bool isProfileComplete = authProvider.profileComplete;
+
+      if (isProfileComplete) {
+        // Jika lengkap, ke main screen
+        Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
+      } else {
+        // Jika TIDAK lengkap, paksa ke edit profile
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/edit-profile',
+          (route) => false,
+        );
+      }
     } else {
       if (mounted) {
         // 1. Hapus teks di semua controller

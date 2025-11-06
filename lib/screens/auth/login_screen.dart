@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-// import 'package:flutter_svg/flutter_svg.dart'; // <-- DIHAPUS
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/provider/auth_provider.dart';
@@ -84,10 +83,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final role = loginProvider.role;
       final isVerified = loginProvider.isEmailVerified;
+      final isProfileComplete = loginProvider.profileComplete;
 
       if (kDebugMode) {
         debugPrint('│ 🎭 Role: $role');
         debugPrint('│ ✉️ Email Verified: $isVerified');
+        debugPrint('│ 👤 Profile Complete: $isProfileComplete');
       }
 
       if (!mounted) return;
@@ -110,13 +111,30 @@ class _LoginScreenState extends State<LoginScreen> {
           (route) => false,
         );
       } else if (role == 'user') {
+        // Jika lengkap, ke main screen
         if (kDebugMode) {
-          debugPrint('│ 🔄 Navigating to user main screen');
+          debugPrint('│ 👤 Profile complete. Navigating to user main screen');
           debugPrint('└─────────────────────────────────────────');
         }
         await prefs.setBool('showLoginModal', true);
         if (!mounted) return;
         Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
+        /*
+        if (isProfileComplete) {
+        } else {
+          // Jika TIDAK lengkap, paksa ke edit profile
+          if (kDebugMode) {
+            debugPrint('│ 👤 Profile INCOMPLETE. Navigating to edit profile');
+            debugPrint('└─────────────────────────────────────────');
+          }
+          if (!mounted) return;
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/edit-profile', // <-- Tujuan baru
+            (route) => false,
+          );
+        }
+        */
       } else if (role == 'admin') {
         if (kDebugMode) {
           debugPrint('│ 🔄 Navigating to admin screen');
@@ -166,11 +184,13 @@ class _LoginScreenState extends State<LoginScreen> {
     if (success) {
       final role = authProvider.role;
       final isVerified = authProvider.isEmailVerified;
+      final isProfileComplete = authProvider.profileComplete;
 
       if (kDebugMode) {
         debugPrint('│ ✅ Google login successful');
         debugPrint('│ 🎭 Role: $role');
         debugPrint('│ ✉️ Email Verified: $isVerified');
+        debugPrint('│ 👤 Profile Complete: $isProfileComplete');
       }
 
       if (!mounted) return;
@@ -196,13 +216,28 @@ class _LoginScreenState extends State<LoginScreen> {
           (route) => false,
         );
       } else if (role == 'user') {
-        if (kDebugMode) {
-          debugPrint('│ 🔄 Navigating to user main screen');
-          debugPrint('└─────────────────────────────────────────');
+        if (isProfileComplete) {
+          // Jika lengkap, ke main screen
+          if (kDebugMode) {
+            debugPrint('│ 👤 Profile complete. Navigating to user main screen');
+            debugPrint('└─────────────────────────────────────────');
+          }
+          await prefs.setBool('showLoginModal', true);
+          if (!mounted) return;
+          Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
+        } else {
+          // Jika TIDAK lengkap, paksa ke edit profile
+          if (kDebugMode) {
+            debugPrint('│ 👤 Profile INCOMPLETE. Navigating to edit profile');
+            debugPrint('└─────────────────────────────────────────');
+          }
+          if (!mounted) return;
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/edit-profile', // <-- Tujuan baru
+            (route) => false,
+          );
         }
-        await prefs.setBool('showLoginModal', true);
-        if (!mounted) return;
-        Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
       } else if (role == 'admin') {
         if (kDebugMode) {
           debugPrint('│ 🔄 Navigating to admin screen');

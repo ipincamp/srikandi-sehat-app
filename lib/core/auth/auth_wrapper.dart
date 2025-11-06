@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-// import 'package:app/core/auth/auth_guard.dart';
 import 'package:app/provider/auth_provider.dart';
 import 'package:app/provider/health_provider.dart';
 import 'package:app/screens/splash/maintenance_screen.dart';
@@ -43,7 +42,7 @@ class _AuthWrapperState extends State<AuthWrapper> with RouteAware {
     if (kDebugMode) {
       AppLogger.startSection('AuthWrapper - Check FCM Token', emoji: '🔔');
     }
-    
+
     final prefs = await SharedPreferences.getInstance();
     final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
 
@@ -54,7 +53,7 @@ class _AuthWrapperState extends State<AuthWrapper> with RouteAware {
       }
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       await authProvider.updateFcmToken();
-      
+
       if (kDebugMode) {
         AppLogger.success('AuthWrapper', 'FCM token sync completed');
         AppLogger.endSection();
@@ -116,37 +115,69 @@ class _AuthWrapperState extends State<AuthWrapper> with RouteAware {
       // User login, TAPI BELUM verifikasi.
       // Arahkan ke OTP screen.
       if (kDebugMode) {
-        AppLogger.warning('AuthWrapper', 'User not verified - redirecting to OTP');
+        AppLogger.warning(
+          'AuthWrapper',
+          'User not verified - redirecting to OTP',
+        );
       }
       // Menggunakan addPostFrameCallback agar navigasi terjadi setelah build.
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.of(context).pushReplacementNamed('/verify-otp');
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/verify-otp');
+        }
       });
       // Tampilkan loading sementara
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     // 3. User sudah terverifikasi ATAU adalah admin
     if (authProvider.role == 'admin') {
       if (kDebugMode) {
-        AppLogger.success('AuthWrapper', 'Admin authenticated - showing admin screen');
+        AppLogger.success(
+          'AuthWrapper',
+          'Admin authenticated - showing admin screen',
+        );
       }
       return widget.adminChild;
     }
 
     if (authProvider.role == 'user') {
       // (Implisit: isEmailVerified == true)
+
+      // Cek kelengkapan profil
+      /*
+      if (!authProvider.profileComplete) {
+        // Jika user sudah verified tapi profil belum lengkap, paksa ke edit profile
+        if (kDebugMode) {
+          AppLogger.warning(
+            'AuthWrapper',
+            'User verified but profile incomplete - redirecting to edit-profile',
+          );
+        }
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            Navigator.of(context).pushReplacementNamed('/edit-profile');
+          }
+        });
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      }
+      */
+
       if (kDebugMode) {
-        AppLogger.success('AuthWrapper', 'User authenticated - showing user screen');
+        AppLogger.success(
+          'AuthWrapper',
+          'User authenticated and profile complete - showing user screen',
+        );
       }
       return widget.userChild;
     }
 
     // 4. Fallback (seharusnya tidak terjadi jika login/load benar)
     if (kDebugMode) {
-      AppLogger.warning('AuthWrapper', 'Fallback to guest screen - unexpected state');
+      AppLogger.warning(
+        'AuthWrapper',
+        'Fallback to guest screen - unexpected state',
+      );
     }
     return widget.guestChild;
   }

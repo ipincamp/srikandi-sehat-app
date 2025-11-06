@@ -8,7 +8,7 @@ class AuthGuard {
     if (kDebugMode) {
       AppLogger.startSection('AuthGuard - Validate Session', emoji: '🔐');
     }
-    
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
@@ -35,10 +35,13 @@ class AuthGuard {
           }
           return false;
         }
-        
+
         if (kDebugMode) {
           final timeRemaining = expiryDate.difference(DateTime.now());
-          AppLogger.info('AuthGuard', 'Token expires in: ${timeRemaining.inHours}h ${timeRemaining.inMinutes % 60}m');
+          AppLogger.info(
+            'AuthGuard',
+            'Token expires in: ${timeRemaining.inHours}h ${timeRemaining.inMinutes % 60}m',
+          );
         }
       } else {
         if (kDebugMode) {
@@ -50,14 +53,11 @@ class AuthGuard {
         AppLogger.success('AuthGuard', 'Session is valid');
         AppLogger.endSection();
       }
-      
+
       return true;
     } catch (e) {
       if (kDebugMode) {
-        AppLogger.exception(
-          category: 'AuthGuard',
-          error: e,
-        );
+        AppLogger.exception(category: 'AuthGuard', error: e);
         AppLogger.endSection();
       }
       return false;
