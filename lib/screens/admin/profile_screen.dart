@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:app/provider/auth_provider.dart';
-import 'package:app/provider/user_profile_provider.dart';
 import 'package:app/widgets/custom_alert.dart';
 import 'package:app/widgets/profile_tile.dart';
-import 'package:app/widgets/custom_popup.dart';
+import 'package:app/widgets/logout_tile.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -47,80 +46,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _showLogoutConfirmation(BuildContext context) async {
-    final bool? confirmed = await CustomConfirmationPopup.show(
-      context,
-      title: 'Konfirmasi Logout',
-      message: 'Apakah Anda yakin ingin keluar dari aplikasi?',
-      confirmText: 'Ya',
-      cancelText: 'Batal',
-      confirmColor: Colors.red,
-      icon: Icons.logout,
-    );
+  // --- 2. HAPUS FUNGSI _showLogoutConfirmation ---
+  // (Fungsi ini sudah ada di dalam LogoutTile)
 
-    if (confirmed == true) {
-      await _logout(context);
-    }
-  }
+  // --- 3. HAPUS FUNGSI _logout ---
+  // (Fungsi ini sudah ada di dalam LogoutTile)
 
-  Future<void> _logout(BuildContext context) async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final profileProvider = Provider.of<UserProfileProvider>(
-      context,
-      listen: false,
-    );
-
-    try {
-      await profileProvider.clearCache(); // Clear cache profil
-      final success = await authProvider.logout(context);
-
-      if (success) {
-        CustomAlert.show(context, 'Berhasil logout', type: AlertType.success);
-        await Future.delayed(const Duration(milliseconds: 700));
-        if (context.mounted) {
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            '/login',
-            (route) => false,
-          );
-        }
-      } else {
-        if (authProvider.errorMessage.isNotEmpty && context.mounted) {
-          CustomAlert.show(
-            context,
-            authProvider.errorMessage,
-            type: AlertType.error,
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        CustomAlert.show(
-          context,
-          'Error saat logout: $e',
-          type: AlertType.error,
-        );
-      }
-    }
-  }
-
-  Widget buildListTile({
-    required IconData icon,
-    required String label,
-    required Color color,
-    Widget? trailing,
-    VoidCallback? onTap,
-  }) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: color.withOpacity(0.2),
-        child: Icon(icon, color: color),
-      ),
-      title: Text(label),
-      // trailing: trailing ?? const Icon(Icons.arrow_forward_ios, size: 16),
-      onTap: onTap,
-    );
-  }
+  // --- 4. HAPUS FUNGSI buildListTile ---
+  // (Fungsi ini tidak digunakan di halaman admin)
 
   @override
   Widget build(BuildContext context) {
@@ -156,24 +89,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           const Divider(),
 
-          // buildListTile(
-          const Spacer(),
+          // --- 5. UBAH BAGIAN INI ---
+          const Spacer(), // Dorong ke bawah
+
+          const LogoutTile(), // Tambahkan LogoutTile di sini
 
           const Padding(
-            padding: EdgeInsets.only(bottom: 16),
+            padding: EdgeInsets.only(bottom: 16, top: 16),
             child: Text('App ver 1.0', style: TextStyle(color: Colors.grey)),
           ),
+          // --- AKHIR PERUBAHAN ---
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showLogoutConfirmation(context),
-        backgroundColor: Colors.red,
-        foregroundColor: Colors.white,
-        tooltip: 'Logout',
-        child: const Icon(Icons.logout),
-      ),
-      // Atur posisi FAB ke pojok kanan bawah
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      // --- 6. HAPUS floatingActionButton ---
+      // --- 7. HAPUS floatingActionButtonLocation ---
     );
   }
 }
