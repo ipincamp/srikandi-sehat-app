@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/provider/auth_provider.dart';
 import 'package:app/widgets/custom_button.dart';
 import 'package:app/widgets/custom_popup.dart';
+import 'package:app/widgets/custom_alert.dart';
 
 class VerifyOtpScreen extends StatefulWidget {
   const VerifyOtpScreen({super.key});
@@ -17,7 +18,11 @@ class VerifyOtpScreen extends StatefulWidget {
 
 class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _otpController = TextEditingController();
+  final List<TextEditingController> _otpControllers = List.generate(
+    6,
+    (_) => TextEditingController(),
+  );
+  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
 
   Timer? _timer;
   int _cooldownSeconds = 0;
@@ -32,7 +37,12 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
 
   @override
   void dispose() {
-    _otpController.dispose();
+    for (var controller in _otpControllers) {
+      controller.dispose();
+    }
+    for (var node in _focusNodes) {
+      node.dispose();
+    }
     _timer?.cancel();
     super.dispose();
   }
@@ -159,25 +169,88 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
   }
 
   Future<void> _submitOtp() async {
-    if (!_formKey.currentState!.validate()) {
+    // Cek apakah sedang loading agar tidak double submit
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.isLoading) return;
+
+    final otp = _otpControllers.map((controller) => controller.text).join();
+
+    if (otp.length != 6) {
+      CustomAlert.show(
+        context,
+        'OTP harus 6 digit lengkap',
+        type: AlertType.warning,
+      );
       return;
     }
-
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final otp = _otpController.text;
 
     final success = await authProvider.submitOtp(otp, context);
 
     if (success && mounted) {
-      // --- UBAH NAVIGASI DI SINI ---
       // Jika sukses, arahkan ke halaman utama (/main)
       // AuthWrapper akan otomatis mengarahkan ke user.MainScreen
       // karena isEmailVerified di provider sudah true.
       Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
       // HAPUS: Navigator.of(context).pop();
-      // --- AKHIR PERUBAHAN ---
+    } else {
+      if (mounted) {
+        // 1. Hapus teks di semua controller
+        for (var controller in _otpControllers) {
+          controller.clear();
+        }
+        // 2. Pindahkan fokus kembali ke kotak pertama
+        FocusScope.of(context).requestFocus(_focusNodes[0]);
+      }
     }
     // Jika gagal, alert akan ditampilkan oleh provider
+  }
+
+  Widget _buildOtpBox(int index) {
+    return SizedBox(
+      width: 48, // Lebar setiap kotak
+      height: 48, // Tinggi setiap kotak
+      child: TextFormField(
+        controller: _otpControllers[index],
+        focusNode: _focusNodes[index],
+        keyboardType: TextInputType.number,
+        textAlign: TextAlign.center,
+        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        inputFormatters: [
+          LengthLimitingTextInputFormatter(1), // Hanya 1 karakter
+          FilteringTextInputFormatter.digitsOnly, // Hanya angka
+        ],
+        decoration: InputDecoration(
+          counterText: '', // Sembunyikan counter
+          contentPadding: EdgeInsets.zero, // Pusatkan teks
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8), // Kotak dengan sudut
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Colors.pink, width: 2),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: Colors.grey.shade400),
+          ),
+        ),
+        onChanged: (value) {
+          if (value.length == 1) {
+            if (index < 5) {
+              // Pindah ke box selanjutnya
+              FocusScope.of(context).requestFocus(_focusNodes[index + 1]);
+            } else {
+              // Ini adalah box ke-6, unfocus dan auto-submit
+              _focusNodes[index].unfocus(); // Sembunyikan keyboard
+              _submitOtp(); // Panggil fungsi submit
+            }
+          } else if (value.isEmpty && index > 0) {
+            // Pindah ke box sebelumnya saat backspace
+            FocusScope.of(context).requestFocus(_focusNodes[index - 1]);
+          }
+        },
+      ),
+    );
   }
 
   @override
@@ -221,44 +294,11 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                   style: const TextStyle(color: Colors.grey, fontSize: 16),
                 ),
                 const SizedBox(height: 32),
-                TextFormField(
-                  controller: _otpController,
-                  decoration: InputDecoration(
-                    labelText: 'Kode OTP 6 Digit',
-                    hintText: '123456',
-                    counterText: "", // Sembunyikan counter
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: Colors.pink,
-                        width: 2,
-                      ),
-                    ),
-                  ),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(6),
-                  ],
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => _submitOtp(),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'OTP tidak boleh kosong';
-                    }
-                    if (value.length != 6) {
-                      return 'OTP harus 6 digit';
-                    }
-                    return null;
-                  },
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: List.generate(6, (index) {
+                    return _buildOtpBox(index);
+                  }),
                 ),
                 const SizedBox(height: 24),
                 CustomButton(
